@@ -8,9 +8,14 @@ services:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
     ports:
-      - "5432:5432"
+      - "5433:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d horarios"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
 
   backend:
     image: node:24-alpine
@@ -23,13 +28,15 @@ services:
     ports:
       - "3000:3000"
     environment:
-      DATABASE_HOST: postgres
-      DATABASE_PORT: 5432
-      DATABASE_USER: postgres
-      DATABASE_PASSWORD: postgres
-      DATABASE_NAME: horarios
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_USER: postgres
+      DB_PASSWORD: postgres
+      DB_NAME: horarios
+      CORS_ORIGIN: http://localhost:4200
     depends_on:
-      - postgres
+      postgres:
+        condition: service_healthy
 
   frontend:
     image: node:24-alpine
