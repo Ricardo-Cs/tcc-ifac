@@ -1,9 +1,9 @@
 import { Column, Entity, Index } from 'typeorm';
-import { BaseEntity } from '../base-entity';
+import { AbstractEntity } from '../base-entity';
 
 @Entity('periodo_letivo')
 @Index(['ativo'], { unique: true, where: 'ativo = true' })
-export class PeriodoLetivoEntity extends BaseEntity {
+export class PeriodoLetivoEntity extends AbstractEntity {
     @Column({ type: 'varchar', length: 10, unique: true })
     codigo: string;
 

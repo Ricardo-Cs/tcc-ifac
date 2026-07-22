@@ -1,9 +1,9 @@
 import { Column, Entity } from 'typeorm';
-import { BaseEntity } from '../base-entity';
+import { AbstractEntity } from '../base-entity';
 import { PapelUsuario } from './enums';
 
 @Entity('usuario')
-export class UsuarioEntity extends BaseEntity {
+export class UsuarioEntity extends AbstractEntity {
     @Column({ type: 'varchar', length: 255 })
     nome: string;
 

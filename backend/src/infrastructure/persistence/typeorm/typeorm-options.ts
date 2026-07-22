@@ -59,9 +59,8 @@ export function buildDataSourceOptions(env: DatabaseEnv): DataSourceOptions {
     password: env.password,
     database: env.database,
     namingStrategy: new SnakeNamingStrategy(),
-    // Schema evolui exclusivamente por migration — sem exceção por ambiente.
-    synchronize: true,
-    migrationsRun: false,
+    synchronize: false,
+    migrationsRun: true,
     entities: [__dirname + '/entities/**/*.entity.{ts,js}'],
     migrations: [__dirname + '/migrations/*.{ts,js}'],
     logging: isProduction ? ['error'] : ['query', 'error'],

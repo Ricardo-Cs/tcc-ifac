@@ -1,5 +1,5 @@
 export enum PapelUsuario {
     ADMIN = "ADMIN",
-    COMISSAO = "COMISSÃO",
+    COMISSAO = "COMISSAO",
     CONSULTA = "CONSULTA"
 }
