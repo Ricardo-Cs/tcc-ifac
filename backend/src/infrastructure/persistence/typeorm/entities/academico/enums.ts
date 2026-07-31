@@ -1,18 +1,6 @@
-export enum Turno {
-    MANHA = "MANHA",
-    TARDE = "TARDE",
-    NOITE = "NOITE"
-}
-
-export enum Modalidade {
-    SUPERIOR = "SUPERIOR",
-    INTEGRADO = "INTEGRADO",
-    SUBSEQUENTE = "SUBSEQUENTE"
-}
-
-export enum TipoSala {
-    COMUM = "COMUM",
-    LABORATORIO = "LABORATORIO",
-    AUDITORIO = "AUDITORIO",
-    QUADRA = "QUADRA"
-}
+/**
+ * Os enums acadêmicos moram no domínio (TypeScript puro). A persistência os
+ * re-exporta para uso nas colunas `@Column({ type: 'enum', ... })`, mantendo
+ * uma única fonte da verdade sem o domínio depender de `infrastructure`.
+ */
+export { Turno, Modalidade, TipoSala } from '../../../../../domain/academico/enums';

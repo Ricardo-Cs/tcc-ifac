@@ -1,24 +1,9 @@
-export enum SeveridadeConflito {
-    FORTE = "FORTE",
-    POTENCIAL = "POTENCIAL",
-    FRACO = "FRACO"
-}
-
-export enum TipoConflito {
-    // Fortes — colisão certa
-    PROFESSOR_DUPLICADO = 'PROFESSOR_DUPLICADO',
-    TURMA_DUPLICADA = 'TURMA_DUPLICADA',
-    SALA_OCUPADA = 'SALA_OCUPADA',
-    RESTRICAO_VIOLADA = 'RESTRICAO_VIOLADA',
-    CARGA_SEMANAL_EXCEDIDA = 'CARGA_SEMANAL_EXCEDIDA',
-
-    // Potenciais — incerteza estrutural (codocência)
-    PROFESSOR_DUPLICADO_POTENCIAL = 'PROFESSOR_DUPLICADO_POTENCIAL',
-
-    // Avisos / fracos
-    RESTRICAO_NAO_IMPORTADA = 'RESTRICAO_NAO_IMPORTADA',
-    CARGA_OFERTA_INCOMPLETA = 'CARGA_OFERTA_INCOMPLETA',
-    CAPACIDADE_SALA_INSUFICIENTE = 'CAPACIDADE_SALA_INSUFICIENTE',
-    TIPO_SALA_INADEQUADO = 'TIPO_SALA_INADEQUADO',
-    HORARIO_NAO_PREFERIDO = 'HORARIO_NAO_PREFERIDO',
-}
+/**
+ * Os enums de conflito moram no domínio (TypeScript puro). A persistência os
+ * re-exporta para uso nas colunas `@Column({ type: 'enum', ... })`, mantendo
+ * uma única fonte da verdade sem o domínio depender de `infrastructure`.
+ */
+export {
+    SeveridadeConflito,
+    TipoConflito,
+} from '../../../../../domain/grade-horaria/conflito';
