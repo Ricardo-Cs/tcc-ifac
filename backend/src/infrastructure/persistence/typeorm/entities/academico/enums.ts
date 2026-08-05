@@ -3,4 +3,9 @@
  * re-exporta para uso nas colunas `@Column({ type: 'enum', ... })`, mantendo
  * uma única fonte da verdade sem o domínio depender de `infrastructure`.
  */
-export { Turno, Modalidade, TipoSala } from '../../../../../domain/academico/enums';
+export {
+    Turno,
+    Modalidade,
+    TipoSala,
+    RegimeOferta,
+} from '../../../../../domain/academico/enums';

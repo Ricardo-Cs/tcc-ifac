@@ -20,7 +20,7 @@ import { TurmaEntity } from '../entities/academico/turma.entity';
 import { OfertaDisciplinaEntity } from '../entities/academico/oferta-disciplina.entity';
 import { ProfessorOfertaEntity } from '../entities/academico/professor-oferta.entity';
 import { AlocacaoAulaEntity } from '../entities/grade-horaria/alocacao-aula.entity';
-import { Modalidade, TipoSala, Turno } from '../entities/academico/enums';
+import { Modalidade, RegimeOferta, TipoSala, Turno } from '../entities/academico/enums';
 
 /**
  * Seed da grade de exemplo: "Sistemas para Internet — 2º Período" no período
@@ -137,6 +137,8 @@ export async function seedGradeSI2026(dataSource: DataSource): Promise<void> {
             { codigo: '2026.2' },
             {
                 codigo: '2026.2',
+                ano: 2026,
+                semestre: 2,
                 descricao: 'Segundo semestre de 2026',
                 dataInicio: '2026-08-01',
                 dataFim: '2026-12-15',
@@ -267,6 +269,7 @@ export async function seedGradeSI2026(dataSource: DataSource): Promise<void> {
                     turma,
                     disciplina: disc,
                     periodoLetivo: periodo,
+                    regime: RegimeOferta.SEMESTRAL,
                     aulasSemana: aulasPorDisciplina.get(d.codigo) ?? 0,
                 },
             );
@@ -277,7 +280,7 @@ export async function seedGradeSI2026(dataSource: DataSource): Promise<void> {
                 manager,
                 ProfessorOfertaEntity,
                 { professor: { id: professor.id }, oferta: { id: oferta.id } } as never,
-                { professor, oferta },
+                { professor, oferta, proporcaoCarga: 100 },
             );
         }
 

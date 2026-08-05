@@ -22,4 +22,8 @@ export class RestricaoProfessorEntity extends AbstractEntity {
 
     @Column({ type: 'text', nullable: true })
     motivo: string | null;
+
+    // Restrição protegida pelo Art. 98 da Lei 8.112/90 (horário de estudante).
+    @Column({ type: 'boolean', default: false })
+    amparoLegal: boolean;
 }

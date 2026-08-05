@@ -27,3 +27,12 @@ export enum TipoSala {
     AUDITORIO = 'AUDITORIO',
     QUADRA = 'QUADRA',
 }
+
+/**
+ * Regime de uma oferta de disciplina. Uma oferta ANUAL é UMA linha só, ligada
+ * ao período letivo em que começa — não se duplica a oferta nos dois semestres.
+ */
+export enum RegimeOferta {
+    ANUAL = 'ANUAL',
+    SEMESTRAL = 'SEMESTRAL',
+}
