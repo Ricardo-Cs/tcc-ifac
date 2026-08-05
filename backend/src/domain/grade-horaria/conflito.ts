@@ -13,23 +13,43 @@ export enum SeveridadeConflito {
     FRACO = 'FRACO',
 }
 
+/**
+ * O QUE colidiu — taxonomia estrutural, estável. NÃO carrega severidade: a
+ * potencialidade da codocência é severidade volátil (decidida em runtime pela
+ * regra), não um tipo à parte. Um professor duplicado é sempre
+ * `PROFESSOR_DUPLICADO`; se há codocência no momento da avaliação, a regra o
+ * marca `POTENCIAL`, senão `FORTE` — sem trocar de tipo. Isso mantém a
+ * identidade (a chave usa o tipo) estável quando só a severidade muda.
+ */
 export enum TipoConflito {
-    // Fortes — colisão certa
     PROFESSOR_DUPLICADO = 'PROFESSOR_DUPLICADO',
     TURMA_DUPLICADA = 'TURMA_DUPLICADA',
     SALA_OCUPADA = 'SALA_OCUPADA',
     RESTRICAO_VIOLADA = 'RESTRICAO_VIOLADA',
     CARGA_SEMANAL_EXCEDIDA = 'CARGA_SEMANAL_EXCEDIDA',
-
-    // Potenciais — incerteza estrutural (codocência)
-    PROFESSOR_DUPLICADO_POTENCIAL = 'PROFESSOR_DUPLICADO_POTENCIAL',
-
-    // Avisos / fracos
     RESTRICAO_NAO_IMPORTADA = 'RESTRICAO_NAO_IMPORTADA',
     CARGA_OFERTA_INCOMPLETA = 'CARGA_OFERTA_INCOMPLETA',
     CAPACIDADE_SALA_INSUFICIENTE = 'CAPACIDADE_SALA_INSUFICIENTE',
     TIPO_SALA_INADEQUADO = 'TIPO_SALA_INADEQUADO',
     HORARIO_NAO_PREFERIDO = 'HORARIO_NAO_PREFERIDO',
+}
+
+/**
+ * A coordenada SEMÂNTICA de uma alocação dentro de um conflito — NUNCA o id da
+ * linha de `alocacao_aula`. No write model, mover uma aula é um UPDATE no slot
+ * da linha existente: o id não muda. Se a identidade do conflito usasse o id, o
+ * aceite grudaria na aula no slot errado após a mudança. Por isso a alocação
+ * entra na chave por `oferta + slot` (+ `sala`, quando a regra envolve sala).
+ */
+export interface ParticipanteConflito {
+    ofertaId: string;
+    slotId: string;
+    /**
+     * Presente só quando a regra leva a sala na identidade (ex.: SALA_OCUPADA).
+     * `undefined` = a regra não considera sala; `null` = a regra considera, mas
+     * a alocação está sem sala definida. Os dois casos geram chaves distintas.
+     */
+    salaId?: string | null;
 }
 
 /**
@@ -42,28 +62,24 @@ export enum TipoConflito {
 export interface Conflito {
     tipo: TipoConflito;
     severidade: SeveridadeConflito;
-    /** Ids das alocações envolvidas na colisão. */
+    /**
+     * Coordenadas semânticas das alocações envolvidas — a base da chave estável
+     * (ver `chaveConflito`). A ordenação/serialização é responsabilidade da
+     * `chaveConflito`; a regra só declara as coordenadas.
+     */
+    participantes: ParticipanteConflito[];
+    /**
+     * Discriminador da situação. Normalmente `[slotId]`; a regra de professor
+     * acrescenta o `professorId` (dois professores nas mesmas ofertas/slot são
+     * dois conflitos distintos, um por professor). Para regras entre dias
+     * (interjornada, quando existir), o par de dias ordenado.
+     */
+    contexto: string[];
+    /**
+     * Ids das linhas de alocação envolvidas — para a interface destacar as aulas
+     * e para o elo de limpeza em cascata do aceite. NÃO entra na identidade.
+     */
     alocacoesEnvolvidas: string[];
     /** Mensagem legível pela comissão de horários. */
     mensagem: string;
-}
-
-/**
- * Identidade estável de um conflito: `${tipo}|${alocações ordenadas}`.
- *
- * É por ela que o motor reconhece, a cada reavaliação (sempre recalculada do
- * zero), que um conflito recomputado é o MESMO que a comissão já aceitou — a
- * severidade fica de fora de propósito, pois pode mudar de contexto sem mudar a
- * identidade do conflito.
- *
- * A ordenação torna a chave independente da ordem em que a regra listou as
- * alocações. Efeito desejável: se a comissão mover uma das aulas envolvidas, o
- * conjunto muda, a chave muda e um eventual aceite deixa de casar — o conflito
- * reaparece, porque o contexto que justificou o aceite mudou.
- */
-export function chaveConflito(
-    conflito: Pick<Conflito, 'tipo' | 'alocacoesEnvolvidas'>,
-): string {
-    const alocacoes = [...conflito.alocacoesEnvolvidas].sort();
-    return `${conflito.tipo}|${alocacoes.join(',')}`;
 }

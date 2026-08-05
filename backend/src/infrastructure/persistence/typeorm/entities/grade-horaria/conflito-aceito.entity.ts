@@ -9,39 +9,40 @@ import {
 import { AbstractEntity } from '../base-entity';
 import { AlocacaoAulaEntity } from './alocacao-aula.entity';
 import { UsuarioEntity } from '../comum/usuario.entity';
-import { SeveridadeConflito, TipoConflito } from './enums';
 
 /**
  * Registra a DECISÃO da comissão de conviver com um conflito específico
  * (com justificativa e autor). NÃO é cache de conflitos calculados —
  * conflito nunca é persistido, é sempre recalculado a partir do estado.
- * Conflitos FORTES não deveriam ser aceitáveis; validar na regra de negócio.
+ * Conflitos FORTES não são aceitáveis; a invariante é validada no domínio
+ * (`chaveDoAceite`), então nem chegam a virar linha aqui.
  *
- * A identidade do conflito aceito é a `chave` determinística (ver
- * `chaveConflito` no domínio), não uma única alocação: um conflito pode
- * envolver duas alocações (ex.: PROFESSOR_DUPLICADO). É pela `chave` que o
- * serviço, ao reavaliar do zero, reconhece que um conflito recomputado é o
- * mesmo que foi aceito e o remove da lista.
+ * A identidade do aceite é a `chave` semântica (ver `chaveConflito` no
+ * domínio): `tipo :: contexto :: participantes(oferta+slot[+sala]) ordenados`.
+ * NÃO usa o id da linha de alocação — mover uma aula é um UPDATE que preserva o
+ * id; se a chave usasse o id, o aceite grudaria na aula no slot errado. É pela
+ * `chave` que o serviço, ao reavaliar do zero, reconhece que um conflito
+ * recomputado é o mesmo que foi aceito e o remove da lista.
+ *
+ * `tipo` e `severidade` NÃO são colunas: `tipo` já está embutido na `chave`, e
+ * `severidade` é volátil de propósito (o mesmo conflito muda de severidade
+ * conforme o contexto) — persisti-la seria gravar um valor que envelhece.
  */
 @Entity('conflito_aceito')
 @Unique(['chave'])
 export class ConflitoAceitoEntity extends AbstractEntity {
-    // `${tipo}|${alocacoesEnvolvidas ordenadas}`. Se qualquer aula envolvida for
-    // movida, a chave muda e o aceite deixa de casar — o conflito reaparece.
+    // `tipo :: contexto :: participantes ordenados`. Se qualquer aula envolvida
+    // for movida, o slot muda, a chave muda e o aceite deixa de casar — o
+    // conflito reaparece para nova avaliação.
     @Column({ type: 'varchar', length: 512 })
     chave: string;
 
-    // Alocação representante (a primeira da chave ordenada). Não é a identidade;
-    // existe para integridade referencial — se ela for removida, o aceite cai
-    // junto (CASCADE), e de todo modo a chave já deixaria de casar.
+    // Alocação representante — NÃO é a identidade (essa é a `chave`). Existe só
+    // como gancho de limpeza em cascata: apagar a aula apaga o aceite (CASCADE).
+    // Se, em vez de apagada, a aula for movida, a `chave` já deixa de casar e o
+    // aceite fica inerte de qualquer forma.
     @ManyToOne(() => AlocacaoAulaEntity, { nullable: false, onDelete: 'CASCADE' })
     alocacao: Relation<AlocacaoAulaEntity>;
-
-    @Column({ type: 'enum', enum: TipoConflito })
-    tipo: TipoConflito;
-
-    @Column({ type: 'enum', enum: SeveridadeConflito })
-    severidade: SeveridadeConflito;
 
     @Column({ type: 'text' })
     justificativa: string;

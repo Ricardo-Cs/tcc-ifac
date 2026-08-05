@@ -38,6 +38,11 @@ export class RegraTurmaDuplicada implements Regra {
             conflitos.push({
                 tipo: TipoConflito.TURMA_DUPLICADA,
                 severidade: SeveridadeConflito.FORTE,
+                // Coordenadas semânticas: as ofertas distintas neste slot. A turma
+                // já é determinada pelas ofertas, então não precisa entrar no
+                // contexto (basta o slot).
+                participantes: [...ofertaIds].map((ofertaId) => ({ ofertaId, slotId })),
+                contexto: [slotId],
                 alocacoesEnvolvidas: alocacoes.map((a) => a.id),
                 mensagem:
                     `A turma ${nomeTurma} tem ${ofertaIds.size} disciplinas no mesmo ` +

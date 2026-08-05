@@ -1,15 +1,25 @@
-import { Conflito, SeveridadeConflito, TipoConflito } from '../conflito';
+import {
+    Conflito,
+    ParticipanteConflito,
+    SeveridadeConflito,
+    TipoConflito,
+} from '../conflito';
 import { AlocacaoSnapshot, GradeSnapshot } from '../snapshot';
 import { Regra } from './regra';
 
 /**
- * PROFESSOR_DUPLICADO / PROFESSOR_DUPLICADO_POTENCIAL — o mesmo professor
- * envolvido em duas ou mais ofertas DISTINTAS alocadas no mesmo slot.
+ * PROFESSOR_DUPLICADO — o mesmo professor envolvido em duas ou mais ofertas
+ * DISTINTAS alocadas no mesmo slot.
  *
- * A severidade depende da codocência:
+ * SEMPRE o tipo PROFESSOR_DUPLICADO; o que muda é a SEVERIDADE, decidida em
+ * runtime pela codocência:
  *   - todas as ofertas envolvidas têm um único professor  -> FORTE (colisão certa)
  *   - alguma oferta envolvida tem codocência               -> POTENCIAL
  *     (pode ser resolvível internamente; a comissão avalia)
+ *
+ * A potencialidade é severidade, não tipo — por isso não vira um valor de enum
+ * à parte. Manter o tipo fixo é o que preserva a chave de identidade quando o
+ * mesmo conflito oscila FORTE<->POTENCIAL sem a aula mudar de slot.
  *
  * Comparar ofertas distintas, não alocações: duas alocações da MESMA oferta no
  * mesmo slot são a mesma aula (o professor está num lugar só) — isso é problema
@@ -33,6 +43,16 @@ export class RegraProfessorDuplicado implements Regra {
             const nomeProfessor = professor?.nome ?? professorId;
             const nomeSlot = slot?.codigo ?? slotId;
 
+            // Coordenadas semânticas: as ofertas distintas deste professor neste
+            // slot. O professorId entra no contexto — em codocência, dois
+            // professores nas MESMAS ofertas/slot são dois conflitos distintos
+            // (um por professor); sem ele no contexto, as duas chaves colidiriam.
+            const participantes = [...ofertaIds].map((ofertaId) => ({
+                ofertaId,
+                slotId,
+            }));
+            const contexto = [professorId, slotId];
+
             const haCodocencia = [...ofertaIds].some((id) => {
                 const oferta = snapshot.ofertas.get(id);
                 return (oferta?.professorIds.length ?? 0) > 1;
@@ -40,8 +60,8 @@ export class RegraProfessorDuplicado implements Regra {
 
             conflitos.push(
                 haCodocencia
-                    ? this.potencial(nomeProfessor, nomeSlot, alocacoes)
-                    : this.forte(nomeProfessor, nomeSlot, alocacoes),
+                    ? this.potencial(nomeProfessor, nomeSlot, alocacoes, participantes, contexto)
+                    : this.forte(nomeProfessor, nomeSlot, alocacoes, participantes, contexto),
             );
         }
 
@@ -52,10 +72,14 @@ export class RegraProfessorDuplicado implements Regra {
         professor: string,
         slot: string,
         alocacoes: AlocacaoSnapshot[],
+        participantes: ParticipanteConflito[],
+        contexto: string[],
     ): Conflito {
         return {
             tipo: TipoConflito.PROFESSOR_DUPLICADO,
             severidade: SeveridadeConflito.FORTE,
+            participantes,
+            contexto,
             alocacoesEnvolvidas: alocacoes.map((a) => a.id),
             mensagem:
                 `O professor ${professor} está em mais de uma aula no mesmo horário ` +
@@ -67,10 +91,16 @@ export class RegraProfessorDuplicado implements Regra {
         professor: string,
         slot: string,
         alocacoes: AlocacaoSnapshot[],
+        participantes: ParticipanteConflito[],
+        contexto: string[],
     ): Conflito {
         return {
-            tipo: TipoConflito.PROFESSOR_DUPLICADO_POTENCIAL,
+            // Mesmo tipo do caso FORTE — só a severidade difere. Assim a chave é
+            // idêntica e o aceite sobrevive à oscilação de severidade.
+            tipo: TipoConflito.PROFESSOR_DUPLICADO,
             severidade: SeveridadeConflito.POTENCIAL,
+            participantes,
+            contexto,
             alocacoesEnvolvidas: alocacoes.map((a) => a.id),
             mensagem:
                 `O professor ${professor} pode ter conflito no horário ${slot}: há ` +

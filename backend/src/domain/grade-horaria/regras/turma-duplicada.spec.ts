@@ -42,6 +42,12 @@ describe('RegraTurmaDuplicada', () => {
         expect(conflitos[0].tipo).toBe(TipoConflito.TURMA_DUPLICADA);
         expect(conflitos[0].severidade).toBe(SeveridadeConflito.FORTE);
         expect(conflitos[0].alocacoesEnvolvidas.sort()).toEqual(['a1', 'a2']);
+        // Participantes por coordenada semântica (oferta+slot), não por id de linha.
+        expect([...conflitos[0].participantes].sort((x, y) => x.ofertaId.localeCompare(y.ofertaId))).toEqual([
+            { ofertaId: 'o1', slotId: 's1' },
+            { ofertaId: 'o2', slotId: 's1' },
+        ]);
+        expect(conflitos[0].contexto).toEqual(['s1']);
         expect(conflitos[0].mensagem).toContain('SI 2026.1');
         expect(conflitos[0].mensagem).toContain('SEG-T1');
     });

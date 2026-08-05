@@ -1,4 +1,5 @@
 import { SeveridadeConflito, TipoConflito } from '../conflito';
+import { chaveConflito } from '../chave-conflito';
 import { alocacao, montarSnapshot, oferta, professor, slot } from '../fixtures';
 import { RegraProfessorDuplicado } from './professor-duplicado';
 
@@ -42,6 +43,12 @@ describe('RegraProfessorDuplicado', () => {
         expect(conflitos[0].tipo).toBe(TipoConflito.PROFESSOR_DUPLICADO);
         expect(conflitos[0].severidade).toBe(SeveridadeConflito.FORTE);
         expect(conflitos[0].alocacoesEnvolvidas.sort()).toEqual(['a1', 'a2']);
+        // Participantes por coordenada semântica; o professor entra no contexto.
+        expect([...conflitos[0].participantes].sort((x, y) => x.ofertaId.localeCompare(y.ofertaId))).toEqual([
+            { ofertaId: 'o1', slotId: 's1' },
+            { ofertaId: 'o2', slotId: 's1' },
+        ]);
+        expect(conflitos[0].contexto).toEqual(['p1', 's1']);
         expect(conflitos[0].mensagem).toContain('Jonas');
         expect(conflitos[0].mensagem).toContain('SEG-T1');
     });
@@ -63,8 +70,9 @@ describe('RegraProfessorDuplicado', () => {
         const conflitos = regra.avaliar(snapshot);
 
         // p1 aparece nas duas ofertas e uma tem codocência -> POTENCIAL.
+        // O tipo continua PROFESSOR_DUPLICADO: a potencialidade é severidade.
         expect(conflitos).toHaveLength(1);
-        expect(conflitos[0].tipo).toBe(TipoConflito.PROFESSOR_DUPLICADO_POTENCIAL);
+        expect(conflitos[0].tipo).toBe(TipoConflito.PROFESSOR_DUPLICADO);
         expect(conflitos[0].severidade).toBe(SeveridadeConflito.POTENCIAL);
     });
 
@@ -118,6 +126,11 @@ describe('RegraProfessorDuplicado', () => {
 
         expect(conflitos).toHaveLength(2);
         expect(conflitos.every((c) => c.severidade === SeveridadeConflito.POTENCIAL)).toBe(true);
+        // Os dois conflitos têm participantes e tipo idênticos: o discriminador é
+        // o professor no contexto. Suas chaves NÃO podem colidir — senão um único
+        // aceite quitaria os dois.
+        const chaves = new Set(conflitos.map((c) => chaveConflito(c)));
+        expect(chaves.size).toBe(2);
     });
 
     it('lida com grade vazia', () => {
