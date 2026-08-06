@@ -11,97 +11,125 @@
  * as regras comparam igualdade, então o compilador precisa pegar um
  * desalinhamento — do contrário viraria falso negativo silencioso.
  */
-import { TipoSala, Turno } from '../academico/enums';
+import { GrupoRegime, TipoSala, Turno } from '../academico/enums';
 
 export type Id = string;
 
 /** Uma aula concreta na grade: uma linha por slot ocupado. */
 export interface AlocacaoSnapshot {
-    id: Id;
-    ofertaId: Id;
-    slotId: Id;
-    /** Null quando a alocação ainda não tem sala definida. */
-    salaId: Id | null;
-    /** Aulas geminadas compartilham o mesmo valor; null = aula avulsa. */
-    grupoBloco: string | null;
+  id: Id;
+  ofertaId: Id;
+  slotId: Id;
+  /** Null quando a alocação ainda não tem sala definida. */
+  salaId: Id | null;
+  /** Aulas geminadas compartilham o mesmo valor; null = aula avulsa. */
+  grupoBloco: string | null;
+}
+
+/**
+ * A participação de um professor numa oferta. `proporcaoCarga` é o percentual
+ * (0–100) da carga daquela oferta atribuído a este professor — origem manual no
+ * cadastro (ver `docs/chronos-duvidas-e-backlog.md`). Professor único = 100;
+ * codocência reparte (70/30, três dividindo etc.).
+ */
+export interface ParticipacaoProfessor {
+  professorId: Id;
+  proporcaoCarga: number;
 }
 
 export interface OfertaSnapshot {
-    id: Id;
-    turmaId: Id;
-    disciplinaId: Id;
-    /** Quantos slots esta oferta deve ocupar por semana. */
-    aulasSemana: number;
-    /** Professores já resolvidos. Mais de um = codocência. */
-    professorIds: Id[];
+  id: Id;
+  turmaId: Id;
+  disciplinaId: Id;
+  /** Quantos slots esta oferta deve ocupar por semana. */
+  aulasSemana: number;
+  /**
+   * Professores já resolvidos, cada um com sua proporção de carga. Mais de um
+   * = codocência. Quem decide a severidade de PROFESSOR_DUPLICADO olha a
+   * proporção, não a contagem: FORTE só quando o professor tem 100% em todas
+   * as ofertas em colisão.
+   */
+  professores: ParticipacaoProfessor[];
 }
 
 export interface ProfessorSnapshot {
-    id: Id;
-    nome: string;
-    maxAulasSemanais: number;
+  id: Id;
+  nome: string;
+  /**
+   * Grupo de regime (RAD, Arts. 14-15): define a FAIXA de carga do professor.
+   * A regra CARGA_SEMANAL_EXCEDIDA deriva o teto a partir dele (via tabela de
+   * referência das faixas, ainda a materializar) e do ajuste individual abaixo.
+   */
+  grupoRegime: GrupoRegime;
+  /**
+   * Redução individual de carga em horas que a comissão anotou (doença, gestão,
+   * projetos, stricto-sensu). `null` = sem ajuste. Aplica-se sobre o teto da faixa.
+   */
+  ajusteCargaHoras: number | null;
+  /** Justificativa livre do ajuste. `null` quando não há ajuste. */
+  ajusteCargaMotivo: string | null;
 }
 
 export interface TurmaSnapshot {
-    id: Id;
-    nome: string;
-    quantidadeAlunos: number | null;
+  id: Id;
+  nome: string;
+  quantidadeAlunos: number | null;
 }
 
 export interface SalaSnapshot {
-    id: Id;
-    nome: string;
-    tipo: TipoSala;
-    capacidade: number | null;
+  id: Id;
+  nome: string;
+  tipo: TipoSala;
+  capacidade: number | null;
 }
 
 export interface DisciplinaSnapshot {
-    id: Id;
-    codigo: string;
-    nome: string;
-    /** Null = a disciplina não exige tipo específico de sala. */
-    tipoSalaRequerido: TipoSala | null;
+  id: Id;
+  codigo: string;
+  nome: string;
+  /** Null = a disciplina não exige tipo específico de sala. */
+  tipoSalaRequerido: TipoSala | null;
 }
 
 export interface SlotSnapshot {
-    id: Id;
-    codigo: string;
-    diaSemana: number;
-    turno: Turno;
-    ordem: number;
+  id: Id;
+  codigo: string;
+  diaSemana: number;
+  turno: Turno;
+  ordem: number;
 }
 
 /** Chave composta professor+slot, usada em índices e no conjunto de restrições. */
 export function chaveProfessorSlot(professorId: Id, slotId: Id): string {
-    return `${professorId}:${slotId}`;
+  return `${professorId}:${slotId}`;
 }
 
 /** Chave composta turma+slot. */
 export function chaveTurmaSlot(turmaId: Id, slotId: Id): string {
-    return `${turmaId}:${slotId}`;
+  return `${turmaId}:${slotId}`;
 }
 
 /** Os dados brutos do período; os índices são derivados destes. */
 export interface DadosSnapshot {
-    periodoLetivoId: Id;
-    alocacoes: AlocacaoSnapshot[];
-    ofertas: Map<Id, OfertaSnapshot>;
-    professores: Map<Id, ProfessorSnapshot>;
-    turmas: Map<Id, TurmaSnapshot>;
-    disciplinas: Map<Id, DisciplinaSnapshot>;
-    salas: Map<Id, SalaSnapshot>;
-    slots: Map<Id, SlotSnapshot>;
-    /**
-     * Restrições declaradas pelos professores no formulário. Presença da chave
-     * `${professorId}:${slotId}` = o professor marcou que NÃO pode nesse slot.
-     */
-    restricoes: Set<string>;
-    /**
-     * A coleta do formulário deste período foi importada? Habilita o terceiro
-     * estado: sem coleta, restrições ainda não entraram e o motor opera em modo
-     * de aviso em vez de acusar RESTRICAO_VIOLADA.
-     */
-    coletaImportada: boolean;
+  periodoLetivoId: Id;
+  alocacoes: AlocacaoSnapshot[];
+  ofertas: Map<Id, OfertaSnapshot>;
+  professores: Map<Id, ProfessorSnapshot>;
+  turmas: Map<Id, TurmaSnapshot>;
+  disciplinas: Map<Id, DisciplinaSnapshot>;
+  salas: Map<Id, SalaSnapshot>;
+  slots: Map<Id, SlotSnapshot>;
+  /**
+   * Restrições declaradas pelos professores no formulário. Presença da chave
+   * `${professorId}:${slotId}` = o professor marcou que NÃO pode nesse slot.
+   */
+  restricoes: Set<string>;
+  /**
+   * A coleta do formulário deste período foi importada? Habilita o terceiro
+   * estado: sem coleta, restrições ainda não entraram e o motor opera em modo
+   * de aviso em vez de acusar RESTRICAO_VIOLADA.
+   */
+  coletaImportada: boolean;
 }
 
 /**
@@ -109,10 +137,10 @@ export interface DadosSnapshot {
  * deixa as regras baratas — cada uma varre o índice que lhe interessa.
  */
 export interface GradeSnapshot extends DadosSnapshot {
-    /** Alocações agrupadas por slot. */
-    porSlot: Map<Id, AlocacaoSnapshot[]>;
-    /** Alocações agrupadas por `${professorId}:${slotId}` (via oferta). */
-    porProfessorSlot: Map<string, AlocacaoSnapshot[]>;
-    /** Alocações agrupadas por `${turmaId}:${slotId}` (via oferta). */
-    porTurmaSlot: Map<string, AlocacaoSnapshot[]>;
+  /** Alocações agrupadas por slot. */
+  porSlot: Map<Id, AlocacaoSnapshot[]>;
+  /** Alocações agrupadas por `${professorId}:${slotId}` (via oferta). */
+  porProfessorSlot: Map<string, AlocacaoSnapshot[]>;
+  /** Alocações agrupadas por `${turmaId}:${slotId}` (via oferta). */
+  porTurmaSlot: Map<string, AlocacaoSnapshot[]>;
 }

@@ -5,12 +5,12 @@
  */
 
 export enum SeveridadeConflito {
-    /** Colisão certa — o mesmo recurso ocupado duas vezes. */
-    FORTE = 'FORTE',
-    /** Incerteza estrutural da codocência — a comissão avalia. */
-    POTENCIAL = 'POTENCIAL',
-    /** Preferência violada — não impede a grade, apenas sinaliza. */
-    FRACO = 'FRACO',
+  /** Colisão certa — o mesmo recurso ocupado duas vezes. */
+  FORTE = 'FORTE',
+  /** Incerteza estrutural da codocência — a comissão avalia. */
+  POTENCIAL = 'POTENCIAL',
+  /** Preferência violada — não impede a grade, apenas sinaliza. */
+  FRACO = 'FRACO',
 }
 
 /**
@@ -22,16 +22,16 @@ export enum SeveridadeConflito {
  * identidade (a chave usa o tipo) estável quando só a severidade muda.
  */
 export enum TipoConflito {
-    PROFESSOR_DUPLICADO = 'PROFESSOR_DUPLICADO',
-    TURMA_DUPLICADA = 'TURMA_DUPLICADA',
-    SALA_OCUPADA = 'SALA_OCUPADA',
-    RESTRICAO_VIOLADA = 'RESTRICAO_VIOLADA',
-    CARGA_SEMANAL_EXCEDIDA = 'CARGA_SEMANAL_EXCEDIDA',
-    RESTRICAO_NAO_IMPORTADA = 'RESTRICAO_NAO_IMPORTADA',
-    CARGA_OFERTA_INCOMPLETA = 'CARGA_OFERTA_INCOMPLETA',
-    CAPACIDADE_SALA_INSUFICIENTE = 'CAPACIDADE_SALA_INSUFICIENTE',
-    TIPO_SALA_INADEQUADO = 'TIPO_SALA_INADEQUADO',
-    HORARIO_NAO_PREFERIDO = 'HORARIO_NAO_PREFERIDO',
+  PROFESSOR_DUPLICADO = 'PROFESSOR_DUPLICADO',
+  TURMA_DUPLICADA = 'TURMA_DUPLICADA',
+  SALA_OCUPADA = 'SALA_OCUPADA',
+  RESTRICAO_VIOLADA = 'RESTRICAO_VIOLADA',
+  CARGA_SEMANAL_EXCEDIDA = 'CARGA_SEMANAL_EXCEDIDA',
+  RESTRICAO_NAO_IMPORTADA = 'RESTRICAO_NAO_IMPORTADA',
+  CARGA_OFERTA_INCOMPLETA = 'CARGA_OFERTA_INCOMPLETA',
+  CAPACIDADE_SALA_INSUFICIENTE = 'CAPACIDADE_SALA_INSUFICIENTE',
+  TIPO_SALA_INADEQUADO = 'TIPO_SALA_INADEQUADO',
+  HORARIO_NAO_PREFERIDO = 'HORARIO_NAO_PREFERIDO',
 }
 
 /**
@@ -42,14 +42,14 @@ export enum TipoConflito {
  * entra na chave por `oferta + slot` (+ `sala`, quando a regra envolve sala).
  */
 export interface ParticipanteConflito {
-    ofertaId: string;
-    slotId: string;
-    /**
-     * Presente só quando a regra leva a sala na identidade (ex.: SALA_OCUPADA).
-     * `undefined` = a regra não considera sala; `null` = a regra considera, mas
-     * a alocação está sem sala definida. Os dois casos geram chaves distintas.
-     */
-    salaId?: string | null;
+  ofertaId: string;
+  slotId: string;
+  /**
+   * Presente só quando a regra leva a sala na identidade (ex.: SALA_OCUPADA).
+   * `undefined` = a regra não considera sala; `null` = a regra considera, mas
+   * a alocação está sem sala definida. Os dois casos geram chaves distintas.
+   */
+  salaId?: string | null;
 }
 
 /**
@@ -60,26 +60,26 @@ export interface ParticipanteConflito {
  * em tempo de avaliação.
  */
 export interface Conflito {
-    tipo: TipoConflito;
-    severidade: SeveridadeConflito;
-    /**
-     * Coordenadas semânticas das alocações envolvidas — a base da chave estável
-     * (ver `chaveConflito`). A ordenação/serialização é responsabilidade da
-     * `chaveConflito`; a regra só declara as coordenadas.
-     */
-    participantes: ParticipanteConflito[];
-    /**
-     * Discriminador da situação. Normalmente `[slotId]`; a regra de professor
-     * acrescenta o `professorId` (dois professores nas mesmas ofertas/slot são
-     * dois conflitos distintos, um por professor). Para regras entre dias
-     * (interjornada, quando existir), o par de dias ordenado.
-     */
-    contexto: string[];
-    /**
-     * Ids das linhas de alocação envolvidas — para a interface destacar as aulas
-     * e para o elo de limpeza em cascata do aceite. NÃO entra na identidade.
-     */
-    alocacoesEnvolvidas: string[];
-    /** Mensagem legível pela comissão de horários. */
-    mensagem: string;
+  tipo: TipoConflito;
+  severidade: SeveridadeConflito;
+  /**
+   * Coordenadas semânticas das alocações envolvidas — a base da chave estável
+   * (ver `chaveConflito`). A ordenação/serialização é responsabilidade da
+   * `chaveConflito`; a regra só declara as coordenadas.
+   */
+  participantes: ParticipanteConflito[];
+  /**
+   * Discriminador da situação. Normalmente `[slotId]`; a regra de professor
+   * acrescenta o `professorId` (dois professores nas mesmas ofertas/slot são
+   * dois conflitos distintos, um por professor). Para regras entre dias
+   * (interjornada, quando existir), o par de dias ordenado.
+   */
+  contexto: string[];
+  /**
+   * Ids das linhas de alocação envolvidas — para a interface destacar as aulas
+   * e para o elo de limpeza em cascata do aceite. NÃO entra na identidade.
+   */
+  alocacoesEnvolvidas: string[];
+  /** Mensagem legível pela comissão de horários. */
+  mensagem: string;
 }

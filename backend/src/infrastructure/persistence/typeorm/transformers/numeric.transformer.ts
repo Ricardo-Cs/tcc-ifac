@@ -12,10 +12,10 @@ import { ValueTransformer } from 'typeorm';
  * direto — o `pg` aceita `number` num parâmetro numeric.
  */
 export const numericTransformer: ValueTransformer = {
-    to(value: number | null | undefined): number | null | undefined {
-        return value;
-    },
-    from(value: string | null | undefined): number | null | undefined {
-        return value === null || value === undefined ? value : Number(value);
-    },
+  to(value: number | null | undefined): number | null | undefined {
+    return value;
+  },
+  from(value: string | null | undefined): number | null | undefined {
+    return value === null || value === undefined ? value : Number(value);
+  },
 };

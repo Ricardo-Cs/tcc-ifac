@@ -18,38 +18,38 @@ import { Regra } from './regra';
  * buckets diferentes de `porTurmaSlot`.
  */
 export class RegraTurmaDuplicada implements Regra {
-    readonly tipo = TipoConflito.TURMA_DUPLICADA;
+  readonly tipo = TipoConflito.TURMA_DUPLICADA;
 
-    avaliar(snapshot: GradeSnapshot): Conflito[] {
-        const conflitos: Conflito[] = [];
+  avaliar(snapshot: GradeSnapshot): Conflito[] {
+    const conflitos: Conflito[] = [];
 
-        for (const [chave, alocacoes] of snapshot.porTurmaSlot) {
-            // Ofertas distintas da turma alocadas neste slot.
-            const ofertaIds = new Set(alocacoes.map((a) => a.ofertaId));
-            if (ofertaIds.size < 2) continue;
+    for (const [chave, alocacoes] of snapshot.porTurmaSlot) {
+      // Ofertas distintas da turma alocadas neste slot.
+      const ofertaIds = new Set(alocacoes.map((a) => a.ofertaId));
+      if (ofertaIds.size < 2) continue;
 
-            // chave = `${turmaId}:${slotId}`
-            const [turmaId, slotId] = chave.split(':');
-            const turma = snapshot.turmas.get(turmaId);
-            const slot = snapshot.slots.get(slotId);
-            const nomeTurma = turma?.nome ?? turmaId;
-            const nomeSlot = slot?.codigo ?? slotId;
+      // chave = `${turmaId}:${slotId}`
+      const [turmaId, slotId] = chave.split(':');
+      const turma = snapshot.turmas.get(turmaId);
+      const slot = snapshot.slots.get(slotId);
+      const nomeTurma = turma?.nome ?? turmaId;
+      const nomeSlot = slot?.codigo ?? slotId;
 
-            conflitos.push({
-                tipo: TipoConflito.TURMA_DUPLICADA,
-                severidade: SeveridadeConflito.FORTE,
-                // Coordenadas semânticas: as ofertas distintas neste slot. A turma
-                // já é determinada pelas ofertas, então não precisa entrar no
-                // contexto (basta o slot).
-                participantes: [...ofertaIds].map((ofertaId) => ({ ofertaId, slotId })),
-                contexto: [slotId],
-                alocacoesEnvolvidas: alocacoes.map((a) => a.id),
-                mensagem:
-                    `A turma ${nomeTurma} tem ${ofertaIds.size} disciplinas no mesmo ` +
-                    `horário (${nomeSlot}).`,
-            });
-        }
-
-        return conflitos;
+      conflitos.push({
+        tipo: TipoConflito.TURMA_DUPLICADA,
+        severidade: SeveridadeConflito.FORTE,
+        // Coordenadas semânticas: as ofertas distintas neste slot. A turma
+        // já é determinada pelas ofertas, então não precisa entrar no
+        // contexto (basta o slot).
+        participantes: [...ofertaIds].map((ofertaId) => ({ ofertaId, slotId })),
+        contexto: [slotId],
+        alocacoesEnvolvidas: alocacoes.map((a) => a.id),
+        mensagem:
+          `A turma ${nomeTurma} tem ${ofertaIds.size} disciplinas no mesmo ` +
+          `horário (${nomeSlot}).`,
+      });
     }
+
+    return conflitos;
+  }
 }

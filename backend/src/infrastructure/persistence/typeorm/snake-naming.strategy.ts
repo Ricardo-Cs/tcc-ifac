@@ -18,10 +18,7 @@ export class SnakeNamingStrategy
   extends DefaultNamingStrategy
   implements NamingStrategyInterface
 {
-  tableName(
-    targetName: string,
-    userSpecifiedName: string | undefined,
-  ): string {
+  tableName(targetName: string, userSpecifiedName: string | undefined): string {
     return userSpecifiedName ?? snakeCase(targetName);
   }
 

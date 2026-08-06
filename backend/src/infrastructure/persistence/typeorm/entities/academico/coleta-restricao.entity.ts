@@ -19,15 +19,18 @@ import { UsuarioEntity } from '../comum/usuario.entity';
 @Entity('coleta_restricao')
 @Unique(['periodoLetivo'])
 export class ColetaRestricaoEntity extends AbstractEntity {
-    @ManyToOne(() => PeriodoLetivoEntity, { nullable: false, onDelete: 'CASCADE' })
-    periodoLetivo: Relation<PeriodoLetivoEntity>;
+  @ManyToOne(() => PeriodoLetivoEntity, {
+    nullable: false,
+    onDelete: 'CASCADE',
+  })
+  periodoLetivo: Relation<PeriodoLetivoEntity>;
 
-    @Column({ type: 'timestamptz' })
-    importadoEm: Date;
+  @Column({ type: 'timestamptz' })
+  importadoEm: Date;
 
-    @ManyToOne(() => UsuarioEntity, { nullable: false, onDelete: 'RESTRICT' })
-    importadoPor: Relation<UsuarioEntity>;
+  @ManyToOne(() => UsuarioEntity, { nullable: false, onDelete: 'RESTRICT' })
+  importadoPor: Relation<UsuarioEntity>;
 
-    @Column({ type: 'varchar', length: 255, nullable: true })
-    arquivoOrigem: string | null;
+  @Column({ type: 'varchar', length: 255, nullable: true })
+  arquivoOrigem: string | null;
 }

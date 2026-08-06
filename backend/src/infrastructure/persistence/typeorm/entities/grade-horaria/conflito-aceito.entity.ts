@@ -1,10 +1,10 @@
 import {
-    Column,
-    Entity,
-    ManyToOne,
-    Unique,
-    type Relation,
-    CreateDateColumn,
+  Column,
+  Entity,
+  ManyToOne,
+  Unique,
+  type Relation,
+  CreateDateColumn,
 } from 'typeorm';
 import { AbstractEntity } from '../base-entity';
 import { AlocacaoAulaEntity } from './alocacao-aula.entity';
@@ -31,25 +31,25 @@ import { UsuarioEntity } from '../comum/usuario.entity';
 @Entity('conflito_aceito')
 @Unique(['chave'])
 export class ConflitoAceitoEntity extends AbstractEntity {
-    // `tipo :: contexto :: participantes ordenados`. Se qualquer aula envolvida
-    // for movida, o slot muda, a chave muda e o aceite deixa de casar — o
-    // conflito reaparece para nova avaliação.
-    @Column({ type: 'varchar', length: 512 })
-    chave: string;
+  // `tipo :: contexto :: participantes ordenados`. Se qualquer aula envolvida
+  // for movida, o slot muda, a chave muda e o aceite deixa de casar — o
+  // conflito reaparece para nova avaliação.
+  @Column({ type: 'varchar', length: 512 })
+  chave: string;
 
-    // Alocação representante — NÃO é a identidade (essa é a `chave`). Existe só
-    // como gancho de limpeza em cascata: apagar a aula apaga o aceite (CASCADE).
-    // Se, em vez de apagada, a aula for movida, a `chave` já deixa de casar e o
-    // aceite fica inerte de qualquer forma.
-    @ManyToOne(() => AlocacaoAulaEntity, { nullable: false, onDelete: 'CASCADE' })
-    alocacao: Relation<AlocacaoAulaEntity>;
+  // Alocação representante — NÃO é a identidade (essa é a `chave`). Existe só
+  // como gancho de limpeza em cascata: apagar a aula apaga o aceite (CASCADE).
+  // Se, em vez de apagada, a aula for movida, a `chave` já deixa de casar e o
+  // aceite fica inerte de qualquer forma.
+  @ManyToOne(() => AlocacaoAulaEntity, { nullable: false, onDelete: 'CASCADE' })
+  alocacao: Relation<AlocacaoAulaEntity>;
 
-    @Column({ type: 'text' })
-    justificativa: string;
+  @Column({ type: 'text' })
+  justificativa: string;
 
-    @ManyToOne(() => UsuarioEntity, { nullable: false, onDelete: 'RESTRICT' })
-    aceitoPor: Relation<UsuarioEntity>;
+  @ManyToOne(() => UsuarioEntity, { nullable: false, onDelete: 'RESTRICT' })
+  aceitoPor: Relation<UsuarioEntity>;
 
-    @CreateDateColumn({ type: 'timestamptz' })
-    aceitoEm: Date;
+  @CreateDateColumn({ type: 'timestamptz' })
+  aceitoEm: Date;
 }

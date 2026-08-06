@@ -27,13 +27,13 @@ const SEP_COORD = '@'; // entre as coordenadas de um participante
 const SEM_SALA = 'sem-sala'; // sala considerada pela regra, mas indefinida (null)
 
 function serializarParticipante(p: ParticipanteConflito): string {
-    const coords = [p.ofertaId, p.slotId];
-    // salaId ausente (undefined) = regra não considera sala; presente (string|null)
-    // = considera, e null vira sentinela para não colidir com "sem coordenada".
-    if (p.salaId !== undefined) {
-        coords.push(p.salaId ?? SEM_SALA);
-    }
-    return coords.join(SEP_COORD);
+  const coords = [p.ofertaId, p.slotId];
+  // salaId ausente (undefined) = regra não considera sala; presente (string|null)
+  // = considera, e null vira sentinela para não colidir com "sem coordenada".
+  if (p.salaId !== undefined) {
+    coords.push(p.salaId ?? SEM_SALA);
+  }
+  return coords.join(SEP_COORD);
 }
 
 /**
@@ -43,12 +43,12 @@ function serializarParticipante(p: ParticipanteConflito): string {
  * codocência) sem deixar de ser o mesmo conflito.
  */
 export function chaveConflito(
-    conflito: Pick<Conflito, 'tipo' | 'contexto' | 'participantes'>,
+  conflito: Pick<Conflito, 'tipo' | 'contexto' | 'participantes'>,
 ): string {
-    const participantes = conflito.participantes
-        .map(serializarParticipante)
-        .sort()
-        .join(SEP_PARTICIPANTES);
-    const contexto = conflito.contexto.join(SEP_CONTEXTO);
-    return [conflito.tipo, contexto, participantes].join(SEP_CAMPO);
+  const participantes = conflito.participantes
+    .map(serializarParticipante)
+    .sort()
+    .join(SEP_PARTICIPANTES);
+  const contexto = conflito.contexto.join(SEP_CONTEXTO);
+  return [conflito.tipo, contexto, participantes].join(SEP_CAMPO);
 }

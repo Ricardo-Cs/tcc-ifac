@@ -10,7 +10,7 @@ import { GradeSnapshot } from '../snapshot';
  * a saída, sem banco, sem mock, sem TestingModule do Nest.
  */
 export interface Regra {
-    /** O tipo "base" da regra. A severidade concreta é decidida na avaliação. */
-    readonly tipo: TipoConflito;
-    avaliar(snapshot: GradeSnapshot): Conflito[];
+  /** O tipo "base" da regra. A severidade concreta é decidida na avaliação. */
+  readonly tipo: TipoConflito;
+  avaliar(snapshot: GradeSnapshot): Conflito[];
 }

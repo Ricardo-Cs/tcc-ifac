@@ -1,14 +1,14 @@
 import 'dotenv/config';
 import {
-    Column,
-    DataSource,
-    DataSourceOptions,
-    Entity,
-    PrimaryGeneratedColumn,
+  Column,
+  DataSource,
+  DataSourceOptions,
+  Entity,
+  PrimaryGeneratedColumn,
 } from 'typeorm';
 import {
-    assertDatabaseEnv,
-    buildDataSourceOptions,
+  assertDatabaseEnv,
+  buildDataSourceOptions,
 } from '../src/infrastructure/persistence/typeorm/typeorm-options';
 import { numericTransformer } from '../src/infrastructure/persistence/typeorm/transformers/numeric.transformer';
 
@@ -25,44 +25,51 @@ import { numericTransformer } from '../src/infrastructure/persistence/typeorm/tr
  */
 @Entity('numeric_transformer_probe')
 class NumericProbe {
-    @PrimaryGeneratedColumn('uuid')
-    id: string;
+  @PrimaryGeneratedColumn('uuid')
+  id: string;
 
-    @Column({ type: 'numeric', precision: 7, scale: 2, transformer: numericTransformer })
-    valor: number;
+  @Column({
+    type: 'numeric',
+    precision: 7,
+    scale: 2,
+    transformer: numericTransformer,
+  })
+  valor: number;
 }
 
 describe('numericTransformer (integração Postgres)', () => {
-    let dataSource: DataSource;
+  let dataSource: DataSource;
 
-    beforeAll(async () => {
-        const base = buildDataSourceOptions(assertDatabaseEnv(process.env));
-        dataSource = new DataSource({
-            ...base,
-            entities: [NumericProbe],
-            migrations: [],
-            migrationsRun: false,
-            synchronize: true,
-            logging: false,
-        } as DataSourceOptions);
-        await dataSource.initialize();
+  beforeAll(async () => {
+    const base = buildDataSourceOptions(assertDatabaseEnv(process.env));
+    dataSource = new DataSource({
+      ...base,
+      entities: [NumericProbe],
+      migrations: [],
+      migrationsRun: false,
+      synchronize: true,
+      logging: false,
     });
+    await dataSource.initialize();
+  });
 
-    afterAll(async () => {
-        if (dataSource?.isInitialized) {
-            await dataSource.query('DROP TABLE IF EXISTS "numeric_transformer_probe"');
-            await dataSource.destroy();
-        }
-    });
+  afterAll(async () => {
+    if (dataSource?.isInitialized) {
+      await dataSource.query(
+        'DROP TABLE IF EXISTS "numeric_transformer_probe"',
+      );
+      await dataSource.destroy();
+    }
+  });
 
-    it('grava um decimal e lê de volta como number, não string', async () => {
-        const repo = dataSource.getRepository(NumericProbe);
-        const salvo = await repo.save(repo.create({ valor: 133.33 }));
+  it('grava um decimal e lê de volta como number, não string', async () => {
+    const repo = dataSource.getRepository(NumericProbe);
+    const salvo = await repo.save(repo.create({ valor: 133.33 }));
 
-        // Lê do banco (objeto novo), não o que ficou em memória após o save.
-        const lido = await repo.findOneByOrFail({ id: salvo.id });
+    // Lê do banco (objeto novo), não o que ficou em memória após o save.
+    const lido = await repo.findOneByOrFail({ id: salvo.id });
 
-        expect(typeof lido.valor).toBe('number');
-        expect(lido.valor).toBeCloseTo(133.33, 2);
-    });
+    expect(typeof lido.valor).toBe('number');
+    expect(lido.valor).toBeCloseTo(133.33, 2);
+  });
 });

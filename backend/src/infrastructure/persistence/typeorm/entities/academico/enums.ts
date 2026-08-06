@@ -4,8 +4,9 @@
  * uma única fonte da verdade sem o domínio depender de `infrastructure`.
  */
 export {
-    Turno,
-    Modalidade,
-    TipoSala,
-    RegimeOferta,
+  Turno,
+  Modalidade,
+  TipoSala,
+  RegimeOferta,
+  GrupoRegime,
 } from '../../../../../domain/academico/enums';
