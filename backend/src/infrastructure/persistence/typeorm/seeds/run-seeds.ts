@@ -1,12 +1,12 @@
 // Ponto de entrada das seeds. Roda fora do Nest (sem DI), reutilizando o mesmo
 // AppDataSource do CLI do TypeORM. Uso: `npm run seed`.
 import { AppDataSource } from '../data-source';
-import { seedGradeSI2026 } from './grade-si-2026-2.seed';
+import { seedGrade2026 } from './grade-2026-2.seed';
 
 async function main(): Promise<void> {
   await AppDataSource.initialize();
   try {
-    await seedGradeSI2026(AppDataSource);
+    await seedGrade2026(AppDataSource);
   } finally {
     await AppDataSource.destroy();
   }
