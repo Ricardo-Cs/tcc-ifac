@@ -90,7 +90,15 @@ export function disciplina(
 export function slot(
   p: Partial<SlotSnapshot> & Pick<SlotSnapshot, 'id'>,
 ): SlotSnapshot {
-  return { codigo: p.id, diaSemana: 1, turno: Turno.TARDE, ordem: 1, ...p };
+  return {
+    codigo: p.id,
+    diaSemana: 1,
+    turno: Turno.TARDE,
+    ordem: 1,
+    horaInicio: '13:30:00',
+    horaFim: '14:20:00',
+    ...p,
+  };
 }
 
 function indexar<T extends { id: string }>(itens: T[]): Map<string, T> {

@@ -97,6 +97,9 @@ export interface SlotSnapshot {
   diaSemana: number;
   turno: Turno;
   ordem: number;
+  /** Faixa horária do slot ("HH:MM:SS"); usada só para exibição na grade. */
+  horaInicio: string;
+  horaFim: string;
 }
 
 /** Chave composta professor+slot, usada em índices e no conjunto de restrições. */

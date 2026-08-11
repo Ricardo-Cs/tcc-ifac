@@ -38,10 +38,28 @@ export interface ConflitoView {
   aceitavel: boolean;
 }
 
+/**
+ * Catálogo de horários do período — TODOS os slots, não só os ocupados. É o que
+ * permite à interface desenhar a grade inteira (inclusive células vazias) e
+ * saber o `id` de destino ao mover uma aula para um horário ainda livre; sem
+ * isso o front só conheceria os slots que já têm aula.
+ */
+export interface SlotView {
+  id: string;
+  codigo: string;
+  diaSemana: number;
+  turno: string;
+  ordem: number;
+  /** Faixa horária "HH:MM:SS" — a interface exibe no cabeçalho da linha. */
+  horaInicio: string;
+  horaFim: string;
+}
+
 export interface GradeView {
   periodoLetivoId: string;
   coletaImportada: boolean;
   aulas: AulaView[];
+  slots: SlotView[];
   conflitos: ConflitoView[];
 }
 
@@ -104,6 +122,17 @@ export function montarGradeView(resultado: ResultadoAvaliacao): GradeView {
     periodoLetivoId: resultado.periodoLetivoId,
     coletaImportada: resultado.coletaImportada,
     aulas: snapshot.alocacoes.map((a) => montarAula(snapshot, a)),
+    slots: [...snapshot.slots.values()]
+      .map((s) => ({
+        id: s.id,
+        codigo: s.codigo,
+        diaSemana: s.diaSemana,
+        turno: s.turno,
+        ordem: s.ordem,
+        horaInicio: s.horaInicio,
+        horaFim: s.horaFim,
+      }))
+      .sort((a, b) => a.diaSemana - b.diaSemana || a.ordem - b.ordem),
     conflitos: resultado.conflitos.map(montarConflito),
   };
 }

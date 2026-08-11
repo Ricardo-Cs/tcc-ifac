@@ -87,7 +87,7 @@ export class SqlSnapshotLoader implements SnapshotLoader {
         `SELECT id, nome, tipo, capacidade FROM sala`,
       ),
       this.dataSource.query(
-        `SELECT id, codigo, dia_semana, turno, ordem FROM slot_horario`,
+        `SELECT id, codigo, dia_semana, turno, ordem, hora_inicio, hora_fim FROM slot_horario`,
       ),
       this.dataSource.query(
         `SELECT professor_id, slot_horario_id
@@ -191,6 +191,8 @@ export class SqlSnapshotLoader implements SnapshotLoader {
           diaSemana: row.dia_semana,
           turno: row.turno as Turno,
           ordem: row.ordem,
+          horaInicio: row.hora_inicio,
+          horaFim: row.hora_fim,
         } satisfies SlotSnapshot,
       ]),
     );

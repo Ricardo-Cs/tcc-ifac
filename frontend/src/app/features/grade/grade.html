@@ -1,0 +1,206 @@
+<div class="min-h-screen bg-background text-foreground">
+  <!-- Cabeçalho -->
+  <header
+    class="flex flex-wrap items-center justify-between gap-4 border-b border-border bg-card px-6 py-3"
+  >
+    <div>
+      <h1 class="text-xl font-semibold tracking-tight">Chronos</h1>
+      <p class="text-xs text-muted-foreground">Grade de horários — comissão do IFAC</p>
+    </div>
+
+    <div class="flex flex-wrap items-center gap-4">
+      @if (periodos().length) {
+        <hlm-select
+          class="w-40"
+          [itemToString]="rotuloPeriodo"
+          [ngModel]="grade()?.periodoLetivoId ?? ''"
+          (ngModelChange)="trocarPeriodo($event)"
+        >
+          <hlm-select-trigger class="w-40">
+            <hlm-select-value placeholder="Período" />
+          </hlm-select-trigger>
+          <hlm-select-content>
+            @for (p of periodos(); track p.id) {
+              <hlm-select-item [value]="p.id">
+                {{ p.codigo }}{{ p.ativo ? ' (ativo)' : '' }}
+              </hlm-select-item>
+            }
+          </hlm-select-content>
+        </hlm-select>
+      }
+
+      <div class="flex gap-1.5">
+        <span
+          class="rounded-full px-2.5 py-1 text-xs font-medium"
+          [class]="pillSeveridade('FORTE')"
+          [class.opacity-40]="!totaisPorSeveridade().FORTE"
+        >{{ totaisPorSeveridade().FORTE }} fortes</span>
+        <span
+          class="rounded-full px-2.5 py-1 text-xs font-medium"
+          [class]="pillSeveridade('POTENCIAL')"
+          [class.opacity-40]="!totaisPorSeveridade().POTENCIAL"
+        >{{ totaisPorSeveridade().POTENCIAL }} potenciais</span>
+        <span
+          class="rounded-full px-2.5 py-1 text-xs font-medium"
+          [class]="pillSeveridade('FRACO')"
+          [class.opacity-40]="!totaisPorSeveridade().FRACO"
+        >{{ totaisPorSeveridade().FRACO }} fracos</span>
+      </div>
+    </div>
+  </header>
+
+  @if (erro()) {
+    <div
+      class="mx-6 mt-4 rounded-md border border-destructive/40 bg-destructive/10 px-4 py-3 text-sm text-destructive"
+    >
+      {{ erro() }}
+    </div>
+  }
+
+  @if (carregando() && !grade()) {
+    <div class="mx-6 mt-4 text-sm text-muted-foreground">Carregando a grade…</div>
+  } @else if (grade()) {
+    <div class="grid items-start gap-5 p-6 lg:grid-cols-[1fr_320px]">
+      <!-- Grade: horários × dias -->
+      <section class="overflow-x-auto">
+        <table
+          class="w-full min-w-[640px] border-separate border-spacing-0 overflow-hidden rounded-xl border border-border bg-card"
+        >
+          <thead>
+            <tr>
+              <th class="w-20 border-b border-border bg-muted/50"></th>
+              @for (dia of dias; track dia.num) {
+                <th
+                  class="border-b border-l border-border bg-muted/50 p-2.5 text-sm font-semibold"
+                >
+                  {{ dia.nome }}
+                </th>
+              }
+            </tr>
+          </thead>
+          <tbody>
+            @for (linha of linhas(); track linha.turno + '-' + linha.ordem) {
+              <tr>
+                <th
+                  class="border-b border-border bg-muted/50 p-2 text-center align-middle whitespace-nowrap"
+                >
+                  <span class="block text-xs font-semibold text-foreground">
+                    {{ linha.turnoRotulo }}
+                  </span>
+                  <span class="block text-[0.68rem] font-medium text-muted-foreground">
+                    {{ linha.faixa }}
+                  </span>
+                </th>
+                @for (dia of dias; track dia.num) {
+                  <td
+                    class="h-20 border-b border-l border-border p-1.5 align-top transition-colors"
+                    [class.bg-accent]="celulaEhAlvo(dia.num, linha)"
+                    [class.ring-2]="celulaEhAlvo(dia.num, linha)"
+                    [class.ring-inset]="celulaEhAlvo(dia.num, linha)"
+                    [class.ring-ring]="celulaEhAlvo(dia.num, linha)"
+                    (dragover)="aoSobrevoar(dia.num, linha, $event)"
+                    (drop)="aoSoltar(dia.num, linha, $event)"
+                  >
+                    @for (aula of aulasDoSlot(slotDaCelula(dia.num, linha)); track aula.id) {
+                      <article
+                        class="mb-1.5 flex cursor-grab flex-col gap-0.5 rounded-md border border-border p-1.5 text-xs leading-tight last:mb-0 active:cursor-grabbing"
+                        [class]="cartaoSeveridade(severidadeDaAula(aula))"
+                        [class.ring-2]="emFoco(aula)"
+                        [class.ring-ring]="emFoco(aula)"
+                        draggable="true"
+                        (dragstart)="aoIniciarArraste(aula)"
+                        (dragend)="aoTerminarArraste()"
+                      >
+                        <div class="flex items-center justify-between">
+                          <strong class="text-[0.82rem]">{{ aula.disciplina?.codigo ?? '—' }}</strong>
+                          <button
+                            hlmBtn
+                            variant="ghost"
+                            size="icon-xs"
+                            type="button"
+                            title="Remover alocação"
+                            (click)="remover(aula)"
+                          >×</button>
+                        </div>
+                        <span class="font-medium">{{ aula.disciplina?.nome }}</span>
+                        @if (aula.turma) {
+                          <span class="text-[0.7rem] text-muted-foreground">{{ aula.turma }}</span>
+                        }
+                        @if (aula.professores.length) {
+                          <span class="text-[0.7rem] italic text-muted-foreground">
+                            {{ aula.professores.join(', ') }}
+                          </span>
+                        }
+                        @if (aula.sala) {
+                          <span class="text-[0.7rem] text-muted-foreground">{{ aula.sala }}</span>
+                        }
+                      </article>
+                    }
+                  </td>
+                }
+              </tr>
+            }
+          </tbody>
+        </table>
+        <p class="mt-2.5 text-xs text-muted-foreground">
+          Arraste uma aula para outro horário — o conflito acende na hora.
+        </p>
+      </section>
+
+      <!-- Painel de conflitos -->
+      <aside hlmCard class="sticky top-4 p-4">
+        <h2 class="mb-3 text-base font-semibold">Conflitos</h2>
+
+        @if (!conflitosOrdenados().length) {
+          <p class="text-sm text-emerald-600">Nenhum conflito. Grade limpa. ✓</p>
+        }
+
+        @for (c of conflitosOrdenados(); track c.chave) {
+          <div
+            class="mb-2.5 rounded-lg border border-border p-2.5"
+            [class]="cartaoSeveridade(c.severidade)"
+            (mouseenter)="conflitoEmFoco.set(c)"
+            (mouseleave)="conflitoEmFoco.set(null)"
+          >
+            <div class="mb-1.5 flex items-center gap-2">
+              <span
+                class="rounded px-1.5 py-0.5 text-[0.62rem] font-bold tracking-wide uppercase"
+                [class]="pillSeveridade(c.severidade)"
+              >{{ rotuloSeveridade(c.severidade) }}</span>
+              <span class="font-mono text-[0.66rem] text-muted-foreground">{{ c.tipo }}</span>
+            </div>
+            <p class="mb-2 text-[0.82rem] leading-snug">{{ c.mensagem }}</p>
+
+            @if (aceitando()?.chave === c.chave) {
+              <div class="flex flex-col gap-2">
+                <textarea
+                  hlmInput
+                  class="min-h-16 w-full py-1 text-xs"
+                  [(ngModel)]="justificativa"
+                  rows="2"
+                  placeholder="Justificativa da comissão…"
+                ></textarea>
+                <div class="flex gap-2">
+                  <button hlmBtn size="sm" type="button" (click)="confirmarAceite()">
+                    Confirmar aceite
+                  </button>
+                  <button hlmBtn variant="ghost" size="sm" type="button" (click)="cancelarAceite()">
+                    Cancelar
+                  </button>
+                </div>
+              </div>
+            } @else if (c.aceitavel) {
+              <button hlmBtn variant="outline" size="sm" type="button" (click)="abrirAceite(c)">
+                Aceitar conflito
+              </button>
+            } @else {
+              <span class="text-[0.72rem] italic text-muted-foreground">
+                Colisão certa — não aceitável
+              </span>
+            }
+          </div>
+        }
+      </aside>
+    </div>
+  }
+</div>
