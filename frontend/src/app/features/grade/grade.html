@@ -1,14 +1,72 @@
-<div class="min-h-screen bg-background text-foreground">
-  <!-- Cabeçalho -->
-  <header
-    class="flex flex-wrap items-center justify-between gap-4 border-b border-border bg-card px-6 py-3"
+<div>
+  <!--
+    Uma barra só para a tela: o recorte (curso › turma) à esquerda, o período e
+    o placar de conflitos à direita. O título e a marca ficam no cabeçalho do
+    shell — dois cabeçalhos empilhados diziam a mesma coisa duas vezes.
+  -->
+  <div
+    class="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 border-b border-border bg-card px-6 py-2.5"
   >
-    <div>
-      <h1 class="text-xl font-semibold tracking-tight">Chronos</h1>
-      <p class="text-xs text-muted-foreground">Grade de horários — comissão do IFAC</p>
+    <div class="flex flex-wrap items-center gap-2">
+      <!-- Cursos: uma grade por curso, nunca as três modalidades empilhadas -->
+      @if (cursos().length) {
+        <hlm-select
+          class="w-full sm:w-80"
+          [itemToString]="rotuloCurso"
+          [ngModel]="cursoSelecionado() ?? ''"
+          (ngModelChange)="selecionarCurso($event)"
+        >
+          <hlm-select-trigger class="w-full sm:w-80">
+            <hlm-select-value placeholder="Curso" />
+          </hlm-select-trigger>
+          <!--
+            Cada opção é UMA linha de texto puro. O `hlm-select-item` estiliza o
+            último <span> filho como flex em linha — qualquer marcação aninhada
+            aqui briga com isso e sai torta.
+          -->
+          <hlm-select-content *hlmSelectPortal>
+            @for (c of cursos(); track c.id) {
+              <hlm-select-item class="pe-6" [value]="c.id">
+                {{ c.sigla }} — {{ c.nome }}
+              </hlm-select-item>
+            }
+            @if (cursos().length > 1) {
+              <hlm-select-separator />
+              <hlm-select-item class="pe-6" [value]="TODOS">Todos os cursos</hlm-select-item>
+            }
+          </hlm-select-content>
+        </hlm-select>
+      }
+
+      <!--
+        Turma: o recorte que de fato tem uma grade. Um curso roda várias turmas
+        ao mesmo tempo (SI tem 1º, 3º e 6º períodos) e empilhá-las numa tabela
+        só faz cada célula ter três aulas que nada têm entre si.
+      -->
+      @if (turmasDoCurso().length) {
+        <hlm-select
+          class="w-full sm:w-72"
+          [itemToString]="rotuloTurma"
+          [ngModel]="turmaSelecionada() ?? ''"
+          (ngModelChange)="selecionarTurma($event)"
+        >
+          <hlm-select-trigger class="w-full sm:w-72">
+            <hlm-select-value placeholder="Turma" />
+          </hlm-select-trigger>
+          <hlm-select-content *hlmSelectPortal>
+            @for (t of turmasDoCurso(); track t.id) {
+              <hlm-select-item class="pe-6" [value]="t.id">{{ t.nome }}</hlm-select-item>
+            }
+            @if (turmasDoCurso().length > 1) {
+              <hlm-select-separator />
+              <hlm-select-item class="pe-6" [value]="TODAS">Todas as turmas</hlm-select-item>
+            }
+          </hlm-select-content>
+        </hlm-select>
+      }
     </div>
 
-    <div class="flex flex-wrap items-center gap-4">
+    <div class="flex flex-wrap items-center gap-3">
       @if (periodos().length) {
         <hlm-select
           class="w-40"
@@ -19,7 +77,8 @@
           <hlm-select-trigger class="w-40">
             <hlm-select-value placeholder="Período" />
           </hlm-select-trigger>
-          <hlm-select-content>
+          <!-- Sem o portal, a lista renderiza no fluxo da página e fica sempre aberta. -->
+          <hlm-select-content *hlmSelectPortal>
             @for (p of periodos(); track p.id) {
               <hlm-select-item [value]="p.id">
                 {{ p.codigo }}{{ p.ativo ? ' (ativo)' : '' }}
@@ -47,7 +106,7 @@
         >{{ totaisPorSeveridade().FRACO }} fracos</span>
       </div>
     </div>
-  </header>
+  </div>
 
   @if (erro()) {
     <div
@@ -63,6 +122,7 @@
     <div class="grid items-start gap-5 p-6 lg:grid-cols-[1fr_320px]">
       <!-- Grade: horários × dias -->
       <section class="overflow-x-auto">
+        <!-- Sem título aqui: o curso em exibição já está escrito no select acima. -->
         <table
           class="w-full min-w-[640px] border-separate border-spacing-0 overflow-hidden rounded-xl border border-border bg-card"
         >
@@ -111,8 +171,15 @@
                         (dragstart)="aoIniciarArraste(aula)"
                         (dragend)="aoTerminarArraste()"
                       >
-                        <div class="flex items-center justify-between">
-                          <strong class="text-[0.82rem]">{{ aula.disciplina?.codigo ?? '—' }}</strong>
+                        <div class="flex items-center justify-between gap-1">
+                          <span class="flex items-center gap-1">
+                            <strong class="text-[0.82rem]">{{ aula.disciplina?.codigo ?? '—' }}</strong>
+                            @if (vendoTodos() && siglaDaAula(aula)) {
+                              <span
+                                class="rounded bg-muted px-1 py-0.5 text-[0.6rem] font-semibold tracking-wide text-muted-foreground"
+                              >{{ siglaDaAula(aula) }}</span>
+                            }
+                          </span>
                           <button
                             hlmBtn
                             variant="ghost"
@@ -123,8 +190,11 @@
                           >×</button>
                         </div>
                         <span class="font-medium">{{ aula.disciplina?.nome }}</span>
-                        @if (aula.turma) {
-                          <span class="text-[0.7rem] text-muted-foreground">{{ aula.turma }}</span>
+                        <!-- A turma só precisa ser dita quando há mais de uma na tabela. -->
+                        @if (vendoVariasTurmas() && aula.turma) {
+                          <span class="text-[0.7rem] font-medium text-muted-foreground">
+                            {{ aula.turma }}
+                          </span>
                         }
                         @if (aula.professores.length) {
                           <span class="text-[0.7rem] italic text-muted-foreground">
@@ -149,10 +219,25 @@
 
       <!-- Painel de conflitos -->
       <aside hlmCard class="sticky top-4 p-4">
-        <h2 class="mb-3 text-base font-semibold">Conflitos</h2>
+        <h2 class="mb-3 text-base font-semibold">
+          Conflitos
+          @if (turmaAtual(); as t) {
+            <span class="font-normal text-muted-foreground">— {{ t.nome }}</span>
+          } @else if (cursoAtual(); as c) {
+            <span class="font-normal text-muted-foreground">— {{ c.sigla }}</span>
+          }
+        </h2>
 
         @if (!conflitosOrdenados().length) {
-          <p class="text-sm text-emerald-600">Nenhum conflito. Grade limpa. ✓</p>
+          <p class="text-sm text-emerald-600">
+            @if (turmaAtual()) {
+              Nenhum conflito nesta turma. Grade limpa. ✓
+            } @else if (cursoAtual()) {
+              Nenhum conflito neste curso. Grade limpa. ✓
+            } @else {
+              Nenhum conflito. Grade limpa. ✓
+            }
+          </p>
         }
 
         @for (c of conflitosOrdenados(); track c.chave) {
@@ -162,14 +247,30 @@
             (mouseenter)="conflitoEmFoco.set(c)"
             (mouseleave)="conflitoEmFoco.set(null)"
           >
-            <div class="mb-1.5 flex items-center gap-2">
+            <div class="mb-1.5 flex flex-wrap items-center gap-x-2 gap-y-1">
               <span
                 class="rounded px-1.5 py-0.5 text-[0.62rem] font-bold tracking-wide uppercase"
                 [class]="pillSeveridade(c.severidade)"
               >{{ rotuloSeveridade(c.severidade) }}</span>
-              <span class="font-mono text-[0.66rem] text-muted-foreground">{{ c.tipo }}</span>
+              <!-- O identificador cru fica no title: serve para depurar, não para ler. -->
+              <span class="text-[0.7rem] text-muted-foreground" [title]="c.tipo">
+                {{ rotuloTipo(c.tipo) }}
+              </span>
             </div>
             <p class="mb-2 text-[0.82rem] leading-snug">{{ c.mensagem }}</p>
+            <!--
+              A turma de fora sai em linha própria: como etiqueta, espremida ao
+              lado do tipo do conflito, o nome quebrava letra a letra na coluna.
+            -->
+            @if (outrasTurmas(c).length) {
+              <p
+                class="mb-2 text-[0.7rem] leading-snug text-muted-foreground"
+                title="Este conflito também envolve aula de outra turma, fora desta tabela"
+              >
+                Também em
+                <span class="font-medium">{{ outrasTurmas(c).join(', ') }}</span>
+              </p>
+            }
 
             @if (aceitando()?.chave === c.chave) {
               <div class="flex flex-col gap-2">

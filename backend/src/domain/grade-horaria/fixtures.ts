@@ -2,10 +2,11 @@
  * Helpers para montar snapshots literais nos testes. Não é código de produção —
  * só existe para deixar os testes das regras triviais de escrever e ler.
  */
-import { GrupoRegime, TipoSala, Turno } from '../academico/enums';
+import { GrupoRegime, Modalidade, TipoSala, Turno } from '../academico/enums';
 import { construirSnapshot } from './construir-snapshot';
 import {
   AlocacaoSnapshot,
+  CursoSnapshot,
   DadosSnapshot,
   DisciplinaSnapshot,
   GradeSnapshot,
@@ -67,7 +68,24 @@ export function professor(
 export function turma(
   p: Partial<TurmaSnapshot> & Pick<TurmaSnapshot, 'id'>,
 ): TurmaSnapshot {
-  return { nome: `Turma ${p.id}`, quantidadeAlunos: null, ...p };
+  return {
+    nome: `Turma ${p.id}`,
+    quantidadeAlunos: null,
+    cursoId: `curso-${p.id}`,
+    ...p,
+  };
+}
+
+export function curso(
+  p: Partial<CursoSnapshot> & Pick<CursoSnapshot, 'id'>,
+): CursoSnapshot {
+  return {
+    nome: `Curso ${p.id}`,
+    sigla: p.id.toUpperCase(),
+    modalidade: Modalidade.SUPERIOR,
+    turnoPadrao: Turno.TARDE,
+    ...p,
+  };
 }
 
 export function sala(
@@ -115,6 +133,7 @@ export function montarSnapshot(entrada: {
   ofertas?: OfertaSnapshot[];
   professores?: ProfessorSnapshot[];
   turmas?: TurmaSnapshot[];
+  cursos?: CursoSnapshot[];
   disciplinas?: DisciplinaSnapshot[];
   salas?: SalaSnapshot[];
   slots?: SlotSnapshot[];
@@ -127,6 +146,7 @@ export function montarSnapshot(entrada: {
     ofertas: indexar(entrada.ofertas ?? []),
     professores: indexar(entrada.professores ?? []),
     turmas: indexar(entrada.turmas ?? []),
+    cursos: indexar(entrada.cursos ?? []),
     disciplinas: indexar(entrada.disciplinas ?? []),
     salas: indexar(entrada.salas ?? []),
     slots: indexar(entrada.slots ?? []),

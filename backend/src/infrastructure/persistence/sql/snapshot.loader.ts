@@ -1,9 +1,15 @@
 import { Injectable } from '@nestjs/common';
 import { InjectDataSource } from '@nestjs/typeorm';
 import { DataSource } from 'typeorm';
-import { GrupoRegime, TipoSala, Turno } from '../../../domain/academico/enums';
+import {
+  GrupoRegime,
+  Modalidade,
+  TipoSala,
+  Turno,
+} from '../../../domain/academico/enums';
 import {
   AlocacaoSnapshot,
+  CursoSnapshot,
   DadosSnapshot,
   DisciplinaSnapshot,
   Id,
@@ -46,6 +52,7 @@ export class SqlSnapshotLoader implements SnapshotLoader {
       profOfertaRows,
       professoresRows,
       turmasRows,
+      cursosRows,
       disciplinasRows,
       salasRows,
       slotsRows,
@@ -71,14 +78,17 @@ export class SqlSnapshotLoader implements SnapshotLoader {
           WHERE o.periodo_letivo_id = $1`,
         [periodoLetivoId],
       ),
-      // Tabelas de referência (professores, turmas, disciplinas, salas, slots)
-      // são pequenas — carregar inteiras evita joins e é barato num campus.
+      // Tabelas de referência (professores, turmas, cursos, disciplinas, salas,
+      // slots) são pequenas — carregar inteiras evita joins e é barato num campus.
       this.dataSource.query(
         `SELECT id, nome, grupo_regime, ajuste_carga_horas, ajuste_carga_motivo
            FROM professor`,
       ),
       this.dataSource.query(
-        `SELECT id, nome, quantidade_alunos FROM turma`,
+        `SELECT id, nome, quantidade_alunos, curso_id FROM turma`,
+      ),
+      this.dataSource.query(
+        `SELECT id, nome, sigla, modalidade, turno_padrao FROM curso`,
       ),
       this.dataSource.query(
         `SELECT id, codigo, nome, tipo_sala_requerido FROM disciplina`,
@@ -154,7 +164,21 @@ export class SqlSnapshotLoader implements SnapshotLoader {
           id: row.id,
           nome: row.nome,
           quantidadeAlunos: row.quantidade_alunos,
+          cursoId: row.curso_id,
         } satisfies TurmaSnapshot,
+      ]),
+    );
+
+    const cursos = new Map<Id, CursoSnapshot>(
+      cursosRows.map((row) => [
+        row.id,
+        {
+          id: row.id,
+          nome: row.nome,
+          sigla: row.sigla,
+          modalidade: row.modalidade as Modalidade,
+          turnoPadrao: row.turno_padrao as Turno,
+        } satisfies CursoSnapshot,
       ]),
     );
 
@@ -209,6 +233,7 @@ export class SqlSnapshotLoader implements SnapshotLoader {
       ofertas,
       professores,
       turmas,
+      cursos,
       disciplinas,
       salas,
       slots,

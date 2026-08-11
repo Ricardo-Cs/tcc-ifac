@@ -6,12 +6,54 @@
 @import '@spartan-ng/brain/hlm-tailwind-preset.css';
 /* You can add global styles to this file, and also import other style files */
 
+/**
+ * Inter, servida do próprio projeto (`public/fonts`) — nada de CDN: a defesa do
+ * TCC pode acontecer sem internet, e a rede do campus costuma barrar domínio de
+ * terceiros. É a versão variável: um arquivo cobre todos os pesos de 100 a 900.
+ */
+@font-face {
+  font-family: 'InterVariable';
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+  src: url('/fonts/InterVariable.woff2') format('woff2');
+}
+
+@font-face {
+  font-family: 'InterVariable';
+  font-style: italic;
+  font-weight: 100 900;
+  font-display: swap;
+  src: url('/fonts/InterVariable-Italic.woff2') format('woff2');
+}
+
+/**
+ * Paleta da marca do Chronos. Os degraus viram utilitários do Tailwind
+ * (`bg-primary-600`, `text-primary-200`…) e são a única fonte das cores da
+ * marca — os tokens semânticos abaixo (--primary, --sidebar…) apontam para
+ * eles, então mexer num degrau reflete no sistema inteiro.
+ */
+@theme {
+  --color-primary-50: #eef1fb;
+  --color-primary-100: #d9e0f7;
+  --color-primary-200: #b8c5ee;
+  --color-primary-300: #8fa0e2;
+  --color-primary-400: #667bce;
+  --color-primary-500: #4459b2;
+  --color-primary-600: #2d3b87;
+  --color-primary-700: #24306d;
+  --color-primary-800: #1b2452;
+  --color-primary-900: #111937;
+}
+
 :root {
   color-scheme: light;
 
+  /* A pilha do sistema fica como rede de segurança se o .woff2 não carregar. */
   --font-sans:
-    -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, 'Noto Sans',
-    sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
+    'InterVariable', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial,
+    'Noto Sans', sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol',
+    'Noto Color Emoji';
 
   --radius: 0.625rem;
   --background: oklch(1 0 0);
@@ -20,8 +62,8 @@
   --card-foreground: oklch(0.141 0.005 285.823);
   --popover: oklch(1 0 0);
   --popover-foreground: oklch(0.141 0.005 285.823);
-  --primary: oklch(0.21 0.006 285.885);
-  --primary-foreground: oklch(0.985 0 0);
+  --primary: var(--color-primary-600);
+  --primary-foreground: #ffffff;
   --secondary: oklch(0.967 0.001 286.375);
   --secondary-foreground: oklch(0.21 0.006 285.885);
   --muted: oklch(0.967 0.001 286.375);
@@ -31,15 +73,21 @@
   --destructive: oklch(0.577 0.245 27.325);
   --border: oklch(0.92 0.004 286.32);
   --input: oklch(0.92 0.004 286.32);
-  --ring: oklch(0.705 0.015 286.067);
-  --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.141 0.005 285.823);
-  --sidebar-primary: oklch(0.21 0.006 285.885);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.967 0.001 286.375);
-  --sidebar-accent-foreground: oklch(0.21 0.006 285.885);
-  --sidebar-border: oklch(0.92 0.004 286.32);
-  --sidebar-ring: oklch(0.705 0.015 286.067);
+  --ring: var(--color-primary-400);
+
+  /*
+   * A barra lateral é uma superfície escura da marca: o realce do item ativo e
+   * as divisórias são véus de branco, não cinzas — assim continuam legíveis se
+   * o degrau do fundo mudar.
+   */
+  --sidebar: var(--color-primary-600);
+  --sidebar-foreground: #ffffff;
+  --sidebar-primary: #ffffff;
+  --sidebar-primary-foreground: var(--color-primary-700);
+  --sidebar-accent: rgb(255 255 255 / 0.14);
+  --sidebar-accent-foreground: #ffffff;
+  --sidebar-border: rgb(255 255 255 / 0.14);
+  --sidebar-ring: rgb(255 255 255 / 0.45);
 }
 
 :root.dark {
@@ -51,8 +99,8 @@
   --card-foreground: oklch(0.985 0 0);
   --popover: oklch(0.21 0.006 285.885);
   --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.92 0.004 286.32);
-  --primary-foreground: oklch(0.21 0.006 285.885);
+  --primary: var(--color-primary-400);
+  --primary-foreground: var(--color-primary-900);
   --secondary: oklch(0.274 0.006 286.033);
   --secondary-foreground: oklch(0.985 0 0);
   --muted: oklch(0.274 0.006 286.033);
@@ -62,15 +110,15 @@
   --destructive: oklch(0.704 0.191 22.216);
   --border: oklch(1 0 0 / 10%);
   --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.552 0.016 285.938);
-  --sidebar: oklch(0.21 0.006 285.885);
-  --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.985 0 0);
-  --sidebar-primary-foreground: oklch(0.21 0.006 285.885);
-  --sidebar-accent: oklch(0.274 0.006 286.033);
-  --sidebar-accent-foreground: oklch(0.985 0 0);
-  --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.552 0.016 285.938);
+  --ring: var(--color-primary-400);
+  --sidebar: var(--color-primary-900);
+  --sidebar-foreground: #ffffff;
+  --sidebar-primary: #ffffff;
+  --sidebar-primary-foreground: var(--color-primary-900);
+  --sidebar-accent: rgb(255 255 255 / 0.12);
+  --sidebar-accent-foreground: #ffffff;
+  --sidebar-border: rgb(255 255 255 / 0.12);
+  --sidebar-ring: rgb(255 255 255 / 0.45);
 }
 
 @layer base {
@@ -78,6 +126,8 @@
     @apply border-border outline-ring/50;
   }
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground font-sans;
+    /* Ligaduras e alternativas contextuais da Inter. */
+    font-feature-settings: 'liga' 1, 'calt' 1;
   }
 }

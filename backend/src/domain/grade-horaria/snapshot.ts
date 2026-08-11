@@ -11,7 +11,7 @@
  * as regras comparam igualdade, então o compilador precisa pegar um
  * desalinhamento — do contrário viraria falso negativo silencioso.
  */
-import { GrupoRegime, TipoSala, Turno } from '../academico/enums';
+import { GrupoRegime, Modalidade, TipoSala, Turno } from '../academico/enums';
 
 export type Id = string;
 
@@ -74,6 +74,30 @@ export interface TurmaSnapshot {
   id: Id;
   nome: string;
   quantidadeAlunos: number | null;
+  /**
+   * O curso a que a turma pertence. Nenhuma regra usa hoje, mas é por aqui que a
+   * grade se separa por curso na interface — sem isso, as três modalidades do
+   * campus caem todas na mesma tabela, empilhadas na mesma célula.
+   */
+  cursoId: Id;
+}
+
+/**
+ * O curso — a unidade pela qual a comissão OLHA a grade (monta o horário de SI,
+ * depois o do Integrado). `modalidade` acompanha porque é o que distingue dois
+ * cursos de mesma sigla e o que rotula a visão na interface.
+ */
+export interface CursoSnapshot {
+  id: Id;
+  nome: string;
+  sigla: string;
+  modalidade: Modalidade;
+  /**
+   * O turno em que o curso funciona. A interface o usa para decidir QUAIS faixas
+   * de horário desenhar na grade do curso — sem ele, a grade da tarde viria com
+   * as quinze linhas do dia, dez delas vazias.
+   */
+  turnoPadrao: Turno;
 }
 
 export interface SalaSnapshot {
@@ -119,6 +143,7 @@ export interface DadosSnapshot {
   ofertas: Map<Id, OfertaSnapshot>;
   professores: Map<Id, ProfessorSnapshot>;
   turmas: Map<Id, TurmaSnapshot>;
+  cursos: Map<Id, CursoSnapshot>;
   disciplinas: Map<Id, DisciplinaSnapshot>;
   salas: Map<Id, SalaSnapshot>;
   slots: Map<Id, SlotSnapshot>;

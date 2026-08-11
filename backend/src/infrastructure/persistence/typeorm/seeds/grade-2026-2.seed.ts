@@ -29,13 +29,20 @@ import {
 } from '../entities/academico/enums';
 
 /**
- * Seed de exemplo do período 2026.2 com TRÊS modalidades ao mesmo tempo — o
- * cenário que dá sentido ao Chronos (superior, integrado e subsequente na mesma
- * comissão). Dados representativos/plausíveis, não são a oferta oficial do IFAC.
+ * Seed do período 2026.2 com TRÊS modalidades ao mesmo tempo — o cenário que dá
+ * sentido ao Chronos (superior, integrado e subsequente na mesma comissão).
  *
- * Cada modalidade roda num turno distinto (integrado de manhã, superior à tarde,
- * subsequente à noite), então as grades não colidem entre si — os conflitos da
- * demo aparecem quando a comissão MOVE uma aula, não já semeados.
+ * A grade de SI é a REAL do campus, transcrita dos horários publicados: 2º, 4º e
+ * 6º períodos correndo juntos à tarde. INFO (manhã) e REDES (noite) seguem
+ * plausíveis, gerados por `distribuir`.
+ *
+ * Como cada modalidade ocupa um turno distinto, elas não colidem entre si. O que
+ * colide é dentro de SI: **Flávio Farias aparece na sexta às 15:10 em dois
+ * lugares** — ES1 do 2º período e LDS2 do 6º. Não é erro de transcrição: na
+ * grade publicada a sexta de LDS2 é do Marlon e a terça é do Flávio, mas o
+ * modelo prende o professor à OFERTA, não à aula. Os dois entram como codocentes
+ * e o motor devolve um POTENCIAL — exatamente o caso que a comissão resolve
+ * internamente e registra como conflito aceito.
  *
  * Idempotente: entidades de referência via get-or-create por chave natural; as
  * alocações do período são reescritas do zero a cada execução.
@@ -102,6 +109,15 @@ const PROFESSORES: ProfessorSeed[] = [
   { siape: '10000009', nome: 'Rafael Souza', grupoRegime: GrupoRegime.G3_40H },
   { siape: '10000010', nome: 'Patrícia Gomes', grupoRegime: GrupoRegime.G1 },
   { siape: '10000011', nome: 'Diego Alves', grupoRegime: GrupoRegime.G2 },
+  // Os que aparecem na grade real de SI (4º e 6º períodos).
+  { siape: '10000012', nome: 'Marlon Teixeira', grupoRegime: GrupoRegime.G1 },
+  { siape: '10000013', nome: 'Diego Canizio', grupoRegime: GrupoRegime.G1 },
+  { siape: '10000014', nome: 'Henrique Canizo', grupoRegime: GrupoRegime.G1 },
+  { siape: '10000015', nome: 'Gustavo Cardial', grupoRegime: GrupoRegime.G1 },
+  { siape: '10000016', nome: 'Tania Facanha', grupoRegime: GrupoRegime.G1 },
+  { siape: '10000017', nome: 'Valdenir Cardoso', grupoRegime: GrupoRegime.G1 },
+  { siape: '10000018', nome: 'Breno Silveira', grupoRegime: GrupoRegime.G1 },
+  { siape: '10000019', nome: 'Cristiane Nogueira', grupoRegime: GrupoRegime.G1 },
 ];
 
 interface SalaSeed {
@@ -114,9 +130,14 @@ const SALAS: SalaSeed[] = [
   { nome: 'LAB 1', tipo: TipoSala.LABORATORIO, capacidade: 30 },
   { nome: 'LAB 2', tipo: TipoSala.LABORATORIO, capacidade: 30 },
   { nome: 'LAB 3', tipo: TipoSala.LABORATORIO, capacidade: 30 },
+  { nome: 'LAB 4', tipo: TipoSala.LABORATORIO, capacidade: 30 },
   { nome: 'LAB 5', tipo: TipoSala.LABORATORIO, capacidade: 30 },
   { nome: 'SALA 1', tipo: TipoSala.COMUM, capacidade: 40 },
   { nome: 'SALA 2', tipo: TipoSala.COMUM, capacidade: 40 },
+  // Salas do bloco B — as que a grade de SI usa quando a aula não é de laboratório.
+  { nome: 'Sala B-208', tipo: TipoSala.COMUM, capacidade: 40 },
+  { nome: 'Sala B-209', tipo: TipoSala.COMUM, capacidade: 40 },
+  { nome: 'Sala B-210', tipo: TipoSala.COMUM, capacidade: 40 },
   { nome: 'QUADRA', tipo: TipoSala.QUADRA, capacidade: 60 },
 ];
 
@@ -125,7 +146,12 @@ interface DisciplinaSeed {
   nome: string;
   cargaHoraria: number;
   tipoSala: TipoSala;
-  professorSiape: string;
+  /**
+   * SIAPEs dos professores da oferta. Mais de um = codocência — e é ela que faz
+   * o motor rebaixar `PROFESSOR_DUPLICADO` de FORTE para POTENCIAL, porque a
+   * comissão pode resolver internamente quem entra em cada aula.
+   */
+  professores: string[];
   /** Sala padrão da disciplina (usada pelo gerador de grade). */
   sala: string;
   /** Tamanhos dos blocos semanais (ex.: [2,2] = duas geminadas). Usado só
@@ -142,18 +168,30 @@ interface BlocoGrade {
   sala: string;
 }
 
+/**
+ * Uma turma é o que de fato TEM uma grade. Um curso roda várias ao mesmo tempo
+ * — SI tem 2º, 4º e 6º períodos simultâneos, todos à tarde — e é entre elas que
+ * moram os conflitos que interessam: o professor que dá aula em duas, o
+ * laboratório disputado.
+ */
+interface TurmaSeed {
+  nome: string;
+  semestreEntrada: string;
+  quantidadeAlunos: number;
+  /** Período (fase) do curso que esta turma cursa em 2026.2. */
+  periodoCurso: number;
+  disciplinas: DisciplinaSeed[];
+  /** Grade fixa (célula a célula). Se ausente, é gerada por `distribuir`. */
+  grade?: BlocoGrade[];
+}
+
 interface CursoSeed {
   sigla: string;
   nome: string;
   modalidade: Modalidade;
   turno: Turno;
   regime: RegimeOferta;
-  /** Período (fase) do curso que esta turma cursa em 2026.2. */
-  periodoCurso: number;
-  turma: { nome: string; semestreEntrada: string; quantidadeAlunos: number };
-  disciplinas: DisciplinaSeed[];
-  /** Grade fixa (célula a célula). Se ausente, é gerada por `distribuir`. */
-  grade?: BlocoGrade[];
+  turmas: TurmaSeed[];
 }
 
 /**
@@ -198,35 +236,98 @@ function distribuir(
 }
 
 const CURSOS: CursoSeed[] = [
-  // ── Superior — tarde (a grade real publicada em ifac.si/horarios) ──────────
+  // ── Superior — tarde. As TRÊS grades reais de SI em 2026.2, transcritas dos
+  //    horários publicados pelo campus: 2º, 4º e 6º períodos correndo juntos.
   {
     sigla: 'SI',
     nome: 'Sistemas para Internet',
     modalidade: Modalidade.SUPERIOR,
     turno: Turno.TARDE,
     regime: RegimeOferta.SEMESTRAL,
-    periodoCurso: 2,
-    turma: { nome: 'SI 2026.1 — Tarde', semestreEntrada: '2026.1', quantidadeAlunos: 30 },
-    disciplinas: [
-      { codigo: 'ED', nome: 'Estrutura de Dados', cargaHoraria: 80, tipoSala: TipoSala.LABORATORIO, professorSiape: '10000001', sala: 'LAB 1' },
-      { codigo: 'SO', nome: 'Sistemas Operacionais', cargaHoraria: 80, tipoSala: TipoSala.LABORATORIO, professorSiape: '10000002', sala: 'LAB 1' },
-      { codigo: 'CPW1', nome: 'Construção de Páginas Web I', cargaHoraria: 66, tipoSala: TipoSala.LABORATORIO, professorSiape: '10000002', sala: 'LAB 1' },
-      { codigo: 'BD1', nome: 'Banco de Dados I', cargaHoraria: 66, tipoSala: TipoSala.LABORATORIO, professorSiape: '10000004', sala: 'LAB 2' },
-      { codigo: 'LP', nome: 'Linguagens de Programação', cargaHoraria: 66, tipoSala: TipoSala.LABORATORIO, professorSiape: '10000003', sala: 'LAB 2' },
-      { codigo: 'ES1', nome: 'Engenharia de Software I', cargaHoraria: 40, tipoSala: TipoSala.LABORATORIO, professorSiape: '10000005', sala: 'LAB 1' },
-    ],
-    grade: [
-      { disciplina: 'ED', dia: 1, ordens: [1, 2, 3], sala: 'LAB 1' },
-      { disciplina: 'SO', dia: 1, ordens: [4, 5], sala: 'LAB 1' },
-      { disciplina: 'CPW1', dia: 2, ordens: [1, 2], sala: 'LAB 1' },
-      { disciplina: 'BD1', dia: 2, ordens: [3, 4], sala: 'LAB 2' },
-      { disciplina: 'SO', dia: 3, ordens: [1, 2], sala: 'LAB 1' },
-      { disciplina: 'ED', dia: 3, ordens: [3, 4], sala: 'LAB 1' },
-      { disciplina: 'LP', dia: 4, ordens: [1, 2, 3], sala: 'LAB 2' },
-      { disciplina: 'CPW1', dia: 4, ordens: [4], sala: 'LAB 1' },
-      { disciplina: 'BD1', dia: 5, ordens: [1, 2], sala: 'LAB 2' },
-      { disciplina: 'ES1', dia: 5, ordens: [3], sala: 'LAB 1' },
-      { disciplina: 'ES1', dia: 5, ordens: [4], sala: 'LAB 5' },
+    turmas: [
+      {
+        nome: 'SI — 2º Período',
+        semestreEntrada: '2026.1',
+        quantidadeAlunos: 30,
+        periodoCurso: 2,
+        disciplinas: [
+          { codigo: 'ED', nome: 'Estrutura de Dados', cargaHoraria: 80, tipoSala: TipoSala.LABORATORIO, professores: ['10000001'], sala: 'LAB 1' },
+          { codigo: 'SO', nome: 'Sistemas Operacionais', cargaHoraria: 80, tipoSala: TipoSala.LABORATORIO, professores: ['10000002'], sala: 'LAB 1' },
+          { codigo: 'CPW1', nome: 'Construção de Páginas Web I', cargaHoraria: 66, tipoSala: TipoSala.LABORATORIO, professores: ['10000002'], sala: 'LAB 1' },
+          { codigo: 'BD1', nome: 'Banco de Dados I', cargaHoraria: 66, tipoSala: TipoSala.LABORATORIO, professores: ['10000004'], sala: 'LAB 2' },
+          { codigo: 'LP', nome: 'Linguagens de Programação', cargaHoraria: 66, tipoSala: TipoSala.LABORATORIO, professores: ['10000003'], sala: 'LAB 1' },
+          { codigo: 'ES1', nome: 'Engenharia de Software I', cargaHoraria: 40, tipoSala: TipoSala.LABORATORIO, professores: ['10000005'], sala: 'LAB 5' },
+        ],
+        grade: [
+          { disciplina: 'ED', dia: 1, ordens: [1, 2, 3], sala: 'LAB 1' },
+          { disciplina: 'SO', dia: 1, ordens: [4, 5], sala: 'LAB 1' },
+          { disciplina: 'CPW1', dia: 2, ordens: [1, 2], sala: 'LAB 1' },
+          { disciplina: 'BD1', dia: 2, ordens: [3], sala: 'LAB 2' },
+          { disciplina: 'BD1', dia: 2, ordens: [4], sala: 'LAB 2' },
+          { disciplina: 'SO', dia: 3, ordens: [1, 2], sala: 'LAB 1' },
+          { disciplina: 'ED', dia: 3, ordens: [3], sala: 'LAB 1' },
+          { disciplina: 'ED', dia: 3, ordens: [4, 5], sala: 'LAB 1' },
+          { disciplina: 'LP', dia: 4, ordens: [1, 2, 3], sala: 'LAB 1' },
+          { disciplina: 'CPW1', dia: 4, ordens: [4, 5], sala: 'LAB 1' },
+          { disciplina: 'BD1', dia: 5, ordens: [1, 2], sala: 'LAB 2' },
+          { disciplina: 'ES1', dia: 5, ordens: [3], sala: 'Sala B-208' },
+          { disciplina: 'ES1', dia: 5, ordens: [4, 5], sala: 'LAB 5' },
+        ],
+      },
+      {
+        nome: 'SI — 4º Período',
+        semestreEntrada: '2025.1',
+        quantidadeAlunos: 28,
+        periodoCurso: 4,
+        disciplinas: [
+          { codigo: 'PW1', nome: 'Programação Web I', cargaHoraria: 80, tipoSala: TipoSala.LABORATORIO, professores: ['10000012'], sala: 'LAB 2' },
+          { codigo: 'RED2', nome: 'Redes de Computadores II', cargaHoraria: 66, tipoSala: TipoSala.LABORATORIO, professores: ['10000013'], sala: 'LAB 2' },
+          { codigo: 'EMP', nome: 'Empreendedorismo', cargaHoraria: 40, tipoSala: TipoSala.COMUM, professores: ['10000014'], sala: 'Sala B-209' },
+          { codigo: 'SEGINF', nome: 'Segurança da Informação', cargaHoraria: 66, tipoSala: TipoSala.LABORATORIO, professores: ['10000015'], sala: 'LAB 2' },
+          { codigo: 'INFSOC', nome: 'Informática e Sociedade', cargaHoraria: 33, tipoSala: TipoSala.COMUM, professores: ['10000016'], sala: 'Sala B-209' },
+          { codigo: 'CEL', nome: 'Comércio Eletrônico', cargaHoraria: 40, tipoSala: TipoSala.LABORATORIO, professores: ['10000017'], sala: 'LAB 5' },
+        ],
+        grade: [
+          { disciplina: 'PW1', dia: 1, ordens: [1, 2, 3], sala: 'LAB 2' },
+          { disciplina: 'SEGINF', dia: 1, ordens: [4, 5], sala: 'LAB 2' },
+          { disciplina: 'RED2', dia: 2, ordens: [1, 2], sala: 'LAB 2' },
+          { disciplina: 'EMP', dia: 2, ordens: [3], sala: 'Sala B-209' },
+          { disciplina: 'EMP', dia: 2, ordens: [4, 5], sala: 'Sala B-209' },
+          { disciplina: 'PW1', dia: 3, ordens: [1, 2, 3], sala: 'LAB 2' },
+          { disciplina: 'SEGINF', dia: 3, ordens: [4, 5], sala: 'LAB 2' },
+          { disciplina: 'RED2', dia: 4, ordens: [1, 2], sala: 'LAB 5' },
+          { disciplina: 'INFSOC', dia: 4, ordens: [4, 5], sala: 'Sala B-209' },
+          { disciplina: 'CEL', dia: 5, ordens: [1, 2, 3], sala: 'LAB 5' },
+        ],
+      },
+      {
+        nome: 'SI — 6º Período',
+        semestreEntrada: '2024.1',
+        quantidadeAlunos: 22,
+        periodoCurso: 6,
+        disciplinas: [
+          { codigo: 'IA', nome: 'Inteligência Artificial', cargaHoraria: 40, tipoSala: TipoSala.LABORATORIO, professores: ['10000018'], sala: 'LAB 5' },
+          // Terça é do Flávio, sexta é do Marlon. O modelo prende o professor à
+          // OFERTA, não à aula, então os dois entram como codocentes — e é isso
+          // que rebaixa para POTENCIAL o choque de sexta com ES1 do 2º período.
+          { codigo: 'LDS2', nome: 'Laboratório de Desenvolvimento de Software II', cargaHoraria: 80, tipoSala: TipoSala.LABORATORIO, professores: ['10000005', '10000012'], sala: 'LAB 5' },
+          { codigo: 'GTI', nome: 'Governança de TI', cargaHoraria: 66, tipoSala: TipoSala.COMUM, professores: ['10000004'], sala: 'Sala B-210' },
+          { codigo: 'LIB', nome: 'Libras', cargaHoraria: 40, tipoSala: TipoSala.COMUM, professores: ['10000019'], sala: 'Sala B-210' },
+          { codigo: 'DDM2', nome: 'Desenvolvimento para Dispositivos Móveis II', cargaHoraria: 66, tipoSala: TipoSala.LABORATORIO, professores: ['10000005'], sala: 'LAB 5' },
+        ],
+        grade: [
+          { disciplina: 'IA', dia: 1, ordens: [1, 2, 3], sala: 'LAB 5' },
+          { disciplina: 'LDS2', dia: 2, ordens: [1, 2, 3], sala: 'LAB 5' },
+          { disciplina: 'DDM2', dia: 2, ordens: [4, 5], sala: 'LAB 5' },
+          { disciplina: 'GTI', dia: 3, ordens: [1, 2], sala: 'LAB 5' },
+          { disciplina: 'DDM2', dia: 3, ordens: [4, 5], sala: 'LAB 5' },
+          { disciplina: 'LIB', dia: 4, ordens: [1, 2, 3], sala: 'Sala B-210' },
+          { disciplina: 'GTI', dia: 4, ordens: [4, 5], sala: 'Sala B-210' },
+          // Na grade publicada esta aula ocupa LAB 3 E LAB 4 (a turma se divide);
+          // o modelo tem uma sala por alocação, então fica registrada em LAB 3.
+          { disciplina: 'LDS2', dia: 5, ordens: [1, 2, 3], sala: 'LAB 3' },
+        ],
+      },
     ],
   },
 
@@ -237,15 +338,21 @@ const CURSOS: CursoSeed[] = [
     modalidade: Modalidade.INTEGRADO,
     turno: Turno.MANHA,
     regime: RegimeOferta.ANUAL,
-    periodoCurso: 1,
-    turma: { nome: 'INFO 2026 — 1º Ano', semestreEntrada: '2026.1', quantidadeAlunos: 35 },
-    disciplinas: [
-      { codigo: 'MAT1', nome: 'Matemática I', cargaHoraria: 80, tipoSala: TipoSala.COMUM, professorSiape: '10000006', sala: 'SALA 1', blocos: [2, 2] },
-      { codigo: 'POR1', nome: 'Língua Portuguesa I', cargaHoraria: 80, tipoSala: TipoSala.COMUM, professorSiape: '10000007', sala: 'SALA 1', blocos: [2, 2] },
-      { codigo: 'LOG', nome: 'Lógica de Programação', cargaHoraria: 66, tipoSala: TipoSala.LABORATORIO, professorSiape: '10000001', sala: 'LAB 3', blocos: [2, 2] },
-      { codigo: 'INFB', nome: 'Informática Básica', cargaHoraria: 66, tipoSala: TipoSala.LABORATORIO, professorSiape: '10000003', sala: 'LAB 3', blocos: [2, 1] },
-      { codigo: 'HIS1', nome: 'História I', cargaHoraria: 40, tipoSala: TipoSala.COMUM, professorSiape: '10000008', sala: 'SALA 2', blocos: [1, 1] },
-      { codigo: 'EDF1', nome: 'Educação Física I', cargaHoraria: 40, tipoSala: TipoSala.QUADRA, professorSiape: '10000009', sala: 'QUADRA', blocos: [2] },
+    turmas: [
+      {
+        nome: 'INFO 2026 — 1º Ano',
+        semestreEntrada: '2026.1',
+        quantidadeAlunos: 35,
+        periodoCurso: 1,
+        disciplinas: [
+          { codigo: 'MAT1', nome: 'Matemática I', cargaHoraria: 80, tipoSala: TipoSala.COMUM, professores: ['10000006'], sala: 'SALA 1', blocos: [2, 2] },
+          { codigo: 'POR1', nome: 'Língua Portuguesa I', cargaHoraria: 80, tipoSala: TipoSala.COMUM, professores: ['10000007'], sala: 'SALA 1', blocos: [2, 2] },
+          { codigo: 'LOG', nome: 'Lógica de Programação', cargaHoraria: 66, tipoSala: TipoSala.LABORATORIO, professores: ['10000001'], sala: 'LAB 3', blocos: [2, 2] },
+          { codigo: 'INFB', nome: 'Informática Básica', cargaHoraria: 66, tipoSala: TipoSala.LABORATORIO, professores: ['10000003'], sala: 'LAB 3', blocos: [2, 1] },
+          { codigo: 'HIS1', nome: 'História I', cargaHoraria: 40, tipoSala: TipoSala.COMUM, professores: ['10000008'], sala: 'SALA 2', blocos: [1, 1] },
+          { codigo: 'EDF1', nome: 'Educação Física I', cargaHoraria: 40, tipoSala: TipoSala.QUADRA, professores: ['10000009'], sala: 'QUADRA', blocos: [2] },
+        ],
+      },
     ],
   },
 
@@ -256,14 +363,20 @@ const CURSOS: CursoSeed[] = [
     modalidade: Modalidade.SUBSEQUENTE,
     turno: Turno.NOITE,
     regime: RegimeOferta.SEMESTRAL,
-    periodoCurso: 1,
-    turma: { nome: 'REDES 2026.2 — Módulo I', semestreEntrada: '2026.2', quantidadeAlunos: 25 },
-    disciplinas: [
-      { codigo: 'RED1', nome: 'Redes de Computadores I', cargaHoraria: 80, tipoSala: TipoSala.LABORATORIO, professorSiape: '10000010', sala: 'LAB 5', blocos: [2, 2] },
-      { codigo: 'SOR', nome: 'Sistemas Operacionais (Redes)', cargaHoraria: 66, tipoSala: TipoSala.LABORATORIO, professorSiape: '10000002', sala: 'LAB 5', blocos: [2, 2] },
-      { codigo: 'ELE', nome: 'Eletrônica Básica', cargaHoraria: 66, tipoSala: TipoSala.LABORATORIO, professorSiape: '10000011', sala: 'LAB 2', blocos: [2, 1] },
-      { codigo: 'CAB', nome: 'Cabeamento Estruturado', cargaHoraria: 66, tipoSala: TipoSala.LABORATORIO, professorSiape: '10000010', sala: 'LAB 2', blocos: [2] },
-      { codigo: 'MATR', nome: 'Matemática Aplicada', cargaHoraria: 40, tipoSala: TipoSala.COMUM, professorSiape: '10000006', sala: 'SALA 2', blocos: [1, 1] },
+    turmas: [
+      {
+        nome: 'REDES 2026.2 — Módulo I',
+        semestreEntrada: '2026.2',
+        quantidadeAlunos: 25,
+        periodoCurso: 1,
+        disciplinas: [
+          { codigo: 'RED1', nome: 'Redes de Computadores I', cargaHoraria: 80, tipoSala: TipoSala.LABORATORIO, professores: ['10000010'], sala: 'LAB 5', blocos: [2, 2] },
+          { codigo: 'SOR', nome: 'Sistemas Operacionais (Redes)', cargaHoraria: 66, tipoSala: TipoSala.LABORATORIO, professores: ['10000002'], sala: 'LAB 5', blocos: [2, 2] },
+          { codigo: 'ELE', nome: 'Eletrônica Básica', cargaHoraria: 66, tipoSala: TipoSala.LABORATORIO, professores: ['10000011'], sala: 'LAB 2', blocos: [2, 1] },
+          { codigo: 'CAB', nome: 'Cabeamento Estruturado', cargaHoraria: 66, tipoSala: TipoSala.LABORATORIO, professores: ['10000010'], sala: 'LAB 2', blocos: [2] },
+          { codigo: 'MATR', nome: 'Matemática Aplicada', cargaHoraria: 40, tipoSala: TipoSala.COMUM, professores: ['10000006'], sala: 'SALA 2', blocos: [1, 1] },
+        ],
+      },
     ],
   },
 ];
@@ -367,8 +480,10 @@ export async function seedGrade2026(dataSource: DataSource): Promise<void> {
     let totalAlocacoes = 0;
     let totalDisciplinas = 0;
 
+    let totalTurmas = 0;
+
     for (const c of CURSOS) {
-      // 6a. Curso + turma.
+      // 6a. Curso.
       const curso = await getOrCreate(
         manager,
         CursoEntity,
@@ -381,110 +496,122 @@ export async function seedGrade2026(dataSource: DataSource): Promise<void> {
           ativo: true,
         },
       );
-      const turma = await getOrCreate(
-        manager,
-        TurmaEntity,
-        { nome: c.turma.nome, curso: { id: curso.id } } as never,
-        {
-          curso,
-          nome: c.turma.nome,
-          semestreEntrada: c.turma.semestreEntrada,
-          quantidadeAlunos: c.turma.quantidadeAlunos,
-          ativa: true,
-        },
-      );
 
-      // 6b. Disciplinas (+ vínculo curso_disciplina na fase do curso).
-      const disciplinasPorCodigo = new Map<string, DisciplinaEntity>();
-      for (const d of c.disciplinas) {
-        const disc = await getOrCreate(
+      // Uma passada por turma: cada uma tem sua grade, e é entre elas que os
+      // conflitos do mesmo curso aparecem.
+      for (const t of c.turmas) {
+        const turma = await getOrCreate(
           manager,
-          DisciplinaEntity,
-          { codigo: d.codigo },
+          TurmaEntity,
+          { nome: t.nome, curso: { id: curso.id } } as never,
           {
-            codigo: d.codigo,
-            nome: d.nome,
-            cargaHoraria: d.cargaHoraria,
-            tipoSalaRequerido: d.tipoSala,
+            curso,
+            nome: t.nome,
+            semestreEntrada: t.semestreEntrada,
+            quantidadeAlunos: t.quantidadeAlunos,
+            ativa: true,
           },
         );
-        disciplinasPorCodigo.set(d.codigo, disc);
-        await getOrCreate(
-          manager,
-          CursoDisciplinaEntity,
-          { curso: { id: curso.id }, disciplina: { id: disc.id }, periodo: c.periodoCurso } as never,
-          { curso, disciplina: disc, periodo: c.periodoCurso },
-        );
-      }
-      totalDisciplinas += c.disciplinas.length;
+        totalTurmas++;
 
-      // 6c. Grade: explícita ou gerada.
-      const ordens = ORDENS_POR_TURNO.get(c.turno)!;
-      const grade = c.grade ?? distribuir(c.disciplinas, ordens);
-
-      // 6d. Ofertas (turma+disciplina+período) + vínculo com o professor.
-      //     aulasSemana derivada da contagem de slots na grade.
-      const aulasPorDisciplina = new Map<string, number>();
-      for (const b of grade) {
-        aulasPorDisciplina.set(
-          b.disciplina,
-          (aulasPorDisciplina.get(b.disciplina) ?? 0) + b.ordens.length,
-        );
-      }
-
-      const ofertasPorDisciplina = new Map<string, OfertaDisciplinaEntity>();
-      for (const d of c.disciplinas) {
-        const disc = disciplinasPorCodigo.get(d.codigo)!;
-        const oferta = await getOrCreate(
-          manager,
-          OfertaDisciplinaEntity,
-          { turma: { id: turma.id }, disciplina: { id: disc.id }, periodoLetivo: { id: periodo.id } } as never,
-          {
-            turma,
-            disciplina: disc,
-            periodoLetivo: periodo,
-            regime: c.regime,
-            aulasSemana: aulasPorDisciplina.get(d.codigo) ?? 0,
-          },
-        );
-        ofertasPorDisciplina.set(d.codigo, oferta);
-
-        const professor = professoresPorSiape.get(d.professorSiape)!;
-        await getOrCreate(
-          manager,
-          ProfessorOfertaEntity,
-          { professor: { id: professor.id }, oferta: { id: oferta.id } } as never,
-          { professor, oferta, proporcaoCarga: 100 },
-        );
-      }
-
-      // 6e. Alocações de aula.
-      for (const b of grade) {
-        const oferta = ofertasPorDisciplina.get(b.disciplina)!;
-        const sala = salasPorNome.get(b.sala)!;
-        // Bloco com mais de uma ordem => aula geminada (mesmo grupoBloco).
-        const grupoBloco = b.ordens.length > 1 ? randomUUID() : null;
-        for (const ordem of b.ordens) {
-          const slot = slotsPorChave.get(`${b.dia}-${c.turno}-${ordem}`)!;
-          await alocacaoRepo.save(
-            alocacaoRepo.create({
-              oferta,
-              slotHorario: slot,
-              sala,
-              periodoLetivo: periodo,
-              grupoBloco,
-              criadoPor: admin,
-            }),
+        // 6b. Disciplinas (+ vínculo curso_disciplina na fase do curso).
+        const disciplinasPorCodigo = new Map<string, DisciplinaEntity>();
+        for (const d of t.disciplinas) {
+          const disc = await getOrCreate(
+            manager,
+            DisciplinaEntity,
+            { codigo: d.codigo },
+            {
+              codigo: d.codigo,
+              nome: d.nome,
+              cargaHoraria: d.cargaHoraria,
+              tipoSalaRequerido: d.tipoSala,
+            },
           );
-          totalAlocacoes++;
+          disciplinasPorCodigo.set(d.codigo, disc);
+          await getOrCreate(
+            manager,
+            CursoDisciplinaEntity,
+            { curso: { id: curso.id }, disciplina: { id: disc.id }, periodo: t.periodoCurso } as never,
+            { curso, disciplina: disc, periodo: t.periodoCurso },
+          );
+        }
+        totalDisciplinas += t.disciplinas.length;
+
+        // 6c. Grade: explícita ou gerada.
+        const ordens = ORDENS_POR_TURNO.get(c.turno)!;
+        const grade = t.grade ?? distribuir(t.disciplinas, ordens);
+
+        // 6d. Ofertas (turma+disciplina+período) + vínculo com os professores.
+        //     aulasSemana derivada da contagem de slots na grade.
+        const aulasPorDisciplina = new Map<string, number>();
+        for (const b of grade) {
+          aulasPorDisciplina.set(
+            b.disciplina,
+            (aulasPorDisciplina.get(b.disciplina) ?? 0) + b.ordens.length,
+          );
+        }
+
+        const ofertasPorDisciplina = new Map<string, OfertaDisciplinaEntity>();
+        for (const d of t.disciplinas) {
+          const disc = disciplinasPorCodigo.get(d.codigo)!;
+          const oferta = await getOrCreate(
+            manager,
+            OfertaDisciplinaEntity,
+            { turma: { id: turma.id }, disciplina: { id: disc.id }, periodoLetivo: { id: periodo.id } } as never,
+            {
+              turma,
+              disciplina: disc,
+              periodoLetivo: periodo,
+              regime: c.regime,
+              aulasSemana: aulasPorDisciplina.get(d.codigo) ?? 0,
+            },
+          );
+          ofertasPorDisciplina.set(d.codigo, oferta);
+
+          // Codocência divide a carga em partes iguais — a proporção não é usada
+          // pelo motor hoje, mas a linha precisa existir para cada professor.
+          const proporcaoCarga = Math.round(100 / d.professores.length);
+          for (const siape of d.professores) {
+            const professor = professoresPorSiape.get(siape)!;
+            await getOrCreate(
+              manager,
+              ProfessorOfertaEntity,
+              { professor: { id: professor.id }, oferta: { id: oferta.id } } as never,
+              { professor, oferta, proporcaoCarga },
+            );
+          }
+        }
+
+        // 6e. Alocações de aula.
+        for (const b of grade) {
+          const oferta = ofertasPorDisciplina.get(b.disciplina)!;
+          const sala = salasPorNome.get(b.sala)!;
+          // Bloco com mais de uma ordem => aula geminada (mesmo grupoBloco).
+          const grupoBloco = b.ordens.length > 1 ? randomUUID() : null;
+          for (const ordem of b.ordens) {
+            const slot = slotsPorChave.get(`${b.dia}-${c.turno}-${ordem}`)!;
+            await alocacaoRepo.save(
+              alocacaoRepo.create({
+                oferta,
+                slotHorario: slot,
+                sala,
+                periodoLetivo: periodo,
+                grupoBloco,
+                criadoPor: admin,
+              }),
+            );
+            totalAlocacoes++;
+          }
         }
       }
     }
 
     console.log(
-      `Seed concluída: ${CURSOS.length} cursos, ${totalDisciplinas} disciplinas, ` +
-        `${PROFESSORES.length} professores, ${SALAS.length} salas, ${slotsPorChave.size} slots ` +
-        `e ${totalAlocacoes} alocações no período ${periodo.codigo}.`,
+      `Seed concluída: ${CURSOS.length} cursos, ${totalTurmas} turmas, ` +
+        `${totalDisciplinas} disciplinas, ${PROFESSORES.length} professores, ` +
+        `${SALAS.length} salas, ${slotsPorChave.size} slots e ${totalAlocacoes} ` +
+        `alocações no período ${periodo.codigo}.`,
     );
   });
 }

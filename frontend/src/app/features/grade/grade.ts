@@ -14,7 +14,16 @@ import { HlmCardImports } from '@spartan-ng/helm/card';
 import { HlmInput } from '@spartan-ng/helm/input';
 import { HlmSelectImports } from '@spartan-ng/helm/select';
 import { GradeApi } from '../../core/api/grade-api';
-import { Aula, Conflito, Grade, Periodo, Severidade, Slot } from '../../core/models/grade.models';
+import {
+  Aula,
+  Conflito,
+  Curso,
+  Grade,
+  Periodo,
+  Severidade,
+  Slot,
+  Turma,
+} from '../../core/models/grade.models';
 
 interface Linha {
   turno: string;
@@ -59,6 +68,31 @@ const SEVERIDADE_ROTULO: Record<Severidade, string> = {
 };
 
 /**
+ * O `tipo` do conflito é taxonomia do domínio (`TipoConflito` no backend) — cru
+ * na tela vira jargão de banco de dados. A comissão lê o que aconteceu, não o
+ * identificador. Um tipo novo que ainda não esteja aqui cai no `humanizar`, que
+ * ao menos tira o CAIXA_ALTA_COM_UNDERLINE.
+ */
+const TIPO_ROTULO: Record<string, string> = {
+  PROFESSOR_DUPLICADO: 'Professor em duas aulas',
+  TURMA_DUPLICADA: 'Turma em duas aulas',
+  SALA_OCUPADA: 'Sala ocupada',
+  RESTRICAO_VIOLADA: 'Restrição do professor',
+  CARGA_SEMANAL_EXCEDIDA: 'Carga semanal excedida',
+  RESTRICAO_NAO_IMPORTADA: 'Coleta não importada',
+  CARGA_OFERTA_INCOMPLETA: 'Carga da oferta incompleta',
+  CAPACIDADE_SALA_INSUFICIENTE: 'Sala pequena para a turma',
+  TIPO_SALA_INADEQUADO: 'Tipo de sala inadequado',
+  HORARIO_NAO_PREFERIDO: 'Horário não preferido',
+};
+
+/** "ALGO_NOVO_ASSIM" → "Algo novo assim". */
+function humanizar(tipo: string): string {
+  const texto = tipo.replaceAll('_', ' ').toLowerCase();
+  return texto.charAt(0).toUpperCase() + texto.slice(1);
+}
+
+/**
  * Cores por severidade. FORTE reaproveita o token `destructive` do tema; âmbar e
  * azul não têm token, então vêm da paleta do Tailwind. Centralizado aqui para o
  * template ficar declarativo.
@@ -74,6 +108,22 @@ const SEVERIDADE_CARTAO: Record<Severidade, string> = {
   FRACO: 'bg-blue-50',
 };
 
+/**
+ * Visão "todos os cursos" — a grade inteira do campus numa tabela só. Não é o
+ * padrão (a comissão monta um curso de cada vez), mas é onde se enxerga o que
+ * atravessa cursos: o professor que dá aula em dois deles.
+ */
+const TODOS_OS_CURSOS = '__todos__';
+
+/**
+ * Visão "todas as turmas do curso" — as três grades de SI (1º, 3º, 6º) na mesma
+ * tabela. Não é o padrão: a comissão monta uma turma por vez, e é justamente o
+ * empilhamento das turmas numa célula só que essa separação desfaz. Serve para
+ * enxergar o que atravessa turmas do mesmo curso (o professor que dá aula em
+ * duas delas, a sala disputada).
+ */
+const TODAS_AS_TURMAS = '__todas__';
+
 @Component({
   selector: 'app-grade',
   imports: [FormsModule, HlmButton, HlmInput, ...HlmCardImports, ...HlmSelectImports],
@@ -83,11 +133,28 @@ export class GradeComponent implements OnInit {
   private readonly api = inject(GradeApi);
 
   readonly dias = DIAS;
+  readonly TODOS = TODOS_OS_CURSOS;
+  readonly TODAS = TODAS_AS_TURMAS;
 
   readonly grade = signal<Grade | null>(null);
   readonly periodos = signal<Periodo[]>([]);
   readonly carregando = signal(false);
   readonly erro = signal<string | null>(null);
+
+  /**
+   * O curso em exibição. `null` só no instante anterior à primeira carga —
+   * `aplicarGrade` resolve para o primeiro curso do período. Nunca começa em
+   * "todos": a comissão monta um curso de cada vez, e empilhar as três
+   * modalidades numa tabela só é justamente o que essa separação desfaz.
+   */
+  readonly cursoSelecionado = signal<string | null>(null);
+
+  /**
+   * A turma em exibição dentro do curso. É o recorte que importa: um curso tem
+   * várias turmas correndo ao mesmo tempo (SI tem 1º, 3º e 6º períodos), cada
+   * uma com sua grade. `aplicarGrade` resolve para a primeira turma do curso.
+   */
+  readonly turmaSelecionada = signal<string | null>(null);
 
   /** Aula sendo arrastada; a célula sob o cursor destaca-se como alvo. */
   readonly arrastando = signal<Aula | null>(null);
@@ -107,13 +174,123 @@ export class GradeComponent implements OnInit {
     });
   }
 
+  // ---- Cursos: a grade separada por curso --------------------------------
+
+  readonly cursos = computed<Curso[]>(() => this.grade()?.cursos ?? []);
+
+  /** O curso em exibição, ou `null` quando a visão é "todos os cursos". */
+  readonly cursoAtual = computed<Curso | null>(() => {
+    const id = this.cursoSelecionado();
+    return this.cursos().find((c) => c.id === id) ?? null;
+  });
+
+  readonly vendoTodos = computed(() => this.cursoSelecionado() === this.TODOS);
+
+  // ---- Turmas: a grade que de fato existe --------------------------------
+
+  /** As turmas do curso em exibição — na visão "todos os cursos", todas elas. */
+  readonly turmasDoCurso = computed<Turma[]>(() => {
+    const turmas = this.grade()?.turmas ?? [];
+    const curso = this.cursoSelecionado();
+    if (!curso || curso === this.TODOS) return turmas;
+    return turmas.filter((t) => t.cursoId === curso);
+  });
+
+  readonly turmaAtual = computed<Turma | null>(() => {
+    const id = this.turmaSelecionada();
+    return this.turmasDoCurso().find((t) => t.id === id) ?? null;
+  });
+
+  /** Verdadeiro quando a tabela empilha mais de uma turma — curso inteiro ou campus. */
+  readonly vendoVariasTurmas = computed(
+    () => this.turmaSelecionada() === this.TODAS || this.vendoTodos(),
+  );
+
+  /** As aulas em exibição — a base de tudo que a tabela desenha. */
+  private readonly aulasVisiveis = computed<Aula[]>(() => {
+    const todas = this.grade()?.aulas ?? [];
+    const curso = this.cursoSelecionado();
+    const turma = this.turmaSelecionada();
+    if (turma && turma !== this.TODAS) return todas.filter((a) => a.turmaId === turma);
+    if (!curso || curso === this.TODOS) return todas;
+    return todas.filter((a) => a.cursoId === curso);
+  });
+
+  /** Todas as aulas por id (inclusive as ocultas) — resolve os envolvidos num conflito. */
+  private readonly aulaPorId = computed<Map<string, Aula>>(
+    () => new Map((this.grade()?.aulas ?? []).map((a) => [a.id, a])),
+  );
+
+  private readonly siglaPorCurso = computed<Map<string, string>>(
+    () => new Map(this.cursos().map((c) => [c.id, c.sigla])),
+  );
+
+  /** Sigla do curso da aula — só interessa na visão "todos", onde eles se misturam. */
+  siglaDaAula(aula: Aula): string | null {
+    return aula.cursoId ? this.siglaPorCurso().get(aula.cursoId) ?? null : null;
+  }
+
+  /**
+   * Trocar de curso troca também de turma: a turma anterior é de outro curso e
+   * deixaria a tabela vazia. Cai na primeira turma do curso novo — a grade de
+   * uma turma é o que a comissão veio montar.
+   */
+  selecionarCurso(id: string): void {
+    this.cursoSelecionado.set(id);
+    this.turmaSelecionada.set(this.primeiraTurmaDoCurso(id));
+    this.conflitoEmFoco.set(null);
+    this.cancelarAceite();
+  }
+
+  selecionarTurma(id: string): void {
+    this.turmaSelecionada.set(id);
+    this.conflitoEmFoco.set(null);
+    this.cancelarAceite();
+  }
+
+  /**
+   * Rótulo do gatilho do select de turmas. Sem isto, o `BrnSelectValue` mostra
+   * o UUID cru em vez do nome da turma.
+   */
+  rotuloTurma = (id: string): string => {
+    if (id === TODAS_AS_TURMAS) return 'Todas as turmas';
+    return this.turmasDoCurso().find((t) => t.id === id)?.nome ?? '';
+  };
+
+  /**
+   * A turma que abre o curso, ou "todas" quando ele não tem nenhuma — a visão
+   * ainda mostra o curso inteiro em vez de uma tabela em branco.
+   */
+  private primeiraTurmaDoCurso(cursoId: string): string {
+    const turmas = this.grade()?.turmas ?? [];
+    if (cursoId === this.TODOS) return TODAS_AS_TURMAS;
+    return turmas.find((t) => t.cursoId === cursoId)?.id ?? TODAS_AS_TURMAS;
+  }
+
   // ---- Estrutura da grade (linhas × dias) -------------------------------
 
-  /** Uma linha por (turno, ordem) presente no catálogo de slots, ordenadas. */
+  /**
+   * Os turnos que a grade do curso em exibição desenha: o turno padrão dele mais
+   * qualquer turno onde ele já tenha aula (contra-turno acontece). `null` = sem
+   * recorte, a visão "todos" mostra o dia inteiro.
+   */
+  private readonly turnosVisiveis = computed<Set<string> | null>(() => {
+    const curso = this.cursoAtual();
+    if (!curso) return null;
+    const turnos = new Set<string>([curso.turnoPadrao]);
+    for (const a of this.aulasVisiveis()) {
+      if (a.slot) turnos.add(a.slot.turno);
+    }
+    return turnos;
+  });
+
+  /** Uma linha por (turno, ordem) dos slots do turno em exibição, ordenadas. */
   readonly linhas = computed<Linha[]>(() => {
     const slots = this.grade()?.slots ?? [];
+    const turnos = this.turnosVisiveis();
     const vistas = new Map<string, Linha>();
     for (const s of slots) {
+      if (turnos && !turnos.has(s.turno)) continue;
       const chave = `${s.turno}-${s.ordem}`;
       if (!vistas.has(chave)) {
         vistas.set(chave, {
@@ -141,7 +318,7 @@ export class GradeComponent implements OnInit {
 
   private readonly aulasPorSlot = computed(() => {
     const mapa = new Map<string, Aula[]>();
-    for (const a of this.grade()?.aulas ?? []) {
+    for (const a of this.aulasVisiveis()) {
       if (!a.slot) continue;
       const lista = mapa.get(a.slot.id) ?? [];
       lista.push(a);
@@ -180,6 +357,10 @@ export class GradeComponent implements OnInit {
     return SEVERIDADE_ROTULO[sev];
   }
 
+  rotuloTipo(tipo: string): string {
+    return TIPO_ROTULO[tipo] ?? humanizar(tipo);
+  }
+
   /** Classe do "pill" de severidade (fundo + texto). */
   pillSeveridade(sev: Severidade): string {
     return SEVERIDADE_PILL[sev];
@@ -198,6 +379,17 @@ export class GradeComponent implements OnInit {
     return this.periodos().find((p) => p.id === id)?.codigo ?? '';
   };
 
+  /**
+   * Idem para o curso: "SI — Sistemas para Internet". A sigla sozinha só diz
+   * algo a quem já a conhece; o nome inteiro sozinho não cabe. Os dois juntos
+   * servem à comissão e a quem vê o sistema pela primeira vez.
+   */
+  rotuloCurso = (id: string): string => {
+    if (id === TODOS_OS_CURSOS) return 'Todos os cursos';
+    const curso = this.cursos().find((c) => c.id === id);
+    return curso ? `${curso.sigla} — ${curso.nome}` : '';
+  };
+
   /** A aula está entre as envolvidas no conflito em foco? (realce no painel) */
   emFoco(aula: Aula): boolean {
     const c = this.conflitoEmFoco();
@@ -206,15 +398,41 @@ export class GradeComponent implements OnInit {
 
   // ---- Conflitos ---------------------------------------------------------
 
-  readonly conflitosOrdenados = computed(() =>
-    [...(this.grade()?.conflitos ?? [])].sort(
-      (a, b) => SEVERIDADE_RANK[a.severidade] - SEVERIDADE_RANK[b.severidade],
-    ),
-  );
+  /**
+   * Os conflitos que tocam o curso em exibição — inclusive os que ele divide com
+   * outro curso (um professor em dois cursos no mesmo horário aparece na grade
+   * dos DOIS). Filtrar por curso não pode esconder o conflito de quem o causou.
+   */
+  readonly conflitosOrdenados = computed(() => {
+    const visiveis = new Set(this.aulasVisiveis().map((a) => a.id));
+    return [...(this.grade()?.conflitos ?? [])]
+      .filter((c) => c.alocacoesEnvolvidas.some((id) => visiveis.has(id)))
+      .sort(
+        (a, b) => SEVERIDADE_RANK[a.severidade] - SEVERIDADE_RANK[b.severidade],
+      );
+  });
+
+  /**
+   * As turmas envolvidas no conflito que NÃO estão na tabela em exibição — de
+   * outro período do mesmo curso ou de outro curso. Sem isto, a comissão vê um
+   * conflito acusando uma aula que não está na tela e não tem como saber de
+   * onde ela veio: o professor de SI que também dá aula no 3º período é
+   * exatamente o caso que mais aparece.
+   */
+  outrasTurmas(conflito: Conflito): string[] {
+    const visiveis = new Set(this.aulasVisiveis().map((a) => a.id));
+    const nomes = new Set<string>();
+    for (const id of conflito.alocacoesEnvolvidas) {
+      if (visiveis.has(id)) continue;
+      const aula = this.aulaPorId().get(id);
+      if (aula?.turma) nomes.add(aula.turma);
+    }
+    return [...nomes];
+  }
 
   readonly totaisPorSeveridade = computed(() => {
     const t = { FORTE: 0, POTENCIAL: 0, FRACO: 0 };
-    for (const c of this.grade()?.conflitos ?? []) t[c.severidade]++;
+    for (const c of this.conflitosOrdenados()) t[c.severidade]++;
     return t;
   });
 
@@ -283,7 +501,7 @@ export class GradeComponent implements OnInit {
     this.erro.set(null);
     fonte().subscribe({
       next: (g) => {
-        this.grade.set(g);
+        this.aplicarGrade(g);
         this.carregando.set(false);
       },
       error: (e) => this.falhar(e),
@@ -294,9 +512,33 @@ export class GradeComponent implements OnInit {
   private executar(acao: () => import('rxjs').Observable<Grade>): void {
     this.erro.set(null);
     acao().subscribe({
-      next: (g) => this.grade.set(g),
+      next: (g) => this.aplicarGrade(g),
       error: (e) => this.falhar(e),
     });
+  }
+
+  /**
+   * Guarda a grade e garante que a seleção de curso continue válida — trocar de
+   * período pode trazer outro conjunto de cursos, e cair numa visão vazia (ou
+   * num curso que não existe mais) pareceria grade em branco.
+   */
+  private aplicarGrade(g: Grade): void {
+    this.grade.set(g);
+
+    const curso = this.cursoSelecionado();
+    const cursoExiste = curso === this.TODOS || g.cursos.some((c) => c.id === curso);
+    const cursoResolvido = cursoExiste ? curso : (g.cursos[0]?.id ?? this.TODOS);
+    if (!cursoExiste) this.cursoSelecionado.set(cursoResolvido);
+
+    // A turma precisa continuar existindo E pertencer ao curso em exibição —
+    // sobrou de outro curso, a tabela viria vazia sem nada explicando por quê.
+    const turma = this.turmaSelecionada();
+    const turmaValida =
+      turma === this.TODAS ||
+      g.turmas.some((t) => t.id === turma && t.cursoId === cursoResolvido);
+    if (!turmaValida) {
+      this.turmaSelecionada.set(this.primeiraTurmaDoCurso(cursoResolvido ?? this.TODOS));
+    }
   }
 
   private falhar(e: unknown): void {

@@ -30,7 +30,16 @@ export interface Aula {
   ofertaId: string;
   grupoBloco: string | null;
   disciplina: Disciplina | null;
+  /** Nome da turma — o rótulo impresso no cartão da aula. */
   turma: string | null;
+  /**
+   * Turma da aula — é por ela que a grade se separa DE FATO: um curso tem
+   * várias turmas no mesmo período (SI tem 1º, 3º e 6º ao mesmo tempo), cada
+   * uma com sua grade. Rótulo em `Grade.turmas`.
+   */
+  turmaId: string | null;
+  /** Curso da turma — o primeiro nível do recorte. Rótulo em `Grade.cursos`. */
+  cursoId: string | null;
   professores: string[];
   sala: string | null;
   slot: Slot | null;
@@ -48,11 +57,30 @@ export interface Conflito {
   aceitavel: boolean;
 }
 
+/** Um curso com oferta no período — cada um rende uma visão da grade. */
+export interface Curso {
+  id: string;
+  nome: string;
+  sigla: string;
+  modalidade: string;
+  /** Turno em que o curso funciona; define as faixas exibidas na grade dele. */
+  turnoPadrao: string;
+}
+
+/** Uma turma com oferta no período — é dela a grade que o aluno recebe. */
+export interface Turma {
+  id: string;
+  nome: string;
+  cursoId: string;
+}
+
 export interface Grade {
   periodoLetivoId: string;
   coletaImportada: boolean;
   aulas: Aula[];
   slots: Slot[];
+  cursos: Curso[];
+  turmas: Turma[];
   conflitos: Conflito[];
 }
 
