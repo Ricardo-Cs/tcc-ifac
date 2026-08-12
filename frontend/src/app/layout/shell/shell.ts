@@ -17,6 +17,7 @@ import {
   lucideTable,
   lucideUsers,
 } from '@ng-icons/lucide';
+import { HlmToaster } from '@spartan-ng/helm/sonner';
 import { filter, map, startWith } from 'rxjs';
 import { NAV } from '../nav';
 
@@ -25,7 +26,7 @@ const CHAVE_RECOLHIDA = 'chronos:sidebar-recolhida';
 
 @Component({
   selector: 'app-shell',
-  imports: [NgIcon, RouterLink, RouterLinkActive, RouterOutlet],
+  imports: [NgIcon, RouterLink, RouterLinkActive, RouterOutlet, HlmToaster],
   providers: [
     provideIcons({
       lucideBookOpen,

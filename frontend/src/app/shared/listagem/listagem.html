@@ -1,0 +1,159 @@
+<div class="overflow-hidden rounded-xl border border-border bg-card">
+  <!-- Barra de ações: busca + filtros à esquerda, adicionar/importar à direita -->
+  <div class="flex flex-wrap items-center justify-between gap-3 border-b border-border p-4">
+    <div class="flex flex-wrap items-center gap-2">
+      <div class="relative w-full sm:w-64">
+        <ng-icon
+          name="lucideSearch"
+          size="1rem"
+          class="pointer-events-none absolute top-1/2 left-2.5 -translate-y-1/2 text-muted-foreground"
+        />
+        <input
+          hlmInput
+          class="w-full ps-8"
+          [ngModel]="termo()"
+          (ngModelChange)="buscar($event)"
+          [placeholder]="'Buscar ' + entidade() + '…'"
+        />
+      </div>
+
+      @for (filtro of filtros(); track filtro.chave) {
+        <hlm-select
+          class="w-44"
+          [itemToString]="rotuladores().get(filtro.chave)!"
+          [ngModel]="valorFiltro(filtro.chave)"
+          (ngModelChange)="filtrar(filtro.chave, $event)"
+        >
+          <hlm-select-trigger class="w-44">
+            <hlm-select-value [placeholder]="filtro.rotulo" />
+          </hlm-select-trigger>
+          <hlm-select-content *hlmSelectPortal>
+            <hlm-select-item [value]="TODOS">Todos</hlm-select-item>
+            <hlm-select-separator />
+            @for (o of opcoesPorFiltro().get(filtro.chave) ?? []; track o.valor) {
+              <hlm-select-item [value]="o.valor">{{ o.rotulo ?? o.valor }}</hlm-select-item>
+            }
+          </hlm-select-content>
+        </hlm-select>
+      }
+
+      @if (algumFiltroAtivo()) {
+        <button hlmBtn variant="ghost" size="sm" class="gap-1" type="button" (click)="limpar()">
+          <ng-icon name="lucideX" size="0.9rem" />
+          Limpar
+        </button>
+      }
+    </div>
+
+    <div class="flex items-center gap-2">
+      @if (mostrarImportar()) {
+        <button hlmBtn variant="outline" size="sm" class="gap-1.5" type="button" (click)="importar.emit()">
+          <ng-icon name="lucideUpload" size="0.95rem" />
+          Importar
+        </button>
+      }
+      @if (mostrarAdicionar()) {
+        <button hlmBtn size="sm" class="gap-1.5" type="button" (click)="adicionar.emit()">
+          <ng-icon name="lucidePlus" size="0.95rem" />
+          Adicionar
+        </button>
+      }
+    </div>
+  </div>
+
+  <!-- Tabela -->
+  <div class="overflow-x-auto">
+    <table class="w-full border-collapse text-sm">
+      <thead>
+        <tr class="border-b border-border bg-muted/40">
+          @for (col of colunas(); track $index) {
+            <th
+              class="px-4 py-2.5 text-xs font-medium tracking-wide text-muted-foreground"
+              [class]="classeColuna(col)"
+            >
+              {{ col.rotulo }}
+            </th>
+          }
+        </tr>
+      </thead>
+      <tbody>
+        @for (item of visiveis(); track $index) {
+          <tr class="border-b border-border transition-colors last:border-0 hover:bg-muted/30">
+            <ng-container
+              [ngTemplateOutlet]="linha()"
+              [ngTemplateOutletContext]="{ $implicit: item }"
+            />
+          </tr>
+        } @empty {
+          <tr>
+            <td
+              [attr.colspan]="colunas().length"
+              class="px-4 py-12 text-center text-sm text-muted-foreground"
+            >
+              @if (termo()) {
+                Nada encontrado para “{{ termo() }}”.
+              } @else {
+                Nenhum registro ainda.
+              }
+            </td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Rodapé: contagem + paginação -->
+  <div class="flex flex-wrap items-center justify-between gap-3 border-t border-border px-4 py-3">
+    <span class="text-xs text-muted-foreground">
+      @if (total()) {
+        Mostrando {{ intervalo().de }}–{{ intervalo().ate }} de {{ total() }} {{ entidade() }}
+      } @else {
+        Nenhum {{ entidade() }}
+      }
+    </span>
+
+    @if (totalPaginas() > 1) {
+      <div class="flex items-center gap-1">
+        <button
+          hlmBtn
+          variant="ghost"
+          size="icon-sm"
+          type="button"
+          [disabled]="paginaAtual() === 1"
+          (click)="anterior()"
+          aria-label="Página anterior"
+        >
+          <ng-icon name="lucideChevronLeft" size="1rem" />
+        </button>
+
+        @for (p of paginasVisiveis(); track $index) {
+          @if (p === '…') {
+            <span class="px-1.5 text-xs text-muted-foreground">…</span>
+          } @else {
+            <button
+              hlmBtn
+              [variant]="p === paginaAtual() ? 'default' : 'ghost'"
+              size="icon-sm"
+              type="button"
+              (click)="irPara(p)"
+            >
+              {{ p }}
+            </button>
+          }
+        }
+
+        <button
+          hlmBtn
+          variant="ghost"
+          size="icon-sm"
+          type="button"
+          [disabled]="paginaAtual() === totalPaginas()"
+          (click)="proxima()"
+          aria-label="Próxima página"
+        >
+          <ng-icon name="lucideChevronRight" size="1rem" />
+        </button>
+      </div>
+    }
+  </div>
+</div>

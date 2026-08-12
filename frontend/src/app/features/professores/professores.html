@@ -1,0 +1,50 @@
+<div class="p-6">
+  <app-listagem
+    [itens]="professores"
+    [colunas]="colunas"
+    [filtros]="filtros"
+    [textoBusca]="textoBusca"
+    entidade="professores"
+    (adicionar)="adicionar()"
+    (importar)="importar()"
+  >
+    <ng-template appLinhaListagem let-p>
+      <td class="px-4 py-3">
+        <div class="flex items-center gap-2.5">
+          <span
+            class="grid size-8 shrink-0 place-items-center rounded-full bg-primary/10 text-[0.7rem] font-semibold text-primary"
+          >{{ iniciais(p.nome) }}</span>
+          <span class="font-medium text-foreground">{{ p.nome }}</span>
+        </div>
+      </td>
+      <td class="px-4 py-3 tabular-nums text-muted-foreground">{{ p.siape }}</td>
+      <td class="px-4 py-3 text-muted-foreground">{{ p.regime }}</td>
+      <td class="px-4 py-3">
+        <span
+          class="inline-flex items-center rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-medium text-emerald-700"
+        >Ativo</span>
+      </td>
+      <td class="px-4 py-3">
+        <div class="flex items-center justify-end gap-0.5">
+          <button hlmBtn variant="ghost" size="icon-sm" type="button" title="Ver" (click)="ver(p)">
+            <ng-icon name="lucideEye" size="1rem" />
+          </button>
+          <button hlmBtn variant="ghost" size="icon-sm" type="button" title="Editar" (click)="editar(p)">
+            <ng-icon name="lucidePencil" size="1rem" />
+          </button>
+          <button
+            hlmBtn
+            variant="ghost"
+            size="icon-sm"
+            type="button"
+            title="Remover"
+            class="text-muted-foreground hover:text-destructive"
+            (click)="remover(p)"
+          >
+            <ng-icon name="lucideTrash2" size="1rem" />
+          </button>
+        </div>
+      </td>
+    </ng-template>
+  </app-listagem>
+</div>
