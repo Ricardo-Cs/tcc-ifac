@@ -6,7 +6,9 @@
   >
     <!-- Marca + botão de recolher -->
     <div class="relative flex h-16 shrink-0 items-center gap-2.5 px-5">
-      <ng-icon name="lucideClock" size="1.6rem" class="shrink-0" />
+      <span class="grid size-9 shrink-0 place-items-center rounded-lg bg-white">
+        <img src="Logo.svg" alt="Chronos" class="size-7" />
+      </span>
       @if (!recolhida()) {
         <span class="truncate text-xl font-semibold tracking-tight">Chronos</span>
       }
