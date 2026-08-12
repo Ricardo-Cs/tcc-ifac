@@ -1,0 +1,108 @@
+<!--
+  Uma barra só para a tela: o recorte (curso › turma) à esquerda, o período e o
+  placar de conflitos à direita. O título e a marca ficam no cabeçalho do shell —
+  dois cabeçalhos empilhados diziam a mesma coisa duas vezes.
+-->
+<div
+  class="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 border-b border-border bg-card px-6 py-2.5"
+>
+  <div class="flex flex-wrap items-center gap-2">
+    <!-- Cursos: uma grade por curso, nunca as três modalidades empilhadas -->
+    @if (cursos().length) {
+      <hlm-select
+        class="w-full sm:w-80"
+        [itemToString]="rotuloCurso"
+        [ngModel]="cursoSelecionado() ?? ''"
+        (ngModelChange)="cursoChange.emit($event)"
+      >
+        <hlm-select-trigger class="w-full sm:w-80">
+          <hlm-select-value placeholder="Curso" />
+        </hlm-select-trigger>
+        <!--
+          Cada opção é UMA linha de texto puro. O `hlm-select-item` estiliza o
+          último <span> filho como flex em linha — qualquer marcação aninhada
+          aqui briga com isso e sai torta.
+        -->
+        <hlm-select-content *hlmSelectPortal>
+          @for (c of cursos(); track c.id) {
+            <hlm-select-item class="pe-6" [value]="c.id">
+              {{ c.sigla }} — {{ c.nome }}
+            </hlm-select-item>
+          }
+          @if (cursos().length > 1) {
+            <hlm-select-separator />
+            <hlm-select-item class="pe-6" [value]="TODOS">Todos os cursos</hlm-select-item>
+          }
+        </hlm-select-content>
+      </hlm-select>
+    }
+
+    <!--
+      Turma: o recorte que de fato tem uma grade. Um curso roda várias turmas ao
+      mesmo tempo (SI tem 1º, 3º e 6º períodos) e empilhá-las numa tabela só faz
+      cada célula ter três aulas que nada têm entre si.
+    -->
+    @if (turmas().length) {
+      <hlm-select
+        class="w-full sm:w-72"
+        [itemToString]="rotuloTurma"
+        [ngModel]="turmaSelecionada() ?? ''"
+        (ngModelChange)="turmaChange.emit($event)"
+      >
+        <hlm-select-trigger class="w-full sm:w-72">
+          <hlm-select-value placeholder="Turma" />
+        </hlm-select-trigger>
+        <hlm-select-content *hlmSelectPortal>
+          @for (t of turmas(); track t.id) {
+            <hlm-select-item class="pe-6" [value]="t.id">{{ t.nome }}</hlm-select-item>
+          }
+          @if (turmas().length > 1) {
+            <hlm-select-separator />
+            <hlm-select-item class="pe-6" [value]="TODAS">Todas as turmas</hlm-select-item>
+          }
+        </hlm-select-content>
+      </hlm-select>
+    }
+  </div>
+
+  <div class="flex flex-wrap items-center gap-3">
+    @if (periodos().length) {
+      <hlm-select
+        class="w-40"
+        [itemToString]="rotuloPeriodo"
+        [ngModel]="periodoAtual()"
+        (ngModelChange)="periodoChange.emit($event)"
+      >
+        <hlm-select-trigger class="w-40">
+          <hlm-select-value placeholder="Período" />
+        </hlm-select-trigger>
+        <!-- Sem o portal, a lista renderiza no fluxo da página e fica sempre aberta. -->
+        <hlm-select-content *hlmSelectPortal>
+          @for (p of periodos(); track p.id) {
+            <hlm-select-item [value]="p.id">
+              {{ p.codigo }}{{ p.ativo ? ' (ativo)' : '' }}
+            </hlm-select-item>
+          }
+        </hlm-select-content>
+      </hlm-select>
+    }
+
+    <div class="flex gap-1.5">
+      <span
+        class="rounded-full px-2.5 py-1 text-xs font-medium"
+        [class]="pillForte()"
+        [class.opacity-40]="!totais().FORTE"
+      >{{ totais().FORTE }} fortes</span>
+      <span
+        class="rounded-full px-2.5 py-1 text-xs font-medium"
+        [class]="pillPotencial()"
+        [class.opacity-40]="!totais().POTENCIAL"
+      >{{ totais().POTENCIAL }} potenciais</span>
+      <span
+        class="rounded-full px-2.5 py-1 text-xs font-medium"
+        [class]="pillFraco()"
+        [class.opacity-40]="!totais().FRACO"
+      >{{ totais().FRACO }} fracos</span>
+    </div>
+  </div>
+</div>

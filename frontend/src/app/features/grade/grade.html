@@ -1,112 +1,16 @@
 <div>
-  <!--
-    Uma barra só para a tela: o recorte (curso › turma) à esquerda, o período e
-    o placar de conflitos à direita. O título e a marca ficam no cabeçalho do
-    shell — dois cabeçalhos empilhados diziam a mesma coisa duas vezes.
-  -->
-  <div
-    class="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 border-b border-border bg-card px-6 py-2.5"
-  >
-    <div class="flex flex-wrap items-center gap-2">
-      <!-- Cursos: uma grade por curso, nunca as três modalidades empilhadas -->
-      @if (cursos().length) {
-        <hlm-select
-          class="w-full sm:w-80"
-          [itemToString]="rotuloCurso"
-          [ngModel]="cursoSelecionado() ?? ''"
-          (ngModelChange)="selecionarCurso($event)"
-        >
-          <hlm-select-trigger class="w-full sm:w-80">
-            <hlm-select-value placeholder="Curso" />
-          </hlm-select-trigger>
-          <!--
-            Cada opção é UMA linha de texto puro. O `hlm-select-item` estiliza o
-            último <span> filho como flex em linha — qualquer marcação aninhada
-            aqui briga com isso e sai torta.
-          -->
-          <hlm-select-content *hlmSelectPortal>
-            @for (c of cursos(); track c.id) {
-              <hlm-select-item class="pe-6" [value]="c.id">
-                {{ c.sigla }} — {{ c.nome }}
-              </hlm-select-item>
-            }
-            @if (cursos().length > 1) {
-              <hlm-select-separator />
-              <hlm-select-item class="pe-6" [value]="TODOS">Todos os cursos</hlm-select-item>
-            }
-          </hlm-select-content>
-        </hlm-select>
-      }
-
-      <!--
-        Turma: o recorte que de fato tem uma grade. Um curso roda várias turmas
-        ao mesmo tempo (SI tem 1º, 3º e 6º períodos) e empilhá-las numa tabela
-        só faz cada célula ter três aulas que nada têm entre si.
-      -->
-      @if (turmasDoCurso().length) {
-        <hlm-select
-          class="w-full sm:w-72"
-          [itemToString]="rotuloTurma"
-          [ngModel]="turmaSelecionada() ?? ''"
-          (ngModelChange)="selecionarTurma($event)"
-        >
-          <hlm-select-trigger class="w-full sm:w-72">
-            <hlm-select-value placeholder="Turma" />
-          </hlm-select-trigger>
-          <hlm-select-content *hlmSelectPortal>
-            @for (t of turmasDoCurso(); track t.id) {
-              <hlm-select-item class="pe-6" [value]="t.id">{{ t.nome }}</hlm-select-item>
-            }
-            @if (turmasDoCurso().length > 1) {
-              <hlm-select-separator />
-              <hlm-select-item class="pe-6" [value]="TODAS">Todas as turmas</hlm-select-item>
-            }
-          </hlm-select-content>
-        </hlm-select>
-      }
-    </div>
-
-    <div class="flex flex-wrap items-center gap-3">
-      @if (periodos().length) {
-        <hlm-select
-          class="w-40"
-          [itemToString]="rotuloPeriodo"
-          [ngModel]="grade()?.periodoLetivoId ?? ''"
-          (ngModelChange)="trocarPeriodo($event)"
-        >
-          <hlm-select-trigger class="w-40">
-            <hlm-select-value placeholder="Período" />
-          </hlm-select-trigger>
-          <!-- Sem o portal, a lista renderiza no fluxo da página e fica sempre aberta. -->
-          <hlm-select-content *hlmSelectPortal>
-            @for (p of periodos(); track p.id) {
-              <hlm-select-item [value]="p.id">
-                {{ p.codigo }}{{ p.ativo ? ' (ativo)' : '' }}
-              </hlm-select-item>
-            }
-          </hlm-select-content>
-        </hlm-select>
-      }
-
-      <div class="flex gap-1.5">
-        <span
-          class="rounded-full px-2.5 py-1 text-xs font-medium"
-          [class]="pillSeveridade('FORTE')"
-          [class.opacity-40]="!totaisPorSeveridade().FORTE"
-        >{{ totaisPorSeveridade().FORTE }} fortes</span>
-        <span
-          class="rounded-full px-2.5 py-1 text-xs font-medium"
-          [class]="pillSeveridade('POTENCIAL')"
-          [class.opacity-40]="!totaisPorSeveridade().POTENCIAL"
-        >{{ totaisPorSeveridade().POTENCIAL }} potenciais</span>
-        <span
-          class="rounded-full px-2.5 py-1 text-xs font-medium"
-          [class]="pillSeveridade('FRACO')"
-          [class.opacity-40]="!totaisPorSeveridade().FRACO"
-        >{{ totaisPorSeveridade().FRACO }} fracos</span>
-      </div>
-    </div>
-  </div>
+  <app-grade-toolbar
+    [cursos]="cursos()"
+    [cursoSelecionado]="cursoSelecionado()"
+    [turmas]="turmasDoCurso()"
+    [turmaSelecionada]="turmaSelecionada()"
+    [periodos]="periodos()"
+    [periodoAtual]="grade()?.periodoLetivoId ?? ''"
+    [totais]="totaisPorSeveridade()"
+    (cursoChange)="selecionarCurso($event)"
+    (turmaChange)="selecionarTurma($event)"
+    (periodoChange)="trocarPeriodo($event)"
+  />
 
   @if (erro()) {
     <div
@@ -120,188 +24,28 @@
     <div class="mx-6 mt-4 text-sm text-muted-foreground">Carregando a grade…</div>
   } @else if (grade()) {
     <div class="grid items-start gap-5 p-6 lg:grid-cols-[1fr_320px]">
-      <!-- Grade: horários × dias -->
-      <section class="overflow-x-auto">
-        <!-- Sem título aqui: o curso em exibição já está escrito no select acima. -->
-        <table
-          class="w-full min-w-[640px] border-separate border-spacing-0 overflow-hidden rounded-xl border border-border bg-card"
-        >
-          <thead>
-            <tr>
-              <th class="w-20 border-b border-border bg-muted/50"></th>
-              @for (dia of dias; track dia.num) {
-                <th
-                  class="border-b border-l border-border bg-muted/50 p-2.5 text-sm font-semibold"
-                >
-                  {{ dia.nome }}
-                </th>
-              }
-            </tr>
-          </thead>
-          <tbody>
-            @for (linha of linhas(); track linha.turno + '-' + linha.ordem) {
-              <tr>
-                <th
-                  class="border-b border-border bg-muted/50 p-2 text-center align-middle whitespace-nowrap"
-                >
-                  <span class="block text-xs font-semibold text-foreground">
-                    {{ linha.turnoRotulo }}
-                  </span>
-                  <span class="block text-[0.68rem] font-medium text-muted-foreground">
-                    {{ linha.faixa }}
-                  </span>
-                </th>
-                @for (dia of dias; track dia.num) {
-                  <td
-                    class="h-20 border-b border-l border-border p-1.5 align-top transition-colors"
-                    [class.bg-accent]="celulaEhAlvo(dia.num, linha)"
-                    [class.ring-2]="celulaEhAlvo(dia.num, linha)"
-                    [class.ring-inset]="celulaEhAlvo(dia.num, linha)"
-                    [class.ring-ring]="celulaEhAlvo(dia.num, linha)"
-                    (dragover)="aoSobrevoar(dia.num, linha, $event)"
-                    (drop)="aoSoltar(dia.num, linha, $event)"
-                  >
-                    @for (aula of aulasDoSlot(slotDaCelula(dia.num, linha)); track aula.id) {
-                      <article
-                        class="mb-1.5 flex cursor-grab flex-col gap-0.5 rounded-md border border-border p-1.5 text-xs leading-tight last:mb-0 active:cursor-grabbing"
-                        [class]="cartaoSeveridade(severidadeDaAula(aula))"
-                        [class.ring-2]="emFoco(aula)"
-                        [class.ring-ring]="emFoco(aula)"
-                        draggable="true"
-                        (dragstart)="aoIniciarArraste(aula)"
-                        (dragend)="aoTerminarArraste()"
-                      >
-                        <div class="flex items-center justify-between gap-1">
-                          <span class="flex items-center gap-1">
-                            <strong class="text-[0.82rem]">{{ aula.disciplina?.codigo ?? '—' }}</strong>
-                            @if (vendoTodos() && siglaDaAula(aula)) {
-                              <span
-                                class="rounded bg-muted px-1 py-0.5 text-[0.6rem] font-semibold tracking-wide text-muted-foreground"
-                              >{{ siglaDaAula(aula) }}</span>
-                            }
-                          </span>
-                          <button
-                            hlmBtn
-                            variant="ghost"
-                            size="icon-xs"
-                            type="button"
-                            title="Remover alocação"
-                            (click)="remover(aula)"
-                          >×</button>
-                        </div>
-                        <span class="font-medium">{{ aula.disciplina?.nome }}</span>
-                        <!-- A turma só precisa ser dita quando há mais de uma na tabela. -->
-                        @if (vendoVariasTurmas() && aula.turma) {
-                          <span class="text-[0.7rem] font-medium text-muted-foreground">
-                            {{ aula.turma }}
-                          </span>
-                        }
-                        @if (aula.professores.length) {
-                          <span class="text-[0.7rem] italic text-muted-foreground">
-                            {{ aula.professores.join(', ') }}
-                          </span>
-                        }
-                        @if (aula.sala) {
-                          <span class="text-[0.7rem] text-muted-foreground">{{ aula.sala }}</span>
-                        }
-                      </article>
-                    }
-                  </td>
-                }
-              </tr>
-            }
-          </tbody>
-        </table>
-        <p class="mt-2.5 text-xs text-muted-foreground">
-          Arraste uma aula para outro horário — o conflito acende na hora.
-        </p>
-      </section>
+      <app-grade-tabela
+        [linhas]="linhas()"
+        [celulaAlvo]="celulaAlvo()"
+        [idsEmFoco]="idsEmFoco()"
+        [vendoTodos]="vendoTodos()"
+        [vendoVariasTurmas]="vendoVariasTurmas()"
+        (sobrevoar)="aoSobrevoar($event)"
+        (soltar)="aoSoltar($event)"
+        (iniciarArraste)="aoIniciarArraste($event)"
+        (terminarArraste)="aoTerminarArraste()"
+        (remover)="remover($event)"
+      />
 
-      <!-- Painel de conflitos -->
-      <aside hlmCard class="sticky top-4 p-4">
-        <h2 class="mb-3 text-base font-semibold">
-          Conflitos
-          @if (turmaAtual(); as t) {
-            <span class="font-normal text-muted-foreground">— {{ t.nome }}</span>
-          } @else if (cursoAtual(); as c) {
-            <span class="font-normal text-muted-foreground">— {{ c.sigla }}</span>
-          }
-        </h2>
-
-        @if (!conflitosOrdenados().length) {
-          <p class="text-sm text-emerald-600">
-            @if (turmaAtual()) {
-              Nenhum conflito nesta turma. Grade limpa. ✓
-            } @else if (cursoAtual()) {
-              Nenhum conflito neste curso. Grade limpa. ✓
-            } @else {
-              Nenhum conflito. Grade limpa. ✓
-            }
-          </p>
-        }
-
-        @for (c of conflitosOrdenados(); track c.chave) {
-          <div
-            class="mb-2.5 rounded-lg border border-border p-2.5"
-            [class]="cartaoSeveridade(c.severidade)"
-            (mouseenter)="conflitoEmFoco.set(c)"
-            (mouseleave)="conflitoEmFoco.set(null)"
-          >
-            <div class="mb-1.5 flex flex-wrap items-center gap-x-2 gap-y-1">
-              <span
-                class="rounded px-1.5 py-0.5 text-[0.62rem] font-bold tracking-wide uppercase"
-                [class]="pillSeveridade(c.severidade)"
-              >{{ rotuloSeveridade(c.severidade) }}</span>
-              <!-- O identificador cru fica no title: serve para depurar, não para ler. -->
-              <span class="text-[0.7rem] text-muted-foreground" [title]="c.tipo">
-                {{ rotuloTipo(c.tipo) }}
-              </span>
-            </div>
-            <p class="mb-2 text-[0.82rem] leading-snug">{{ c.mensagem }}</p>
-            <!--
-              A turma de fora sai em linha própria: como etiqueta, espremida ao
-              lado do tipo do conflito, o nome quebrava letra a letra na coluna.
-            -->
-            @if (outrasTurmas(c).length) {
-              <p
-                class="mb-2 text-[0.7rem] leading-snug text-muted-foreground"
-                title="Este conflito também envolve aula de outra turma, fora desta tabela"
-              >
-                Também em
-                <span class="font-medium">{{ outrasTurmas(c).join(', ') }}</span>
-              </p>
-            }
-
-            @if (aceitando()?.chave === c.chave) {
-              <div class="flex flex-col gap-2">
-                <textarea
-                  hlmInput
-                  class="min-h-16 w-full py-1 text-xs"
-                  [(ngModel)]="justificativa"
-                  rows="2"
-                  placeholder="Justificativa da comissão…"
-                ></textarea>
-                <div class="flex gap-2">
-                  <button hlmBtn size="sm" type="button" (click)="confirmarAceite()">
-                    Confirmar aceite
-                  </button>
-                  <button hlmBtn variant="ghost" size="sm" type="button" (click)="cancelarAceite()">
-                    Cancelar
-                  </button>
-                </div>
-              </div>
-            } @else if (c.aceitavel) {
-              <button hlmBtn variant="outline" size="sm" type="button" (click)="abrirAceite(c)">
-                Aceitar conflito
-              </button>
-            } @else {
-              <span class="text-[0.72rem] italic text-muted-foreground">
-                Colisão certa — não aceitável
-              </span>
-            }
-          </div>
-        }
-      </aside>
+      <app-conflitos-painel
+        [conflitos]="conflitos()"
+        [escopo]="escopoConflitos()"
+        [aceitandoChave]="aceitandoChave()"
+        (focar)="conflitoEmFoco.set($event)"
+        (abrirAceite)="abrirAceite($event)"
+        (cancelarAceite)="cancelarAceite()"
+        (confirmarAceite)="confirmarAceite($event)"
+      />
     </div>
   }
 </div>

@@ -1,0 +1,86 @@
+<aside hlmCard class="sticky top-4 p-4">
+  <h2 class="mb-3 text-base font-semibold">
+    Conflitos
+    @if (escopo().rotulo) {
+      <span class="font-normal text-muted-foreground">— {{ escopo().rotulo }}</span>
+    }
+  </h2>
+
+  @if (vazio()) {
+    <p class="text-sm text-emerald-600">
+      @switch (escopo().nivel) {
+        @case ('turma') {
+          Nenhum conflito nesta turma. Grade limpa. ✓
+        }
+        @case ('curso') {
+          Nenhum conflito neste curso. Grade limpa. ✓
+        }
+        @default {
+          Nenhum conflito. Grade limpa. ✓
+        }
+      }
+    </p>
+  }
+
+  @for (item of conflitos(); track item.conflito.chave) {
+    <div
+      class="mb-2.5 rounded-lg border border-border p-2.5"
+      [class]="cartaoSeveridade(item.conflito.severidade)"
+      (mouseenter)="focar.emit(item.conflito)"
+      (mouseleave)="focar.emit(null)"
+    >
+      <div class="mb-1.5 flex flex-wrap items-center gap-x-2 gap-y-1">
+        <span
+          class="rounded px-1.5 py-0.5 text-[0.62rem] font-bold tracking-wide uppercase"
+          [class]="pillSeveridade(item.conflito.severidade)"
+        >{{ rotuloSeveridade(item.conflito.severidade) }}</span>
+        <!-- O identificador cru fica no title: serve para depurar, não para ler. -->
+        <span class="text-[0.7rem] text-muted-foreground" [title]="item.conflito.tipo">
+          {{ rotuloTipo(item.conflito.tipo) }}
+        </span>
+      </div>
+      <p class="mb-2 text-[0.82rem] leading-snug">{{ item.conflito.mensagem }}</p>
+      <!--
+        A turma de fora sai em linha própria: como etiqueta, espremida ao lado do
+        tipo do conflito, o nome quebrava letra a letra na coluna.
+      -->
+      @if (item.outrasTurmas.length) {
+        <p
+          class="mb-2 text-[0.7rem] leading-snug text-muted-foreground"
+          title="Este conflito também envolve aula de outra turma, fora desta tabela"
+        >
+          Também em
+          <span class="font-medium">{{ item.outrasTurmas.join(', ') }}</span>
+        </p>
+      }
+
+      @if (aceitandoChave() === item.conflito.chave) {
+        <div class="flex flex-col gap-2">
+          <textarea
+            hlmInput
+            class="min-h-16 w-full py-1 text-xs"
+            [(ngModel)]="justificativa"
+            rows="2"
+            placeholder="Justificativa da comissão…"
+          ></textarea>
+          <div class="flex gap-2">
+            <button hlmBtn size="sm" type="button" (click)="confirmar(item.conflito.chave)">
+              Confirmar aceite
+            </button>
+            <button hlmBtn variant="ghost" size="sm" type="button" (click)="cancelar()">
+              Cancelar
+            </button>
+          </div>
+        </div>
+      } @else if (item.conflito.aceitavel) {
+        <button hlmBtn variant="outline" size="sm" type="button" (click)="abrir(item.conflito)">
+          Aceitar conflito
+        </button>
+      } @else {
+        <span class="text-[0.72rem] italic text-muted-foreground">
+          Colisão certa — não aceitável
+        </span>
+      }
+    </div>
+  }
+</aside>

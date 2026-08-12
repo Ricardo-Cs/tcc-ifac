@@ -44,9 +44,8 @@ export class RegraTurmaDuplicada implements Regra {
         participantes: [...ofertaIds].map((ofertaId) => ({ ofertaId, slotId })),
         contexto: [slotId],
         alocacoesEnvolvidas: alocacoes.map((a) => a.id),
-        mensagem:
-          `A turma ${nomeTurma} tem ${ofertaIds.size} disciplinas no mesmo ` +
-          `horário (${nomeSlot}).`,
+        // Aviso curto: turma e horário. O tipo do conflito já aparece ao lado na tela.
+        mensagem: `${nomeTurma} com ${ofertaIds.size} disciplinas no horário ${nomeSlot}.`,
       });
     }
 

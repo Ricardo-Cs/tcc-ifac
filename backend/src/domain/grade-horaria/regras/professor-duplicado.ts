@@ -98,9 +98,8 @@ export class RegraProfessorDuplicado implements Regra {
       participantes,
       contexto,
       alocacoesEnvolvidas: alocacoes.map((a) => a.id),
-      mensagem:
-        `O professor ${professor} está em mais de uma aula no mesmo horário ` +
-        `(${slot}).`,
+      // Aviso curto: quem e onde. O tipo do conflito já aparece ao lado na tela.
+      mensagem: `${professor} em duas aulas no horário ${slot}.`,
     };
   }
 
@@ -119,10 +118,8 @@ export class RegraProfessorDuplicado implements Regra {
       participantes,
       contexto,
       alocacoesEnvolvidas: alocacoes.map((a) => a.id),
-      mensagem:
-        `O professor ${professor} pode ter conflito no horário ${slot}: sua ` +
-        `carga está repartida (codocência) em pelo menos uma das ofertas, ` +
-        `então a comissão avalia.`,
+      // Aviso curto: o "pode" já sinaliza o caráter potencial; codocência é o motivo.
+      mensagem: `${professor} pode conflitar no horário ${slot} (codocência).`,
     };
   }
 }

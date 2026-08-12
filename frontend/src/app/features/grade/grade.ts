@@ -6,13 +6,12 @@
  *
  * Princípio herdado do backend: o sistema não bloqueia — mover para cima de
  * outra aula é permitido; o que aparece é o conflito, não um erro.
+ *
+ * Este componente é o cérebro: guarda o estado, fala com o servidor e monta as
+ * formas prontas (view-models) da grade. Quem desenha são os filhos — a barra, a
+ * tabela e o painel de conflitos —, que só recebem e anunciam.
  */
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
-import { FormsModule } from '@angular/forms';
-import { HlmButton } from '@spartan-ng/helm/button';
-import { HlmCardImports } from '@spartan-ng/helm/card';
-import { HlmInput } from '@spartan-ng/helm/input';
-import { HlmSelectImports } from '@spartan-ng/helm/select';
 import { GradeApi } from '../../core/api/grade-api';
 import {
   Aula,
@@ -24,115 +23,33 @@ import {
   Slot,
   Turma,
 } from '../../core/models/grade.models';
-
-interface Linha {
-  turno: string;
-  ordem: number;
-  /** Nome legível do turno ("Tarde"). */
-  turnoRotulo: string;
-  /** Faixa horária já formatada ("13:30 – 14:20"). */
-  faixa: string;
-}
-
-/** "13:30:00" → "13:30". */
-function hhmm(hora: string): string {
-  return hora?.slice(0, 5) ?? '';
-}
-
-const DIAS = [
-  { num: 1, nome: 'Segunda' },
-  { num: 2, nome: 'Terça' },
-  { num: 3, nome: 'Quarta' },
-  { num: 4, nome: 'Quinta' },
-  { num: 5, nome: 'Sexta' },
-];
-
-const TURNO_RANK: Record<string, number> = { MANHA: 0, TARDE: 1, NOITE: 2 };
-const TURNO_ROTULO: Record<string, string> = {
-  MANHA: 'Manhã',
-  TARDE: 'Tarde',
-  NOITE: 'Noite',
-};
-
-/** FORTE primeiro — é o que a comissão precisa resolver antes de publicar. */
-const SEVERIDADE_RANK: Record<Severidade, number> = {
-  FORTE: 0,
-  POTENCIAL: 1,
-  FRACO: 2,
-};
-
-const SEVERIDADE_ROTULO: Record<Severidade, string> = {
-  FORTE: 'Forte',
-  POTENCIAL: 'Potencial',
-  FRACO: 'Fraco',
-};
-
-/**
- * O `tipo` do conflito é taxonomia do domínio (`TipoConflito` no backend) — cru
- * na tela vira jargão de banco de dados. A comissão lê o que aconteceu, não o
- * identificador. Um tipo novo que ainda não esteja aqui cai no `humanizar`, que
- * ao menos tira o CAIXA_ALTA_COM_UNDERLINE.
- */
-const TIPO_ROTULO: Record<string, string> = {
-  PROFESSOR_DUPLICADO: 'Professor em duas aulas',
-  TURMA_DUPLICADA: 'Turma em duas aulas',
-  SALA_OCUPADA: 'Sala ocupada',
-  RESTRICAO_VIOLADA: 'Restrição do professor',
-  CARGA_SEMANAL_EXCEDIDA: 'Carga semanal excedida',
-  RESTRICAO_NAO_IMPORTADA: 'Coleta não importada',
-  CARGA_OFERTA_INCOMPLETA: 'Carga da oferta incompleta',
-  CAPACIDADE_SALA_INSUFICIENTE: 'Sala pequena para a turma',
-  TIPO_SALA_INADEQUADO: 'Tipo de sala inadequado',
-  HORARIO_NAO_PREFERIDO: 'Horário não preferido',
-};
-
-/** "ALGO_NOVO_ASSIM" → "Algo novo assim". */
-function humanizar(tipo: string): string {
-  const texto = tipo.replaceAll('_', ' ').toLowerCase();
-  return texto.charAt(0).toUpperCase() + texto.slice(1);
-}
-
-/**
- * Cores por severidade. FORTE reaproveita o token `destructive` do tema; âmbar e
- * azul não têm token, então vêm da paleta do Tailwind. Centralizado aqui para o
- * template ficar declarativo.
- */
-const SEVERIDADE_PILL: Record<Severidade, string> = {
-  FORTE: 'bg-destructive/10 text-destructive',
-  POTENCIAL: 'bg-amber-100 text-amber-700',
-  FRACO: 'bg-blue-100 text-blue-700',
-};
-const SEVERIDADE_CARTAO: Record<Severidade, string> = {
-  FORTE: 'bg-destructive/5',
-  POTENCIAL: 'bg-amber-50',
-  FRACO: 'bg-blue-50',
-};
-
-/**
- * Visão "todos os cursos" — a grade inteira do campus numa tabela só. Não é o
- * padrão (a comissão monta um curso de cada vez), mas é onde se enxerga o que
- * atravessa cursos: o professor que dá aula em dois deles.
- */
-const TODOS_OS_CURSOS = '__todos__';
-
-/**
- * Visão "todas as turmas do curso" — as três grades de SI (1º, 3º, 6º) na mesma
- * tabela. Não é o padrão: a comissão monta uma turma por vez, e é justamente o
- * empilhamento das turmas numa célula só que essa separação desfaz. Serve para
- * enxergar o que atravessa turmas do mesmo curso (o professor que dá aula em
- * duas delas, a sala disputada).
- */
-const TODAS_AS_TURMAS = '__todas__';
+import { GradeToolbarComponent } from './components/grade-toolbar/grade-toolbar';
+import { GradeTabelaComponent, EventoCelula } from './components/grade-tabela/grade-tabela';
+import { ConflitosPainelComponent } from './components/conflitos-painel/conflitos-painel';
+import { SEVERIDADE_RANK } from './severidade';
+import {
+  AulaVm,
+  CelulaVm,
+  ConflitoVm,
+  DIAS,
+  EscopoConflitos,
+  LinhaVm,
+  TODAS_AS_TURMAS,
+  TODOS_OS_CURSOS,
+  TURNO_RANK,
+  TURNO_ROTULO,
+  chaveCelula,
+  hhmm,
+} from './grade.view';
 
 @Component({
   selector: 'app-grade',
-  imports: [FormsModule, HlmButton, HlmInput, ...HlmCardImports, ...HlmSelectImports],
+  imports: [GradeToolbarComponent, GradeTabelaComponent, ConflitosPainelComponent],
   templateUrl: './grade.html',
 })
 export class GradeComponent implements OnInit {
   private readonly api = inject(GradeApi);
 
-  readonly dias = DIAS;
   readonly TODOS = TODOS_OS_CURSOS;
   readonly TODAS = TODAS_AS_TURMAS;
 
@@ -164,7 +81,6 @@ export class GradeComponent implements OnInit {
   readonly conflitoEmFoco = signal<Conflito | null>(null);
   /** Conflito cujo formulário de aceite está aberto. */
   readonly aceitando = signal<Conflito | null>(null);
-  justificativa = '';
 
   ngOnInit(): void {
     this.carregar(() => this.api.gradeAtual());
@@ -179,7 +95,7 @@ export class GradeComponent implements OnInit {
   readonly cursos = computed<Curso[]>(() => this.grade()?.cursos ?? []);
 
   /** O curso em exibição, ou `null` quando a visão é "todos os cursos". */
-  readonly cursoAtual = computed<Curso | null>(() => {
+  private readonly cursoAtual = computed<Curso | null>(() => {
     const id = this.cursoSelecionado();
     return this.cursos().find((c) => c.id === id) ?? null;
   });
@@ -196,7 +112,7 @@ export class GradeComponent implements OnInit {
     return turmas.filter((t) => t.cursoId === curso);
   });
 
-  readonly turmaAtual = computed<Turma | null>(() => {
+  private readonly turmaAtual = computed<Turma | null>(() => {
     const id = this.turmaSelecionada();
     return this.turmasDoCurso().find((t) => t.id === id) ?? null;
   });
@@ -225,11 +141,6 @@ export class GradeComponent implements OnInit {
     () => new Map(this.cursos().map((c) => [c.id, c.sigla])),
   );
 
-  /** Sigla do curso da aula — só interessa na visão "todos", onde eles se misturam. */
-  siglaDaAula(aula: Aula): string | null {
-    return aula.cursoId ? this.siglaPorCurso().get(aula.cursoId) ?? null : null;
-  }
-
   /**
    * Trocar de curso troca também de turma: a turma anterior é de outro curso e
    * deixaria a tabela vazia. Cai na primeira turma do curso novo — a grade de
@@ -239,23 +150,14 @@ export class GradeComponent implements OnInit {
     this.cursoSelecionado.set(id);
     this.turmaSelecionada.set(this.primeiraTurmaDoCurso(id));
     this.conflitoEmFoco.set(null);
-    this.cancelarAceite();
+    this.aceitando.set(null);
   }
 
   selecionarTurma(id: string): void {
     this.turmaSelecionada.set(id);
     this.conflitoEmFoco.set(null);
-    this.cancelarAceite();
+    this.aceitando.set(null);
   }
-
-  /**
-   * Rótulo do gatilho do select de turmas. Sem isto, o `BrnSelectValue` mostra
-   * o UUID cru em vez do nome da turma.
-   */
-  rotuloTurma = (id: string): string => {
-    if (id === TODAS_AS_TURMAS) return 'Todas as turmas';
-    return this.turmasDoCurso().find((t) => t.id === id)?.nome ?? '';
-  };
 
   /**
    * A turma que abre o curso, ou "todas" quando ele não tem nenhuma — a visão
@@ -284,34 +186,10 @@ export class GradeComponent implements OnInit {
     return turnos;
   });
 
-  /** Uma linha por (turno, ordem) dos slots do turno em exibição, ordenadas. */
-  readonly linhas = computed<Linha[]>(() => {
-    const slots = this.grade()?.slots ?? [];
-    const turnos = this.turnosVisiveis();
-    const vistas = new Map<string, Linha>();
-    for (const s of slots) {
-      if (turnos && !turnos.has(s.turno)) continue;
-      const chave = `${s.turno}-${s.ordem}`;
-      if (!vistas.has(chave)) {
-        vistas.set(chave, {
-          turno: s.turno,
-          ordem: s.ordem,
-          turnoRotulo: TURNO_ROTULO[s.turno] ?? s.turno,
-          faixa: `${hhmm(s.horaInicio)} – ${hhmm(s.horaFim)}`,
-        });
-      }
-    }
-    return [...vistas.values()].sort(
-      (a, b) =>
-        (TURNO_RANK[a.turno] ?? 9) - (TURNO_RANK[b.turno] ?? 9) ||
-        a.ordem - b.ordem,
-    );
-  });
-
   private readonly slotPorCelula = computed(() => {
     const mapa = new Map<string, Slot>();
     for (const s of this.grade()?.slots ?? []) {
-      mapa.set(`${s.diaSemana}-${s.turno}-${s.ordem}`, s);
+      mapa.set(chaveCelula(s.diaSemana, s.turno, s.ordem), s);
     }
     return mapa;
   });
@@ -341,86 +219,78 @@ export class GradeComponent implements OnInit {
     return mapa;
   });
 
-  slotDaCelula(dia: number, linha: Linha): Slot | undefined {
-    return this.slotPorCelula().get(`${dia}-${linha.turno}-${linha.ordem}`);
-  }
-
-  aulasDoSlot(slot: Slot | undefined): Aula[] {
-    return slot ? this.aulasPorSlot().get(slot.id) ?? [] : [];
-  }
-
-  severidadeDaAula(aula: Aula): Severidade | null {
-    return this.severidadePorAula().get(aula.id) ?? null;
-  }
-
-  rotuloSeveridade(sev: Severidade): string {
-    return SEVERIDADE_ROTULO[sev];
-  }
-
-  rotuloTipo(tipo: string): string {
-    return TIPO_ROTULO[tipo] ?? humanizar(tipo);
-  }
-
-  /** Classe do "pill" de severidade (fundo + texto). */
-  pillSeveridade(sev: Severidade): string {
-    return SEVERIDADE_PILL[sev];
-  }
-
-  /** Classe da borda esquerda + fundo do cartão da conflito/aula, por severidade. */
-  cartaoSeveridade(sev: Severidade | null): string {
-    return sev ? SEVERIDADE_CARTAO[sev] : 'bg-card';
-  }
-
   /**
-   * Rótulo exibido no gatilho do select. Sem isto, o `BrnSelectValue` mostra o
-   * valor cru (o UUID do período) em vez do código legível.
+   * As linhas prontas da tabela: uma por (turno, ordem) do turno em exibição, já
+   * com as cinco células (Seg–Sex) e as aulas de cada uma resolvidas. É o que a
+   * tabela recebe e apenas desenha.
    */
-  rotuloPeriodo = (id: string): string => {
-    return this.periodos().find((p) => p.id === id)?.codigo ?? '';
-  };
+  readonly linhas = computed<LinhaVm[]>(() => {
+    const slots = this.grade()?.slots ?? [];
+    const turnos = this.turnosVisiveis();
+    const severidade = this.severidadePorAula();
+    const siglas = this.siglaPorCurso();
+    const slotPorCelula = this.slotPorCelula();
+    const aulasPorSlot = this.aulasPorSlot();
 
-  /**
-   * Idem para o curso: "SI — Sistemas para Internet". A sigla sozinha só diz
-   * algo a quem já a conhece; o nome inteiro sozinho não cabe. Os dois juntos
-   * servem à comissão e a quem vê o sistema pela primeira vez.
-   */
-  rotuloCurso = (id: string): string => {
-    if (id === TODOS_OS_CURSOS) return 'Todos os cursos';
-    const curso = this.cursos().find((c) => c.id === id);
-    return curso ? `${curso.sigla} — ${curso.nome}` : '';
-  };
+    const aulaVm = (aula: Aula): AulaVm => ({
+      aula,
+      severidade: severidade.get(aula.id) ?? null,
+      sigla: aula.cursoId ? siglas.get(aula.cursoId) ?? null : null,
+    });
 
-  /** A aula está entre as envolvidas no conflito em foco? (realce no painel) */
-  emFoco(aula: Aula): boolean {
-    const c = this.conflitoEmFoco();
-    return !!c && c.alocacoesEnvolvidas.includes(aula.id);
-  }
+    // Linhas distintas (turno, ordem) dos slots visíveis, ordenadas.
+    const vistas = new Map<string, { turno: string; ordem: number }>();
+    for (const s of slots) {
+      if (turnos && !turnos.has(s.turno)) continue;
+      const chave = `${s.turno}-${s.ordem}`;
+      if (!vistas.has(chave)) vistas.set(chave, { turno: s.turno, ordem: s.ordem });
+    }
+    const ordenadas = [...vistas.values()].sort(
+      (a, b) =>
+        (TURNO_RANK[a.turno] ?? 9) - (TURNO_RANK[b.turno] ?? 9) || a.ordem - b.ordem,
+    );
+
+    return ordenadas.map(({ turno, ordem }) => {
+      const celulas: CelulaVm[] = DIAS.map((dia) => {
+        const slot = slotPorCelula.get(chaveCelula(dia.num, turno, ordem));
+        const aulas = slot ? (aulasPorSlot.get(slot.id) ?? []).map(aulaVm) : [];
+        return { dia: dia.num, turno, ordem, aulas };
+      });
+      // A faixa horária vem de qualquer slot da linha — todos compartilham o horário.
+      const modelo = slotPorCelula.get(chaveCelula(DIAS[0].num, turno, ordem));
+      const faixa = modelo ? `${hhmm(modelo.horaInicio)} – ${hhmm(modelo.horaFim)}` : '';
+      return { turnoRotulo: TURNO_ROTULO[turno] ?? turno, faixa, celulas };
+    });
+  });
+
+  /** Ids das aulas envolvidas no conflito em foco — a tabela as realça. */
+  readonly idsEmFoco = computed<Set<string>>(
+    () => new Set(this.conflitoEmFoco()?.alocacoesEnvolvidas ?? []),
+  );
 
   // ---- Conflitos ---------------------------------------------------------
 
   /**
    * Os conflitos que tocam o curso em exibição — inclusive os que ele divide com
    * outro curso (um professor em dois cursos no mesmo horário aparece na grade
-   * dos DOIS). Filtrar por curso não pode esconder o conflito de quem o causou.
+   * dos DOIS). Cada um já traz as turmas de fora resolvidas para o painel.
    */
-  readonly conflitosOrdenados = computed(() => {
+  readonly conflitos = computed<ConflitoVm[]>(() => {
     const visiveis = new Set(this.aulasVisiveis().map((a) => a.id));
     return [...(this.grade()?.conflitos ?? [])]
       .filter((c) => c.alocacoesEnvolvidas.some((id) => visiveis.has(id)))
-      .sort(
-        (a, b) => SEVERIDADE_RANK[a.severidade] - SEVERIDADE_RANK[b.severidade],
-      );
+      .sort((a, b) => SEVERIDADE_RANK[a.severidade] - SEVERIDADE_RANK[b.severidade])
+      .map((conflito) => ({ conflito, outrasTurmas: this.outrasTurmas(conflito, visiveis) }));
   });
 
   /**
    * As turmas envolvidas no conflito que NÃO estão na tabela em exibição — de
    * outro período do mesmo curso ou de outro curso. Sem isto, a comissão vê um
-   * conflito acusando uma aula que não está na tela e não tem como saber de
-   * onde ela veio: o professor de SI que também dá aula no 3º período é
-   * exatamente o caso que mais aparece.
+   * conflito acusando uma aula que não está na tela e não tem como saber de onde
+   * ela veio: o professor de SI que também dá aula no 3º período é exatamente o
+   * caso que mais aparece.
    */
-  outrasTurmas(conflito: Conflito): string[] {
-    const visiveis = new Set(this.aulasVisiveis().map((a) => a.id));
+  private outrasTurmas(conflito: Conflito, visiveis: Set<string>): string[] {
     const nomes = new Set<string>();
     for (const id of conflito.alocacoesEnvolvidas) {
       if (visiveis.has(id)) continue;
@@ -430,11 +300,22 @@ export class GradeComponent implements OnInit {
     return [...nomes];
   }
 
-  readonly totaisPorSeveridade = computed(() => {
-    const t = { FORTE: 0, POTENCIAL: 0, FRACO: 0 };
-    for (const c of this.conflitosOrdenados()) t[c.severidade]++;
+  readonly totaisPorSeveridade = computed<Record<Severidade, number>>(() => {
+    const t: Record<Severidade, number> = { FORTE: 0, POTENCIAL: 0, FRACO: 0 };
+    for (const { conflito } of this.conflitos()) t[conflito.severidade]++;
     return t;
   });
+
+  /** De onde o painel está falando — governa o cabeçalho e a mensagem de grade limpa. */
+  readonly escopoConflitos = computed<EscopoConflitos>(() => {
+    const turma = this.turmaAtual();
+    if (turma) return { nivel: 'turma', rotulo: turma.nome };
+    const curso = this.cursoAtual();
+    if (curso) return { nivel: 'curso', rotulo: curso.sigla };
+    return { nivel: 'todos', rotulo: null };
+  });
+
+  readonly aceitandoChave = computed(() => this.aceitando()?.chave ?? null);
 
   // ---- Ações -------------------------------------------------------------
 
@@ -452,16 +333,18 @@ export class GradeComponent implements OnInit {
     this.celulaAlvo.set(null);
   }
 
-  aoSobrevoar(dia: number, linha: Linha, evento: DragEvent): void {
+  aoSobrevoar({ celula, evento }: EventoCelula): void {
     if (!this.arrastando()) return;
     evento.preventDefault();
-    this.celulaAlvo.set(`${dia}-${linha.turno}-${linha.ordem}`);
+    this.celulaAlvo.set(chaveCelula(celula.dia, celula.turno, celula.ordem));
   }
 
-  aoSoltar(dia: number, linha: Linha, evento: DragEvent): void {
+  aoSoltar({ celula, evento }: EventoCelula): void {
     evento.preventDefault();
     const aula = this.arrastando();
-    const slotDestino = this.slotDaCelula(dia, linha);
+    const slotDestino = this.slotPorCelula().get(
+      chaveCelula(celula.dia, celula.turno, celula.ordem),
+    );
     this.aoTerminarArraste();
     if (!aula || !slotDestino) return;
     if (aula.slot?.id === slotDestino.id) return; // soltou no mesmo lugar
@@ -474,24 +357,15 @@ export class GradeComponent implements OnInit {
 
   abrirAceite(conflito: Conflito): void {
     this.aceitando.set(conflito);
-    this.justificativa = '';
   }
 
   cancelarAceite(): void {
     this.aceitando.set(null);
-    this.justificativa = '';
   }
 
-  confirmarAceite(): void {
-    const conflito = this.aceitando();
-    const texto = this.justificativa.trim();
-    if (!conflito || !texto) return;
-    this.executar(() => this.api.aceitarConflito(conflito.chave, texto));
-    this.cancelarAceite();
-  }
-
-  celulaEhAlvo(dia: number, linha: Linha): boolean {
-    return this.celulaAlvo() === `${dia}-${linha.turno}-${linha.ordem}`;
+  confirmarAceite({ chave, justificativa }: { chave: string; justificativa: string }): void {
+    this.executar(() => this.api.aceitarConflito(chave, justificativa));
+    this.aceitando.set(null);
   }
 
   // ---- Infra de carga ----------------------------------------------------
