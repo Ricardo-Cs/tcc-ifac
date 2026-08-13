@@ -2,8 +2,7 @@ import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 import { Grade, Periodo } from '../models/grade.models';
-
-const BASE = 'http://localhost:3000';
+import { API_BASE as BASE } from './api-base';
 
 @Injectable({ providedIn: 'root' })
 export class GradeApi {

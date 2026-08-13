@@ -1,12 +1,12 @@
 <div class="p-6">
   <app-listagem
-    [itens]="professores"
+    [itens]="professores()"
     [colunas]="colunas"
     [filtros]="filtros"
     [textoBusca]="textoBusca"
+    [mostrarImportar]="false"
     entidade="professores"
-    (adicionar)="adicionar()"
-    (importar)="importar()"
+    (adicionar)="abrirNovo()"
   >
     <ng-template appLinhaListagem let-p>
       <td class="px-4 py-3">
@@ -18,17 +18,20 @@
         </div>
       </td>
       <td class="px-4 py-3 tabular-nums text-muted-foreground">{{ p.siape }}</td>
-      <td class="px-4 py-3 text-muted-foreground">{{ p.regime }}</td>
+      <td class="px-4 py-3 text-muted-foreground">{{ rotuloRegime(p.grupoRegime) }}</td>
       <td class="px-4 py-3">
+        @if (p.ativo) {
         <span
           class="inline-flex items-center rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-medium text-emerald-700"
         >Ativo</span>
+        } @else {
+        <span
+          class="inline-flex items-center rounded-full bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground"
+        >Inativo</span>
+        }
       </td>
       <td class="px-4 py-3">
         <div class="flex items-center justify-end gap-0.5">
-          <button hlmBtn variant="ghost" size="icon-sm" type="button" title="Ver" (click)="ver(p)">
-            <ng-icon name="lucideEye" size="1rem" />
-          </button>
           <button hlmBtn variant="ghost" size="icon-sm" type="button" title="Editar" (click)="editar(p)">
             <ng-icon name="lucidePencil" size="1rem" />
           </button>
@@ -39,7 +42,7 @@
             type="button"
             title="Remover"
             class="text-muted-foreground hover:text-destructive"
-            (click)="remover(p)"
+            (click)="pedirRemocao(p)"
           >
             <ng-icon name="lucideTrash2" size="1rem" />
           </button>
@@ -48,3 +51,76 @@
     </ng-template>
   </app-listagem>
 </div>
+
+<!-- Criar/editar: um diálogo só, controlado pelo signal `dialogAberto`. -->
+<hlm-dialog [state]="dialogAberto() ? 'open' : 'closed'" (closed)="fecharDialog()">
+  <hlm-dialog-content *hlmDialogPortal class="sm:max-w-md">
+    <hlm-dialog-header>
+      <h3 hlmDialogTitle>{{ tituloDialog() }}</h3>
+      <p hlmDialogDescription>Professor que a comissão aloca nas ofertas da grade.</p>
+    </hlm-dialog-header>
+
+    <form class="grid gap-4 py-2" (ngSubmit)="salvar()">
+      <div class="grid gap-1.5">
+        <label class="text-sm font-medium" for="prof-nome">Nome</label>
+        <input hlmInput id="prof-nome" [ngModel]="rascunho().nome" name="nome"
+          (ngModelChange)="atualizar('nome', $event)" placeholder="Ex.: Maria Silva" />
+      </div>
+
+      <div class="grid gap-1.5">
+        <label class="text-sm font-medium" for="prof-siape">SIAPE</label>
+        <input hlmInput id="prof-siape" [ngModel]="rascunho().siape" name="siape"
+          (ngModelChange)="atualizar('siape', $event)" placeholder="7 ou 8 dígitos" inputmode="numeric" />
+      </div>
+
+      <div class="grid gap-1.5">
+        <label class="text-sm font-medium" for="prof-email">E-mail <span class="text-muted-foreground">(opcional)</span></label>
+        <input hlmInput id="prof-email" type="email" [ngModel]="rascunho().email" name="email"
+          (ngModelChange)="atualizar('email', $event)" placeholder="Ex.: maria.silva@ifac.edu.br" />
+      </div>
+
+      <div class="grid gap-1.5">
+        <label class="text-sm font-medium" for="prof-titulacao">Titulação <span class="text-muted-foreground">(opcional)</span></label>
+        <input hlmInput id="prof-titulacao" [ngModel]="rascunho().titulacao" name="titulacao"
+          (ngModelChange)="atualizar('titulacao', $event)" placeholder="Ex.: Doutorado" />
+      </div>
+
+      <div class="grid gap-1.5">
+        <label class="text-sm font-medium">Regime</label>
+        <hlm-select [ngModel]="rascunho().grupoRegime" name="grupoRegime"
+          [itemToString]="rotuloRegime" (ngModelChange)="atualizar('grupoRegime', $event)">
+          <hlm-select-trigger class="w-full">
+            <hlm-select-value placeholder="Selecione o regime" />
+          </hlm-select-trigger>
+          <hlm-select-content *hlmSelectPortal>
+            @for (r of regimes; track r.valor) {
+            <hlm-select-item [value]="r.valor">{{ r.rotulo }}</hlm-select-item>
+            }
+          </hlm-select-content>
+        </hlm-select>
+      </div>
+    </form>
+
+    <hlm-dialog-footer>
+      <button hlmBtn variant="outline" type="button" (click)="fecharDialog()">Cancelar</button>
+      <button hlmBtn type="button" [disabled]="salvando()" (click)="salvar()">Salvar</button>
+    </hlm-dialog-footer>
+  </hlm-dialog-content>
+</hlm-dialog>
+
+<!-- Confirmar remoção: destrutivo, então nunca num clique só. -->
+<hlm-dialog [state]="removendo() ? 'open' : 'closed'" (closed)="cancelarRemocao()">
+  <hlm-dialog-content *hlmDialogPortal class="sm:max-w-md">
+    <hlm-dialog-header>
+      <h3 hlmDialogTitle>Remover professor</h3>
+      <p hlmDialogDescription>
+        Remover <strong>{{ removendo()?.nome }}</strong> (SIAPE {{ removendo()?.siape }})? Esta ação
+        não pode ser desfeita.
+      </p>
+    </hlm-dialog-header>
+    <hlm-dialog-footer>
+      <button hlmBtn variant="outline" type="button" (click)="cancelarRemocao()">Cancelar</button>
+      <button hlmBtn variant="destructive" type="button" [disabled]="salvando()" (click)="confirmarRemocao()">Remover</button>
+    </hlm-dialog-footer>
+  </hlm-dialog-content>
+</hlm-dialog>

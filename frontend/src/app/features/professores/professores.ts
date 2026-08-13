@@ -1,17 +1,20 @@
 /**
- * Cadastro de Professores — a primeira tela a estrear a listagem padrão
- * (`app-listagem`). Aqui ela só configura as colunas e desenha cada linha; a
- * moldura (busca, paginação, Adicionar/Importar) vem pronta do componente.
- *
- * Os dados são um retrato dos professores semeados (`grade-2026-2.seed.ts`).
- * Enquanto não há endpoint de professores, servem para exercitar a listagem; as
- * ações de linha e o Importar apenas disparam um toast — o laço visual fechado
- * sem back-end de cadastro.
+ * Cadastro de Professores — segue o molde de Cursos (listagem + diálogo de
+ * formulário), agora integrado ao backend (`ProfessoresController`): a lista vem
+ * de `GET /professores` e o salvar/remover chamam POST/PATCH/DELETE. A unicidade
+ * do SIAPE é decidida pelo servidor (409) — a tela traduz a resposta em toast.
  */
-import { Component, inject } from '@angular/core';
+import { Component, computed, inject, signal } from '@angular/core';
+import { FormsModule } from '@angular/forms';
 import { NgIcon, provideIcons } from '@ng-icons/core';
-import { lucideEye, lucidePencil, lucideTrash2 } from '@ng-icons/lucide';
+import { lucidePencil, lucideTrash2 } from '@ng-icons/lucide';
 import { HlmButton } from '@spartan-ng/helm/button';
+import { HlmDialogImports } from '@spartan-ng/helm/dialog';
+import { HlmInput } from '@spartan-ng/helm/input';
+import { HlmSelectImports } from '@spartan-ng/helm/select';
+import { AcademicoApi } from '../../core/api/academico-api';
+import { mensagemErro } from '../../core/api/erro-http';
+import { GrupoRegime, Professor } from '../../core/models/academico.models';
 import { ToastService } from '../../core/toast';
 import {
   ColunaListagem,
@@ -20,45 +23,58 @@ import {
 } from '../../shared/listagem/listagem';
 import { ListagemLinhaDirective } from '../../shared/listagem/listagem-linha';
 
-interface Professor {
+/** Grupos de regime (RAD) — código do domínio + rótulo humano para exibir/filtrar. */
+const REGIMES = [
+  { valor: 'G1', rotulo: 'G1' },
+  { valor: 'G2', rotulo: 'G2' },
+  { valor: 'G3_20H', rotulo: 'G3 (20h)' },
+  { valor: 'G3_40H', rotulo: 'G3 (40h)' },
+  { valor: 'G2_1', rotulo: 'G2.1' },
+  { valor: 'G2_2', rotulo: 'G2.2' },
+  { valor: 'G2_3', rotulo: 'G2.3' },
+] as const;
+
+/** O rascunho do formulário — os campos editáveis de um professor. */
+interface RascunhoProfessor {
   nome: string;
   siape: string;
-  regime: string;
+  email: string;
+  titulacao: string;
+  grupoRegime: GrupoRegime | '';
 }
 
-/** Retrato dos professores do seed 2026.2 (dados fictícios, representativos). */
-const PROFESSORES: Professor[] = [
-  { nome: 'Jonas Pontes', siape: '10000001', regime: 'G1' },
-  { nome: 'Darueck Campos', siape: '10000002', regime: 'G1' },
-  { nome: 'Alvaro Rios', siape: '10000003', regime: 'G1' },
-  { nome: 'Mauricio Cunha', siape: '10000004', regime: 'G1' },
-  { nome: 'Flavio Farias', siape: '10000005', regime: 'G1' },
-  { nome: 'Ana Beatriz Lima', siape: '10000006', regime: 'G3 (40h)' },
-  { nome: 'Carlos Nogueira', siape: '10000007', regime: 'G1' },
-  { nome: 'Marina Lopes', siape: '10000008', regime: 'G2' },
-  { nome: 'Rafael Souza', siape: '10000009', regime: 'G3 (40h)' },
-  { nome: 'Patrícia Gomes', siape: '10000010', regime: 'G1' },
-  { nome: 'Diego Alves', siape: '10000011', regime: 'G2' },
-  { nome: 'Marlon Teixeira', siape: '10000012', regime: 'G1' },
-  { nome: 'Diego Canizio', siape: '10000013', regime: 'G1' },
-  { nome: 'Henrique Canizo', siape: '10000014', regime: 'G1' },
-  { nome: 'Gustavo Cardial', siape: '10000015', regime: 'G1' },
-  { nome: 'Tania Facanha', siape: '10000016', regime: 'G1' },
-  { nome: 'Valdenir Cardoso', siape: '10000017', regime: 'G1' },
-  { nome: 'Breno Silveira', siape: '10000018', regime: 'G1' },
-  { nome: 'Cristiane Nogueira', siape: '10000019', regime: 'G1' },
-];
+const RASCUNHO_VAZIO: RascunhoProfessor = {
+  nome: '',
+  siape: '',
+  email: '',
+  titulacao: '',
+  grupoRegime: '',
+};
 
 @Component({
   selector: 'app-professores',
-  imports: [NgIcon, HlmButton, ListagemComponent, ListagemLinhaDirective],
-  providers: [provideIcons({ lucideEye, lucidePencil, lucideTrash2 })],
+  imports: [
+    FormsModule,
+    NgIcon,
+    HlmButton,
+    HlmInput,
+    ListagemComponent,
+    ListagemLinhaDirective,
+    ...HlmSelectImports,
+    ...HlmDialogImports,
+  ],
+  providers: [provideIcons({ lucidePencil, lucideTrash2 })],
   templateUrl: './professores.html',
 })
 export class ProfessoresComponent {
+  private readonly api = inject(AcademicoApi);
   private readonly toast = inject(ToastService);
 
-  readonly professores = PROFESSORES;
+  readonly regimes = REGIMES;
+
+  readonly professores = signal<Professor[]>([]);
+  readonly salvando = signal(false);
+
   readonly colunas: ColunaListagem[] = [
     { rotulo: 'Nome' },
     { rotulo: 'SIAPE', largura: 'w-40' },
@@ -67,36 +83,149 @@ export class ProfessoresComponent {
     { rotulo: 'Ações', alinhamento: 'fim', largura: 'w-28' },
   ];
 
-  /** Regime é faceta: valor exato, deduzido dos próprios dados. */
+  /** Regime é faceta: rótulo humano, deduzido dos próprios dados. */
   readonly filtros: FiltroListagem<Professor>[] = [
-    { chave: 'regime', rotulo: 'Regime', valor: (p) => p.regime },
+    { chave: 'regime', rotulo: 'Regime', valor: (p) => this.rotuloRegime(p.grupoRegime) },
   ];
 
   /** Só nome e SIAPE fazem sentido na busca — regime/status são filtros de faceta. */
   readonly textoBusca = (p: Professor): string => `${p.nome} ${p.siape}`;
+
+  constructor() {
+    this.carregar();
+  }
+
+  private carregar(): void {
+    this.api.listarProfessores().subscribe({
+      next: (professores) => this.professores.set(professores),
+      error: (err) =>
+        this.toast.erro('Falha ao carregar professores', mensagemErro(err, 'Tente novamente.')),
+    });
+  }
+
+  // Arrow field para servir de `itemToString` do hlm-select: o trigger deriva
+  // seu texto do VALOR selecionado, não do conteúdo do item — sem isto mostraria
+  // o código cru (ex.: "G3_40H").
+  readonly rotuloRegime = (valor: string): string =>
+    REGIMES.find((r) => r.valor === valor)?.rotulo ?? valor;
 
   iniciais(nome: string): string {
     const partes = nome.trim().split(/\s+/);
     return (partes[0][0] + (partes[1]?.[0] ?? '')).toUpperCase();
   }
 
-  adicionar(): void {
-    this.toast.emBreve('Cadastrar professor');
+  // ---- Diálogo de formulário --------------------------------------------
+
+  readonly editando = signal<Professor | null>(null);
+  readonly dialogAberto = signal(false);
+  readonly rascunho = signal<RascunhoProfessor>(RASCUNHO_VAZIO);
+
+  readonly removendo = signal<Professor | null>(null);
+
+  readonly tituloDialog = computed(() =>
+    this.editando() ? 'Editar professor' : 'Novo professor',
+  );
+
+  atualizar<K extends keyof RascunhoProfessor>(campo: K, valor: RascunhoProfessor[K]): void {
+    this.rascunho.update((r) => ({ ...r, [campo]: valor }));
   }
 
-  importar(): void {
-    this.toast.info('Importação iniciada', 'A planilha de professores seria lida aqui.');
+  abrirNovo(): void {
+    this.editando.set(null);
+    this.rascunho.set(RASCUNHO_VAZIO);
+    this.dialogAberto.set(true);
   }
 
-  ver(p: Professor): void {
-    this.toast.info(p.nome, `SIAPE ${p.siape} · Regime ${p.regime}`);
+  editar(professor: Professor): void {
+    this.editando.set(professor);
+    this.rascunho.set({
+      nome: professor.nome,
+      siape: professor.siape,
+      email: professor.email ?? '',
+      titulacao: professor.titulacao ?? '',
+      grupoRegime: professor.grupoRegime,
+    });
+    this.dialogAberto.set(true);
   }
 
-  editar(p: Professor): void {
-    this.toast.emBreve(`Editar ${p.nome}`);
+  fecharDialog(): void {
+    this.dialogAberto.set(false);
   }
 
-  remover(p: Professor): void {
-    this.toast.aviso(`Remover ${p.nome}?`, 'A remoção definitiva ainda não está ligada.');
+  salvar(): void {
+    const r = this.rascunho();
+    const nome = r.nome.trim();
+    const siape = r.siape.trim();
+    if (!nome || !siape || !r.grupoRegime) {
+      this.toast.erro('Preencha os campos obrigatórios', 'Nome, SIAPE e regime são obrigatórios.');
+      return;
+    }
+    if (!/^\d{7,8}$/.test(siape)) {
+      this.toast.erro('SIAPE inválido', 'O SIAPE deve ter 7 ou 8 dígitos.');
+      return;
+    }
+
+    // Campos opcionais viram null quando vazios — o backend distingue ausente de
+    // string vazia, e null é o "sem valor" que a coluna nullable espera.
+    const dados = {
+      nome,
+      siape,
+      email: r.email.trim() || null,
+      titulacao: r.titulacao.trim() || null,
+      grupoRegime: r.grupoRegime,
+    };
+    const alvo = this.editando();
+    this.salvando.set(true);
+
+    const requisicao = alvo
+      ? this.api.atualizarProfessor(alvo.id, dados)
+      : this.api.criarProfessor(dados);
+
+    requisicao.subscribe({
+      next: (professor) => {
+        this.professores.update((lista) =>
+          alvo ? lista.map((p) => (p.id === professor.id ? professor : p)) : [...lista, professor],
+        );
+        this.toast.sucesso(`${professor.nome} ${alvo ? 'atualizado' : 'cadastrado'}`);
+        this.salvando.set(false);
+        this.fecharDialog();
+      },
+      error: (err) => {
+        this.toast.erro(
+          alvo ? 'Falha ao atualizar' : 'Falha ao cadastrar',
+          mensagemErro(err, 'Não foi possível salvar o professor.'),
+        );
+        this.salvando.set(false);
+      },
+    });
+  }
+
+  // ---- Remoção -----------------------------------------------------------
+
+  pedirRemocao(professor: Professor): void {
+    this.removendo.set(professor);
+  }
+
+  cancelarRemocao(): void {
+    this.removendo.set(null);
+  }
+
+  confirmarRemocao(): void {
+    const alvo = this.removendo();
+    if (!alvo) return;
+    this.salvando.set(true);
+    this.api.removerProfessor(alvo.id).subscribe({
+      next: () => {
+        this.professores.update((lista) => lista.filter((p) => p.id !== alvo.id));
+        this.toast.sucesso(`${alvo.nome} removido`);
+        this.salvando.set(false);
+        this.removendo.set(null);
+      },
+      error: (err) => {
+        this.toast.erro('Falha ao remover', mensagemErro(err, 'Não foi possível remover o professor.'));
+        this.salvando.set(false);
+        this.removendo.set(null);
+      },
+    });
   }
 }
