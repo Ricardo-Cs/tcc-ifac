@@ -16,6 +16,8 @@ import { AulaVm } from '../../grade.view';
 })
 export class AulaCartaoComponent {
   readonly vm = input.required<AulaVm>();
+  /** Período editável: `false` deixa o cartão só para leitura (sem arrastar/remover). */
+  readonly editavel = input(true);
   /** Visão "todos os cursos": só aí a sigla do curso é dita no cartão. */
   readonly vendoTodos = input(false);
   /** Há mais de uma turma na tabela: só aí o nome da turma precisa aparecer. */

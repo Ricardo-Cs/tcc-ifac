@@ -11,14 +11,14 @@
  * formas prontas (view-models) da grade. Quem desenha são os filhos — a barra, a
  * tabela e o painel de conflitos —, que só recebem e anunciam.
  */
-import { Component, OnInit, computed, inject, signal } from '@angular/core';
+import { Component, computed, effect, inject, signal } from '@angular/core';
 import { GradeApi } from '../../core/api/grade-api';
+import { PeriodoState } from '../../core/state/periodo-state';
 import {
   Aula,
   Conflito,
   Curso,
   Grade,
-  Periodo,
   Severidade,
   Slot,
   Turma,
@@ -47,16 +47,35 @@ import {
   imports: [GradeToolbarComponent, GradeTabelaComponent, ConflitosPainelComponent],
   templateUrl: './grade.html',
 })
-export class GradeComponent implements OnInit {
+export class GradeComponent {
   private readonly api = inject(GradeApi);
+
+  /** Período em foco no sistema (seletor do header). A grade o segue. */
+  readonly periodo = inject(PeriodoState);
 
   readonly TODOS = TODOS_OS_CURSOS;
   readonly TODAS = TODAS_AS_TURMAS;
 
   readonly grade = signal<Grade | null>(null);
-  readonly periodos = signal<Periodo[]>([]);
   readonly carregando = signal(false);
   readonly erro = signal<string | null>(null);
+
+  /** Id do período já carregado — evita recarregar quando o foco não mudou. */
+  private periodoCarregado: string | null | undefined;
+
+  constructor() {
+    // A grade acompanha o período em foco: o header troca o `?periodo=` da URL,
+    // `selecionado()` reflete, e aqui recarregamos. Enquanto a lista de períodos
+    // não resolve, `selecionado()` é nulo e caímos no `gradeAtual()` — a grade
+    // aparece sem esperar; quando o id do corrente chega, recarrega por ele.
+    effect(() => {
+      const foco = this.periodo.selecionado();
+      const id = foco?.id ?? null;
+      if (id === this.periodoCarregado) return;
+      this.periodoCarregado = id;
+      this.carregar(() => (id ? this.api.grade(id) : this.api.gradeAtual()));
+    });
+  }
 
   /**
    * O curso em exibição. `null` só no instante anterior à primeira carga —
@@ -81,14 +100,6 @@ export class GradeComponent implements OnInit {
   readonly conflitoEmFoco = signal<Conflito | null>(null);
   /** Conflito cujo formulário de aceite está aberto. */
   readonly aceitando = signal<Conflito | null>(null);
-
-  ngOnInit(): void {
-    this.carregar(() => this.api.gradeAtual());
-    this.api.periodos().subscribe({
-      next: (p) => this.periodos.set(p),
-      error: () => {},
-    });
-  }
 
   // ---- Cursos: a grade separada por curso --------------------------------
 
@@ -318,11 +329,6 @@ export class GradeComponent implements OnInit {
   readonly aceitandoChave = computed(() => this.aceitando()?.chave ?? null);
 
   // ---- Ações -------------------------------------------------------------
-
-  trocarPeriodo(id: string): void {
-    if (!id) return;
-    this.carregar(() => this.api.grade(id));
-  }
 
   aoIniciarArraste(aula: Aula): void {
     this.arrastando.set(aula);

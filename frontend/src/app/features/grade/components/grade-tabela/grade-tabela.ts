@@ -25,6 +25,8 @@ export class GradeTabelaComponent {
   readonly celulaAlvo = input<string | null>(null);
   /** Ids das aulas envolvidas no conflito em foco — recebem anel de realce. */
   readonly idsEmFoco = input<Set<string>>(new Set());
+  /** Período editável: `false` desliga o arraste e o remover (período passado). */
+  readonly editavel = input(true);
   readonly vendoTodos = input(false);
   readonly vendoVariasTurmas = input(false);
 

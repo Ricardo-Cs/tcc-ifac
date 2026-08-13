@@ -6,25 +6,28 @@
 @import '@spartan-ng/brain/hlm-tailwind-preset.css';
 /* You can add global styles to this file, and also import other style files */
 
-/**
- * Inter, servida do próprio projeto (`public/fonts`) — nada de CDN: a defesa do
- * TCC pode acontecer sem internet, e a rede do campus costuma barrar domínio de
- * terceiros. É a versão variável: um arquivo cobre todos os pesos de 100 a 900.
- */
 @font-face {
-  font-family: 'InterVariable';
+  font-family: 'Nunito Variable';
   font-style: normal;
-  font-weight: 100 900;
+  font-weight: 200 1000;
   font-display: swap;
-  src: url('/fonts/InterVariable.woff2') format('woff2');
+  src: url('/fonts/Nunito-Variable.woff2') format('woff2');
 }
 
 @font-face {
-  font-family: 'InterVariable';
+  font-family: 'Nunito Variable';
   font-style: italic;
+  font-weight: 200 1000;
+  font-display: swap;
+  src: url('/fonts/Nunito-Variable-Italic.woff2') format('woff2');
+}
+
+@font-face {
+  font-family: 'Montserrat Variable';
+  font-style: normal;
   font-weight: 100 900;
   font-display: swap;
-  src: url('/fonts/InterVariable-Italic.woff2') format('woff2');
+  src: url('/fonts/Montserrat-Variable.woff2') format('woff2');
 }
 
 /**
@@ -44,6 +47,9 @@
   --color-primary-700: #24306d;
   --color-primary-800: #1b2452;
   --color-primary-900: #111937;
+
+  /* Fonte da marca: vira o utilitário `font-brand` (só o wordmark Chronos usa). */
+  --font-brand: 'Montserrat Variable', var(--font-sans);
 }
 
 :root {
@@ -51,8 +57,8 @@
 
   /* A pilha do sistema fica como rede de segurança se o .woff2 não carregar. */
   --font-sans:
-    'InterVariable', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial,
-    'Noto Sans', sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol',
+    'Nunito Variable', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue',
+    Arial, 'Noto Sans', sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol',
     'Noto Color Emoji';
 
   --radius: 0.625rem;
@@ -127,7 +133,9 @@
   }
   body {
     @apply bg-background text-foreground font-sans;
-    /* Ligaduras e alternativas contextuais da Inter. */
-    font-feature-settings: 'liga' 1, 'calt' 1;
+    /* Ligaduras e alternativas contextuais da Nunito. */
+    font-feature-settings:
+      'liga' 1,
+      'calt' 1;
   }
 }

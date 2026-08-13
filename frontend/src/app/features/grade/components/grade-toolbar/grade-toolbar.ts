@@ -1,13 +1,14 @@
 /**
- * A barra da tela: o recorte (curso › turma) à esquerda, o período e o placar de
- * conflitos à direita. Só controles — não sabe carregar grade nem mover aula;
- * anuncia a escolha e o container reage. Os rótulos dos selects moram aqui porque
- * é aqui que estão as listas de onde eles saem.
+ * A barra da tela: o recorte (curso › turma) à esquerda, o placar de conflitos à
+ * direita. O período saiu daqui — virou estado do sistema no cabeçalho do shell.
+ * Só controles — não sabe carregar grade nem mover aula; anuncia a escolha e o
+ * container reage. Os rótulos dos selects moram aqui porque é aqui que estão as
+ * listas de onde eles saem.
  */
 import { Component, computed, input, output } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { HlmSelectImports } from '@spartan-ng/helm/select';
-import { Curso, Periodo, Severidade, Turma } from '../../../../core/models/grade.models';
+import { Curso, Severidade, Turma } from '../../../../core/models/grade.models';
 import { pillSeveridade } from '../../severidade';
 import { TODAS_AS_TURMAS, TODOS_OS_CURSOS } from '../../grade.view';
 
@@ -21,13 +22,10 @@ export class GradeToolbarComponent {
   readonly cursoSelecionado = input<string | null>(null);
   readonly turmas = input.required<Turma[]>();
   readonly turmaSelecionada = input<string | null>(null);
-  readonly periodos = input.required<Periodo[]>();
-  readonly periodoAtual = input<string>('');
   readonly totais = input.required<Record<Severidade, number>>();
 
   readonly cursoChange = output<string>();
   readonly turmaChange = output<string>();
-  readonly periodoChange = output<string>();
 
   readonly TODOS = TODOS_OS_CURSOS;
   readonly TODAS = TODAS_AS_TURMAS;
@@ -46,9 +44,5 @@ export class GradeToolbarComponent {
   rotuloTurma = (id: string): string => {
     if (id === TODAS_AS_TURMAS) return 'Todas as turmas';
     return this.turmas().find((t) => t.id === id)?.nome ?? '';
-  };
-
-  rotuloPeriodo = (id: string): string => {
-    return this.periodos().find((p) => p.id === id)?.codigo ?? '';
   };
 }

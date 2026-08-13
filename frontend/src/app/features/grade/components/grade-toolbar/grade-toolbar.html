@@ -1,7 +1,7 @@
 <!--
-  Uma barra só para a tela: o recorte (curso › turma) à esquerda, o período e o
-  placar de conflitos à direita. O título e a marca ficam no cabeçalho do shell —
-  dois cabeçalhos empilhados diziam a mesma coisa duas vezes.
+  Uma barra só para a tela: o recorte (curso › turma) à esquerda, o placar de
+  conflitos à direita. O período é estado do sistema inteiro e mora no cabeçalho
+  do shell; o título e a marca também — dois cabeçalhos diziam a mesma coisa.
 -->
 <div
   class="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 border-b border-border bg-card px-6 py-2.5"
@@ -66,27 +66,6 @@
   </div>
 
   <div class="flex flex-wrap items-center gap-3">
-    @if (periodos().length) {
-      <hlm-select
-        class="w-40"
-        [itemToString]="rotuloPeriodo"
-        [ngModel]="periodoAtual()"
-        (ngModelChange)="periodoChange.emit($event)"
-      >
-        <hlm-select-trigger class="w-40">
-          <hlm-select-value placeholder="Período" />
-        </hlm-select-trigger>
-        <!-- Sem o portal, a lista renderiza no fluxo da página e fica sempre aberta. -->
-        <hlm-select-content *hlmSelectPortal>
-          @for (p of periodos(); track p.id) {
-            <hlm-select-item [value]="p.id">
-              {{ p.codigo }}{{ p.ativo ? ' (ativo)' : '' }}
-            </hlm-select-item>
-          }
-        </hlm-select-content>
-      </hlm-select>
-    }
-
     <div class="flex gap-1.5">
       <span
         class="rounded-full px-2.5 py-1 text-xs font-medium"

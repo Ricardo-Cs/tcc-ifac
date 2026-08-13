@@ -11,10 +11,17 @@ export const routes: Routes = [
     children: [
       { path: '', pathMatch: 'full', redirectTo: 'planejamento' },
       { path: 'dashboard', component: EmConstrucaoComponent, data: { titulo: 'Dashboard' } },
+      { path: 'cursos', component: EmConstrucaoComponent, data: { titulo: 'Cursos' } },
       { path: 'professores', component: ProfessoresComponent, data: { titulo: 'Professores' } },
       { path: 'disciplinas', component: EmConstrucaoComponent, data: { titulo: 'Disciplinas' } },
       { path: 'turmas', component: EmConstrucaoComponent, data: { titulo: 'Turmas' } },
       { path: 'salas', component: EmConstrucaoComponent, data: { titulo: 'Salas' } },
+      {
+        path: 'periodos',
+        component: EmConstrucaoComponent,
+        data: { titulo: 'Períodos letivos' },
+      },
+      { path: 'ofertas', component: EmConstrucaoComponent, data: { titulo: 'Ofertas' } },
       {
         path: 'disponibilidades',
         component: EmConstrucaoComponent,
@@ -25,7 +32,17 @@ export const routes: Routes = [
         component: GradeComponent,
         data: { titulo: 'Planejamento de Horários' },
       },
-      { path: 'horarios', component: EmConstrucaoComponent, data: { titulo: 'Horários' } },
+      { path: 'horarios', component: EmConstrucaoComponent, data: { titulo: 'Grade da turma' } },
+      {
+        path: 'horarios-professor',
+        component: EmConstrucaoComponent,
+        data: { titulo: 'Grade por professor' },
+      },
+      {
+        path: 'horarios-sala',
+        component: EmConstrucaoComponent,
+        data: { titulo: 'Grade por sala' },
+      },
       {
         path: 'configuracoes',
         component: EmConstrucaoComponent,

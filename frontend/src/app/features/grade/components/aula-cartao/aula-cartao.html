@@ -1,9 +1,11 @@
 <article
-  class="mb-1.5 flex cursor-grab flex-col gap-0.5 rounded-md border border-border p-1.5 text-xs leading-tight last:mb-0 active:cursor-grabbing"
+  class="mb-1.5 flex flex-col gap-0.5 rounded-md border border-border p-1.5 text-xs leading-tight last:mb-0"
   [class]="classeCartao()"
+  [class.cursor-grab]="editavel()"
+  [class.active:cursor-grabbing]="editavel()"
   [class.ring-2]="emFoco()"
   [class.ring-ring]="emFoco()"
-  draggable="true"
+  [attr.draggable]="editavel()"
   (dragstart)="iniciarArraste.emit(aula())"
   (dragend)="terminarArraste.emit()"
 >
@@ -16,6 +18,7 @@
         >{{ vm().sigla }}</span>
       }
     </span>
+    @if (editavel()) {
     <button
       hlmBtn
       variant="ghost"
@@ -24,6 +27,7 @@
       title="Remover alocação"
       (click)="remover.emit(aula())"
     >×</button>
+    }
   </div>
   <span class="font-medium">{{ aula().disciplina?.nome }}</span>
   <!-- A turma só precisa ser dita quando há mais de uma na tabela. -->

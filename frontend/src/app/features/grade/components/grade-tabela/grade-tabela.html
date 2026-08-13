@@ -27,9 +27,10 @@
           [class.ring-ring]="ehAlvo(celula)" (dragover)="sobrevoar.emit({ celula, evento: $event })"
           (drop)="soltar.emit({ celula, evento: $event })">
           @for (item of celula.aulas; track item.aula.id) {
-          <app-aula-cartao [vm]="item" [vendoTodos]="vendoTodos()" [vendoVariasTurmas]="vendoVariasTurmas()"
-            [emFoco]="idsEmFoco().has(item.aula.id)" (iniciarArraste)="iniciarArraste.emit($event)"
-            (terminarArraste)="terminarArraste.emit()" (remover)="remover.emit($event)" />
+          <app-aula-cartao [vm]="item" [editavel]="editavel()" [vendoTodos]="vendoTodos()"
+            [vendoVariasTurmas]="vendoVariasTurmas()" [emFoco]="idsEmFoco().has(item.aula.id)"
+            (iniciarArraste)="iniciarArraste.emit($event)" (terminarArraste)="terminarArraste.emit()"
+            (remover)="remover.emit($event)" />
           }
         </td>
         }

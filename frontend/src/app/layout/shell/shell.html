@@ -2,75 +2,62 @@
   <!-- Barra lateral -->
   <aside
     class="sticky top-0 flex h-screen shrink-0 flex-col bg-sidebar text-sidebar-foreground transition-[width] duration-200 ease-out"
-    [class]="recolhida() ? 'w-[76px]' : 'w-64'"
-  >
+    [class]="recolhida() ? 'w-19' : 'w-64'">
     <!-- Marca + botão de recolher -->
     <div class="relative flex h-16 shrink-0 items-center gap-2.5 px-5">
-      <span class="grid size-9 shrink-0 place-items-center rounded-lg bg-white">
-        <img src="Logo.svg" alt="Chronos" class="size-7" />
-      </span>
+      <img src="Logo.svg" alt="Chronos" class="size-10" />
       @if (!recolhida()) {
-        <span class="truncate text-xl font-semibold tracking-tight">Chronos</span>
+      <span class="truncate font-brand text-2xl font-semibold tracking-tight">Chronos</span>
       }
-      <button
-        type="button"
-        class="absolute top-1/2 -right-3 grid size-6 -translate-y-1/2 place-items-center rounded-full bg-sidebar text-sidebar-foreground/70 ring-1 ring-sidebar-border transition-colors hover:bg-sidebar-accent hover:text-sidebar-foreground focus-visible:ring-2 focus-visible:ring-sidebar-ring focus-visible:outline-none"
+      <button type="button"
+        class="absolute top-1/2 -right-4 z-20 grid h-8 w-10 -translate-y-1/2 place-items-center rounded-full bg-card text-primary shadow-md ring-1 ring-border transition-colors hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
         [title]="recolhida() ? 'Expandir menu' : 'Recolher menu'"
-        [attr.aria-label]="recolhida() ? 'Expandir menu' : 'Recolher menu'"
-        (click)="alternarRecolhida()"
-      >
-        <ng-icon [name]="recolhida() ? 'lucideChevronsRight' : 'lucideChevronsLeft'" size="0.9rem" />
+        [attr.aria-label]="recolhida() ? 'Expandir menu' : 'Recolher menu'" (click)="alternarRecolhida()">
+        <ng-icon [name]="recolhida() ? 'lucideChevronsRight' : 'lucideChevronsLeft'" size="1rem" />
       </button>
     </div>
 
     <!-- Menu -->
     <nav class="flex-1 overflow-x-hidden overflow-y-auto px-3 py-2">
       @for (grupo of grupos; track $index) {
-        @if (grupo.titulo) {
-          @if (recolhida()) {
-            <div class="mx-2 my-2.5 border-t border-sidebar-border"></div>
-          } @else {
-            <p class="mt-4 mb-1 px-3 text-xs font-semibold text-sidebar-foreground/50">
-              {{ grupo.titulo }}
-            </p>
-          }
-        } @else if (!$first) {
-          <!-- Grupo sem rótulo depois do primeiro (Configurações): só respiro. -->
-          @if (recolhida()) {
-            <div class="mx-2 my-2.5 border-t border-sidebar-border"></div>
-          } @else {
-            <div class="mt-4"></div>
-          }
-        }
+      @if (grupo.titulo) {
+      @if (recolhida()) {
+      <div class="mx-2 my-2.5 border-t border-sidebar-border"></div>
+      } @else {
+      <p class="mt-4 mb-1 px-3 text-xs font-semibold text-sidebar-foreground/50">
+        {{ grupo.titulo }}
+      </p>
+      }
+      } @else if (!$first) {
+      <!-- Grupo sem rótulo depois do primeiro (Configurações): só respiro. -->
+      @if (recolhida()) {
+      <div class="mx-2 my-2.5 border-t border-sidebar-border"></div>
+      } @else {
+      <div class="mt-4"></div>
+      }
+      }
 
-        @for (item of grupo.itens; track item.rota) {
-          <a
-            class="mb-0.5 flex items-center gap-3 rounded-lg px-3 py-2 text-sm text-sidebar-foreground/85 transition-colors hover:bg-sidebar-accent hover:text-sidebar-foreground"
-            [routerLink]="item.rota"
-            routerLinkActive="bg-sidebar-accent font-medium text-sidebar-foreground"
-            [class.justify-center]="recolhida()"
-            [title]="recolhida() ? item.rotulo : ''"
-          >
-            <ng-icon [name]="item.icone" size="1.15rem" class="shrink-0" />
-            @if (!recolhida()) {
-              <span class="truncate">{{ item.rotulo }}</span>
-            }
-          </a>
+      @for (item of grupo.itens; track item.rota) {
+      <a class="mb-0.5 flex items-center gap-3 rounded-lg px-3 py-2 text-sm text-sidebar-foreground/85 transition-colors hover:bg-sidebar-accent hover:text-sidebar-foreground"
+        [routerLink]="item.rota" routerLinkActive="bg-sidebar-accent font-medium text-sidebar-foreground"
+        [class.justify-center]="recolhida()" [title]="recolhida() ? item.rotulo : ''">
+        <ng-icon [name]="item.icone" size="1.15rem" class="shrink-0" />
+        @if (!recolhida()) {
+        <span class="truncate">{{ item.rotulo }}</span>
         }
+      </a>
+      }
       }
     </nav>
 
     <!-- Saída -->
     <div class="shrink-0 border-t border-sidebar-border p-3">
-      <button
-        type="button"
+      <button type="button"
         class="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm text-sidebar-foreground/85 transition-colors hover:bg-sidebar-accent hover:text-sidebar-foreground"
-        [class.justify-center]="recolhida()"
-        [title]="recolhida() ? 'Sair do sistema' : ''"
-      >
+        [class.justify-center]="recolhida()" [title]="recolhida() ? 'Sair do sistema' : ''">
         <ng-icon name="lucideLogOut" size="1.15rem" class="shrink-0" />
         @if (!recolhida()) {
-          <span class="truncate">Sair do sistema</span>
+        <span class="truncate">Sair do sistema</span>
         }
       </button>
     </div>
@@ -79,18 +66,43 @@
   <!-- Coluna de conteúdo -->
   <div class="flex min-w-0 flex-1 flex-col">
     <header
-      class="sticky top-0 z-10 flex h-16 shrink-0 items-center justify-between gap-4 border-b border-border bg-card px-6"
-    >
+      class="sticky top-0 z-10 flex h-16 shrink-0 items-center justify-between gap-4 border-b border-border bg-card px-6">
       <div class="min-w-0">
         <p class="truncate text-xs text-muted-foreground">Chronos / {{ titulo() }}</p>
         <h1 class="truncate text-base font-semibold tracking-tight">{{ titulo() }}</h1>
       </div>
 
       <div class="flex shrink-0 items-center gap-2.5">
+        <!-- Seletor de período: estado do sistema inteiro, ancorado no ?periodo= da URL. -->
+        @if (periodo.periodos().length) {
+        <hlm-select class="w-40" [itemToString]="rotuloPeriodo" [ngModel]="periodo.selecionado()?.codigo ?? ''"
+          (ngModelChange)="periodo.selecionar($event)">
+          <hlm-select-trigger class="h-9 w-40">
+            <hlm-select-value placeholder="Período" />
+          </hlm-select-trigger>
+          <hlm-select-content *hlmSelectPortal>
+            @for (p of periodo.periodos(); track p.id) {
+            <hlm-select-item class="pe-6" [value]="p.codigo">
+              {{ p.codigo }}{{ p.ativo ? ' · atual' : '' }}
+            </hlm-select-item>
+            }
+          </hlm-select-content>
+        </hlm-select>
+        }
+
+        <!-- Período passado/fechado: o sistema inteiro vira somente leitura. -->
+        @if (!periodo.editavel()) {
         <span
-          class="grid size-9 place-items-center rounded-full bg-primary text-xs font-semibold text-primary-foreground"
-          >US</span
-        >
+          class="hidden items-center gap-1.5 rounded-full bg-amber-100 px-2.5 py-1 text-xs font-medium text-amber-700 sm:inline-flex dark:bg-amber-500/15 dark:text-amber-400">
+          <ng-icon name="lucideHistory" size="0.85rem" />
+          Somente leitura
+        </span>
+        }
+
+        <span class="mx-1 hidden h-6 w-px bg-border sm:block"></span>
+
+        <span
+          class="grid size-9 place-items-center rounded-full bg-primary text-xs font-semibold text-primary-foreground">US</span>
         <span class="hidden text-sm text-muted-foreground sm:inline">Usuário da Silva</span>
       </div>
     </header>

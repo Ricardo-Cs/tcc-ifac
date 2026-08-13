@@ -18,10 +18,13 @@ export const NAV: readonly GrupoNav[] = [
   {
     titulo: 'Cadastros',
     itens: [
+      { rota: '/cursos', rotulo: 'Cursos', icone: 'lucideSchool' },
       { rota: '/professores', rotulo: 'Professores', icone: 'lucideUsers' },
       { rota: '/disciplinas', rotulo: 'Disciplinas', icone: 'lucideBookOpen' },
       { rota: '/turmas', rotulo: 'Turmas', icone: 'lucideGraduationCap' },
       { rota: '/salas', rotulo: 'Salas', icone: 'lucideLandmark' },
+      { rota: '/periodos', rotulo: 'Períodos letivos', icone: 'lucideCalendarRange' },
+      { rota: '/ofertas', rotulo: 'Ofertas', icone: 'lucideLayers' },
       { rota: '/disponibilidades', rotulo: 'Disponibilidades', icone: 'lucideCalendarDays' },
     ],
   },
@@ -30,10 +33,6 @@ export const NAV: readonly GrupoNav[] = [
     itens: [
       { rota: '/planejamento', rotulo: 'Planejamento de Horários', icone: 'lucideTable' },
     ],
-  },
-  {
-    titulo: 'Resultados',
-    itens: [{ rota: '/horarios', rotulo: 'Horários', icone: 'lucideClipboardList' }],
   },
   {
     titulo: null,

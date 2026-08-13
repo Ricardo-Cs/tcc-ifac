@@ -4,12 +4,9 @@
     [cursoSelecionado]="cursoSelecionado()"
     [turmas]="turmasDoCurso()"
     [turmaSelecionada]="turmaSelecionada()"
-    [periodos]="periodos()"
-    [periodoAtual]="grade()?.periodoLetivoId ?? ''"
     [totais]="totaisPorSeveridade()"
     (cursoChange)="selecionarCurso($event)"
     (turmaChange)="selecionarTurma($event)"
-    (periodoChange)="trocarPeriodo($event)"
   />
 
   @if (erro()) {
@@ -28,6 +25,7 @@
         [linhas]="linhas()"
         [celulaAlvo]="celulaAlvo()"
         [idsEmFoco]="idsEmFoco()"
+        [editavel]="periodo.editavel()"
         [vendoTodos]="vendoTodos()"
         [vendoVariasTurmas]="vendoVariasTurmas()"
         (sobrevoar)="aoSobrevoar($event)"
