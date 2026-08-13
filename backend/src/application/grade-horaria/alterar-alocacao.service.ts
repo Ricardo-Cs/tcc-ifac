@@ -1,4 +1,8 @@
-import { Inject, Injectable, ServiceUnavailableException } from '@nestjs/common';
+import {
+  Inject,
+  Injectable,
+  ServiceUnavailableException,
+} from '@nestjs/common';
 import {
   ALOCACOES_REPOSITORY,
   AlocacaoAlterada,

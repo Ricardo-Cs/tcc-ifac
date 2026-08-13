@@ -41,9 +41,7 @@ import { SnapshotLoader } from '../../../application/grade-horaria/ports';
  */
 @Injectable()
 export class SqlSnapshotLoader implements SnapshotLoader {
-  constructor(
-    @InjectDataSource() private readonly dataSource: DataSource,
-  ) {}
+  constructor(@InjectDataSource() private readonly dataSource: DataSource) {}
 
   async carregar(periodoLetivoId: string): Promise<DadosSnapshot> {
     const [
@@ -93,9 +91,7 @@ export class SqlSnapshotLoader implements SnapshotLoader {
       this.dataSource.query(
         `SELECT id, codigo, nome, tipo_sala_requerido FROM disciplina`,
       ),
-      this.dataSource.query(
-        `SELECT id, nome, tipo, capacidade FROM sala`,
-      ),
+      this.dataSource.query(`SELECT id, nome, tipo, capacidade FROM sala`),
       this.dataSource.query(
         `SELECT id, codigo, dia_semana, turno, ordem, hora_inicio, hora_fim FROM slot_horario`,
       ),
