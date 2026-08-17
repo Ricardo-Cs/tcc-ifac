@@ -7,7 +7,8 @@ import {
   Min,
   MaxLength,
 } from 'class-validator';
-import { TipoSala } from '../../../../domain/academico/enums';
+import { TipoSala } from '@domain/academico/enums';
+import { Disciplina } from '@domain/academico/disciplina';
 
 /** Corpo de criação de disciplina. */
 export class CriarDisciplinaDto {
@@ -60,4 +61,15 @@ export class DisciplinaResponseDto {
 
   @ApiProperty({ enum: TipoSala, nullable: true })
   tipoSalaRequerido: TipoSala | null;
+
+  /** Único ponto que traduz a Disciplina do domínio no contrato de resposta. */
+  static fromDomain(disciplina: Disciplina): DisciplinaResponseDto {
+    const dto = new DisciplinaResponseDto();
+    dto.id = disciplina.id;
+    dto.codigo = disciplina.codigo;
+    dto.nome = disciplina.nome;
+    dto.cargaHoraria = disciplina.cargaHoraria;
+    dto.tipoSalaRequerido = disciplina.tipoSalaRequerido;
+    return dto;
+  }
 }

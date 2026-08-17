@@ -2,10 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { InjectDataSource } from '@nestjs/typeorm';
 import { DataSource } from 'typeorm';
 import { StatusPeriodo } from '../../../domain/comum/enums';
-import {
-  PeriodoResumo,
-  PeriodosRepository,
-} from '../../../application/grade-horaria/ports';
+import { PeriodoResumo, PeriodosRepository } from '@domain/grade-horaria/ports';
 
 /**
  * Consulta de períodos letivos: listagem para a interface escolher e resolução

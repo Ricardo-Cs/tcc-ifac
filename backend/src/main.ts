@@ -26,7 +26,7 @@ async function bootstrap() {
     .setTitle('Chronos API')
     .setDescription(
       'API do Chronos — apoio à decisão para montagem de grade horária do ' +
-      'IFAC (campus Rio Branco). Cadastros acadêmicos e motor de conflitos.',
+        'IFAC (campus Rio Branco). Cadastros acadêmicos e motor de conflitos.',
     )
     .setVersion('1.0')
     .addTag('cursos', 'Cadastro de cursos')

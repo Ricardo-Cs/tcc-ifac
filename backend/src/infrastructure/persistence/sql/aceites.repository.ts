@@ -4,7 +4,7 @@ import { DataSource } from 'typeorm';
 import {
   AceitesRepository,
   RegistrarAceiteInput,
-} from '../../../application/grade-horaria/ports';
+} from '@domain/grade-horaria/ports';
 
 /**
  * Lê as chaves de aceite de um período. `conflito_aceito` não tem coluna de

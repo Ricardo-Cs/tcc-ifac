@@ -9,9 +9,15 @@ import {
   ConflitoForteNaoAceitavelError,
   chaveDoAceite,
 } from '../../domain/grade-horaria/aceite-conflito';
-import { AvaliarGradeService } from './avaliar-grade.service';
-import { ACEITES_REPOSITORY, USUARIOS_REPOSITORY } from './ports';
-import type { AceitesRepository, UsuariosRepository } from './ports';
+import { AvaliarGradeUseCase } from './avaliar-grade.use-case';
+import {
+  ACEITES_REPOSITORY,
+  USUARIOS_REPOSITORY,
+} from '@domain/grade-horaria/ports';
+import type {
+  AceitesRepository,
+  UsuariosRepository,
+} from '@domain/grade-horaria/ports';
 
 /**
  * Registra a decisão da comissão de conviver com um conflito. A severidade é
@@ -21,9 +27,9 @@ import type { AceitesRepository, UsuariosRepository } from './ports';
  * resolve-se. Só então grava.
  */
 @Injectable()
-export class AceitarConflitoService {
+export class AceitarConflitoUseCase {
   constructor(
-    private readonly avaliarGrade: AvaliarGradeService,
+    private readonly avaliarGrade: AvaliarGradeUseCase,
     @Inject(ACEITES_REPOSITORY)
     private readonly aceites: AceitesRepository,
     @Inject(USUARIOS_REPOSITORY)

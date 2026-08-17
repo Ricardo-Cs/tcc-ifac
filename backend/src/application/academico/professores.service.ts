@@ -4,15 +4,15 @@ import {
   AtualizarProfessorInput,
   CriarProfessorInput,
   Professor,
-} from './ports';
-import type { ProfessoresRepository } from './ports';
+} from '@domain/academico/professor';
+import type { ProfessoresRepository } from '@domain/academico/professor';
 
 @Injectable()
 export class ProfessoresService {
   constructor(
     @Inject(PROFESSORES_REPOSITORY)
     private readonly professores: ProfessoresRepository,
-  ) { }
+  ) {}
 
   listar(): Promise<Professor[]> {
     return this.professores.listar();

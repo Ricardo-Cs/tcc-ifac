@@ -8,7 +8,8 @@ import {
   Min,
   MaxLength,
 } from 'class-validator';
-import { Modalidade, Turno } from '../../../../domain/academico/enums';
+import { Modalidade, Turno } from '@domain/academico/enums';
+import { Curso } from '@domain/academico/curso';
 
 /** Corpo de criação de curso. */
 export class CriarCursoDto {
@@ -75,4 +76,17 @@ export class CursoResponseDto {
 
   @ApiProperty()
   ativo: boolean;
+
+  /** Único ponto que traduz o Curso do domínio no contrato de resposta. */
+  static fromDomain(curso: Curso): CursoResponseDto {
+    const dto = new CursoResponseDto();
+    dto.id = curso.id;
+    dto.nome = curso.nome;
+    dto.sigla = curso.sigla;
+    dto.modalidade = curso.modalidade;
+    dto.turnoPadrao = curso.turnoPadrao;
+    dto.cargaHoraria = curso.cargaHoraria;
+    dto.ativo = curso.ativo;
+    return dto;
+  }
 }

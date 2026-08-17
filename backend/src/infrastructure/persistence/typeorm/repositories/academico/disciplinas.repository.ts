@@ -6,7 +6,7 @@ import {
   CriarDisciplinaInput,
   Disciplina,
   DisciplinasRepository,
-} from '../../../../../application/academico/ports';
+} from '@domain/academico/disciplina';
 import { DisciplinaEntity } from '../../entities/academico/disciplina.entity';
 import {
   isViolacaoChaveEstrangeira,

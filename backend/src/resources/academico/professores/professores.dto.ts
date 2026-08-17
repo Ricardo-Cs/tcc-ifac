@@ -9,7 +9,8 @@ import {
   Matches,
   MaxLength,
 } from 'class-validator';
-import { GrupoRegime } from '../../../../domain/academico/enums';
+import { GrupoRegime } from '@domain/academico/enums';
+import { Professor } from '@domain/academico/professor';
 
 /** Corpo de criação de professor. */
 export class CriarProfessorDto {
@@ -102,4 +103,19 @@ export class ProfessorResponseDto {
 
   @ApiProperty()
   ativo: boolean;
+
+  /** Único ponto que traduz o Professor do domínio no contrato de resposta. */
+  static fromDomain(professor: Professor): ProfessorResponseDto {
+    const dto = new ProfessorResponseDto();
+    dto.id = professor.id;
+    dto.nome = professor.nome;
+    dto.email = professor.email;
+    dto.siape = professor.siape;
+    dto.titulacao = professor.titulacao;
+    dto.grupoRegime = professor.grupoRegime;
+    dto.ajusteCargaHoras = professor.ajusteCargaHoras;
+    dto.ajusteCargaMotivo = professor.ajusteCargaMotivo;
+    dto.ativo = professor.ativo;
+    return dto;
+  }
 }

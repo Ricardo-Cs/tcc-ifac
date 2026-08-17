@@ -20,12 +20,12 @@ import {
   ApiParam,
   ApiTags,
 } from '@nestjs/swagger';
-import { DisciplinasService } from '../../../application/academico/disciplinas.service';
+import { DisciplinasService } from '@application/academico/disciplinas.service';
 import {
   AtualizarDisciplinaDto,
   CriarDisciplinaDto,
   DisciplinaResponseDto,
-} from './dtos/disciplinas.dto';
+} from './disciplinas.dto';
 
 @ApiTags('disciplinas')
 @Controller('disciplinas')
@@ -37,8 +37,11 @@ export class DisciplinasController {
     summary: 'Lista todas as disciplinas, ordenadas por código.',
   })
   @ApiOkResponse({ type: DisciplinaResponseDto, isArray: true })
-  listar(): Promise<DisciplinaResponseDto[]> {
-    return this.disciplinas.listar();
+  async listar(): Promise<DisciplinaResponseDto[]> {
+    const disciplinas = await this.disciplinas.listar();
+    return disciplinas.map((disciplina) =>
+      DisciplinaResponseDto.fromDomain(disciplina),
+    );
   }
 
   @Get(':id')
@@ -46,10 +49,12 @@ export class DisciplinasController {
   @ApiParam({ name: 'id', format: 'uuid' })
   @ApiOkResponse({ type: DisciplinaResponseDto })
   @ApiNotFoundResponse({ description: 'Disciplina não encontrada.' })
-  buscar(
+  async buscar(
     @Param('id', ParseUUIDPipe) id: string,
   ): Promise<DisciplinaResponseDto> {
-    return this.disciplinas.buscarPorId(id);
+    return DisciplinaResponseDto.fromDomain(
+      await this.disciplinas.buscarPorId(id),
+    );
   }
 
   @Post()
@@ -58,8 +63,8 @@ export class DisciplinasController {
   @ApiConflictResponse({
     description: 'Já existe disciplina com o mesmo código.',
   })
-  criar(@Body() dto: CriarDisciplinaDto): Promise<DisciplinaResponseDto> {
-    return this.disciplinas.criar(dto);
+  async criar(@Body() dto: CriarDisciplinaDto): Promise<DisciplinaResponseDto> {
+    return DisciplinaResponseDto.fromDomain(await this.disciplinas.criar(dto));
   }
 
   @Patch(':id')
@@ -70,11 +75,13 @@ export class DisciplinasController {
   @ApiConflictResponse({
     description: 'Já existe disciplina com o mesmo código.',
   })
-  atualizar(
+  async atualizar(
     @Param('id', ParseUUIDPipe) id: string,
     @Body() dto: AtualizarDisciplinaDto,
   ): Promise<DisciplinaResponseDto> {
-    return this.disciplinas.atualizar(id, dto);
+    return DisciplinaResponseDto.fromDomain(
+      await this.disciplinas.atualizar(id, dto),
+    );
   }
 
   @Delete(':id')

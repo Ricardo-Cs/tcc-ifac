@@ -8,12 +8,12 @@ import {
   AlocacaoAlterada,
   MoverAlocacaoInput,
   USUARIOS_REPOSITORY,
-} from './ports';
+} from '@domain/grade-horaria/ports';
 import type {
   AlocacoesRepository,
   CriarAlocacaoInput,
   UsuariosRepository,
-} from './ports';
+} from '@domain/grade-horaria/ports';
 
 /** O que o cliente envia para criar uma aula — sem o autor, resolvido aqui. */
 export type NovaAlocacao = Omit<CriarAlocacaoInput, 'criadoPorId'>;
@@ -25,7 +25,7 @@ export type NovaAlocacao = Omit<CriarAlocacaoInput, 'criadoPorId'>;
  * pelo controller após a escrita) é que mostra o que acendeu.
  */
 @Injectable()
-export class AlterarAlocacaoService {
+export class AlterarAlocacaoUseCase {
   constructor(
     @Inject(ALOCACOES_REPOSITORY)
     private readonly alocacoes: AlocacoesRepository,

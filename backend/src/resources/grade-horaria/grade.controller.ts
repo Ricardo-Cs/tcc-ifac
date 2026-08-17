@@ -10,14 +10,14 @@ import {
   Patch,
   Post,
 } from '@nestjs/common';
-import { AvaliarGradeService } from '../../../application/grade-horaria/avaliar-grade.service';
-import { AlterarAlocacaoService } from '../../../application/grade-horaria/alterar-alocacao.service';
-import { AceitarConflitoService } from '../../../application/grade-horaria/aceitar-conflito.service';
+import { AvaliarGradeUseCase } from '@application/grade-horaria/avaliar-grade.use-case';
+import { AlterarAlocacaoUseCase } from '@application/grade-horaria/alterar-alocacao.use-case';
+import { AceitarConflitoUseCase } from '@application/grade-horaria/aceitar-conflito.use-case';
 import {
   PERIODOS_REPOSITORY,
   PeriodoResumo,
-} from '../../../application/grade-horaria/ports';
-import type { PeriodosRepository } from '../../../application/grade-horaria/ports';
+} from '@domain/grade-horaria/ports';
+import type { PeriodosRepository } from '@domain/grade-horaria/ports';
 import { GradeView, montarGradeView } from './grade.view';
 
 interface CriarAlocacaoBody {
@@ -48,9 +48,9 @@ interface AceitarConflitoBody {
 @Controller()
 export class GradeController {
   constructor(
-    private readonly avaliarGrade: AvaliarGradeService,
-    private readonly alterarAlocacao: AlterarAlocacaoService,
-    private readonly aceitarConflito: AceitarConflitoService,
+    private readonly avaliarGrade: AvaliarGradeUseCase,
+    private readonly alterarAlocacao: AlterarAlocacaoUseCase,
+    private readonly aceitarConflito: AceitarConflitoUseCase,
     @Inject(PERIODOS_REPOSITORY)
     private readonly periodos: PeriodosRepository,
   ) {}

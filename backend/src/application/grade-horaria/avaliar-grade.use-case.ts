@@ -6,8 +6,16 @@ import {
   SeveridadeConflito,
 } from '../../domain/grade-horaria/conflito';
 import { chaveConflito } from '../../domain/grade-horaria/chave-conflito';
-import { ACEITES_REPOSITORY, REGRAS, SNAPSHOT_LOADER } from './ports';
-import type { AceitesRepository, Regras, SnapshotLoader } from './ports';
+import {
+  ACEITES_REPOSITORY,
+  REGRAS,
+  SNAPSHOT_LOADER,
+} from '@domain/grade-horaria/ports';
+import type {
+  AceitesRepository,
+  Regras,
+  SnapshotLoader,
+} from '@domain/grade-horaria/ports';
 
 /** Um conflito ativo, já anotado com sua chave de identidade estável. */
 export interface ConflitoAvaliado extends Conflito {
@@ -32,7 +40,7 @@ export interface ResultadoAvaliacao {
  * mora nas `Regra` do domínio; aqui é só a sequência.
  */
 @Injectable()
-export class AvaliarGradeService {
+export class AvaliarGradeUseCase {
   constructor(
     @Inject(SNAPSHOT_LOADER) private readonly loader: SnapshotLoader,
     @Inject(ACEITES_REPOSITORY) private readonly aceites: AceitesRepository,

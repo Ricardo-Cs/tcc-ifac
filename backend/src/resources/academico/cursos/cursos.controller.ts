@@ -20,12 +20,12 @@ import {
   ApiParam,
   ApiTags,
 } from '@nestjs/swagger';
-import { CursosService } from '../../../application/academico/cursos.service';
+import { CursosService } from '@application/academico/cursos.service';
 import {
   AtualizarCursoDto,
   CriarCursoDto,
   CursoResponseDto,
-} from './dtos/cursos.dto';
+} from './cursos.dto';
 
 @ApiTags('cursos')
 @Controller('cursos')
@@ -35,8 +35,9 @@ export class CursosController {
   @Get()
   @ApiOperation({ summary: 'Lista todos os cursos, ordenados por sigla.' })
   @ApiOkResponse({ type: CursoResponseDto, isArray: true })
-  listar(): Promise<CursoResponseDto[]> {
-    return this.cursos.listar();
+  async listar(): Promise<CursoResponseDto[]> {
+    const cursos = await this.cursos.listar();
+    return cursos.map((curso) => CursoResponseDto.fromDomain(curso));
   }
 
   @Get(':id')
@@ -44,16 +45,18 @@ export class CursosController {
   @ApiParam({ name: 'id', format: 'uuid' })
   @ApiOkResponse({ type: CursoResponseDto })
   @ApiNotFoundResponse({ description: 'Curso não encontrado.' })
-  buscar(@Param('id', ParseUUIDPipe) id: string): Promise<CursoResponseDto> {
-    return this.cursos.buscarPorId(id);
+  async buscar(
+    @Param('id', ParseUUIDPipe) id: string,
+  ): Promise<CursoResponseDto> {
+    return CursoResponseDto.fromDomain(await this.cursos.buscarPorId(id));
   }
 
   @Post()
   @ApiOperation({ summary: 'Cadastra um novo curso.' })
   @ApiCreatedResponse({ type: CursoResponseDto })
   @ApiConflictResponse({ description: 'Já existe curso com a mesma sigla.' })
-  criar(@Body() dto: CriarCursoDto): Promise<CursoResponseDto> {
-    return this.cursos.criar(dto);
+  async criar(@Body() dto: CriarCursoDto): Promise<CursoResponseDto> {
+    return CursoResponseDto.fromDomain(await this.cursos.criar(dto));
   }
 
   @Patch(':id')
@@ -62,11 +65,11 @@ export class CursosController {
   @ApiOkResponse({ type: CursoResponseDto })
   @ApiNotFoundResponse({ description: 'Curso não encontrado.' })
   @ApiConflictResponse({ description: 'Já existe curso com a mesma sigla.' })
-  atualizar(
+  async atualizar(
     @Param('id', ParseUUIDPipe) id: string,
     @Body() dto: AtualizarCursoDto,
   ): Promise<CursoResponseDto> {
-    return this.cursos.atualizar(id, dto);
+    return CursoResponseDto.fromDomain(await this.cursos.atualizar(id, dto));
   }
 
   @Delete(':id')

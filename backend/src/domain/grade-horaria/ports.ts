@@ -1,14 +1,15 @@
 /**
- * Portas (interfaces) da camada de aplicação para o motor de conflitos. O
- * domínio é puro e não sabe carregar nada; a aplicação orquestra, e depende
- * DESTAS interfaces — nunca de implementações concretas de `infrastructure`.
- * A ligação (qual classe implementa cada porta) é feita no módulo Nest, por
- * token de injeção. Assim o domínio + a orquestração continuam testáveis sem
- * banco: basta uma implementação em memória das portas.
+ * Portas (interfaces) do motor de conflitos. O domínio declara AQUI o que
+ * precisa carregar/gravar, mas continua puro: não sabe *como* — depende
+ * DESTAS interfaces, nunca de implementações concretas de `infrastructure`.
+ * A camada de aplicação orquestra sobre elas; a ligação (qual classe de
+ * `infrastructure` satisfaz cada porta) é feita no módulo Nest, por token de
+ * injeção. Assim o domínio + a orquestração continuam testáveis sem banco:
+ * basta uma implementação em memória das portas.
  */
-import { DadosSnapshot } from '../../domain/grade-horaria/snapshot';
-import { StatusPeriodo } from '../../domain/comum/enums';
-import { Regra } from '../../domain/grade-horaria/regras/regra';
+import { DadosSnapshot } from './snapshot';
+import { StatusPeriodo } from '../comum/enums';
+import { Regra } from './regras/regra';
 
 /** Carrega o estado bruto de um período letivo para alimentar o motor. */
 export const SNAPSHOT_LOADER = Symbol('SNAPSHOT_LOADER');

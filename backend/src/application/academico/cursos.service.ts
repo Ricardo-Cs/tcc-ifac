@@ -4,15 +4,15 @@ import {
   AtualizarCursoInput,
   CriarCursoInput,
   Curso,
-} from './ports';
-import type { CursosRepository } from './ports';
+} from '@domain/academico/curso';
+import type { CursosRepository } from '@domain/academico/curso';
 
 @Injectable()
 export class CursosService {
   constructor(
     @Inject(CURSOS_REPOSITORY)
     private readonly cursos: CursosRepository,
-  ) { }
+  ) {}
 
   listar(): Promise<Curso[]> {
     return this.cursos.listar();

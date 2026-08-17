@@ -21,7 +21,7 @@ import {
   TurmaSnapshot,
   chaveProfessorSlot,
 } from '../../../domain/grade-horaria/snapshot';
-import { SnapshotLoader } from '../../../application/grade-horaria/ports';
+import { SnapshotLoader } from '@domain/grade-horaria/ports';
 
 /**
  * Loader do snapshot em SQL cru (`persistence/sql/`). Carrega o período inteiro

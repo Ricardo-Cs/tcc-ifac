@@ -33,21 +33,34 @@ npm run seed                 # popula dados de teste (grade SI 2026.2)
 
 Precisa de PostgreSQL 16 e das variáveis `DB_HOST/DB_PORT/DB_USER/DB_PASSWORD/DB_NAME` (ver `.env.example`). `assertDatabaseEnv` falha cedo e com a mesma mensagem tanto no CLI do TypeORM quanto no boot do Nest.
 
-## Arquitetura em camadas (layer-first)
+## Arquitetura em camadas (layer-first, 4 camadas + `resources`)
 
 ```
 src/
-├── domain/<contexto>/          TypeScript puro. Regra de negócio.
-├── application/<contexto>/      orquestração, portas (interfaces)   [planejado]
-└── infrastructure/
-    └── persistence/
-        ├── typeorm/            entidades, migrations, seeds, data-source
-        └── sql/                queries cruas (ex.: carga do snapshot) [planejado]
+├── domain/<contexto>/          TypeScript puro. Regra de negócio + PORTAS (interfaces).
+├── application/<contexto>/      orquestração (services / casos de uso).
+├── infrastructure/
+│   └── persistence/
+│       ├── typeorm/            entidades, seeds, data-source, repositórios
+│       └── sql/                queries cruas (ex.: carga do snapshot)
+└── resources/<contexto>/        camada de apresentação Nest: controllers, DTOs, módulo.
+    ├── <entidade>/             1 pasta por resource: <entidade>.controller.ts + <entidade>.dto.ts
+    └── <contexto>.module.ts    wiring do contexto (forFeature + providers dos resources)
 ```
 
-Contextos hoje: `comum`, `academico`, `grade-horaria` (`disponibilidade` é previsto, mas restrição de professor vive por ora em `academico`). As camadas `application/` e `persistence/sql/` ainda não existem — são o próximo passo (a porta do snapshot e o loader SQL). Hoje o motor de conflitos é alimentado por `construir-snapshot.ts` a partir de dados brutos.
+**4 camadas de topo**, sendo `resources/` a camada de apresentação (o "resource" idiomático do Nest). O domínio segue **funcional** (funções puras + interfaces anêmicas), _não_ aggregate/eventos — decisão deliberada; o motor de conflitos é o núcleo funcional e não deve virar OO com estado mutável.
 
-**Regra de dependência inviolável:** `domain/` NÃO importa TypeORM, NÃO importa NestJS, NÃO importa nada de `infrastructure/`. É a peça autoral do TCC e precisa ser testável sem banco.
+**Organização de `resources/`:** um **contexto com N resources** (ex.: `academico` → cursos/disciplinas/professores) usa **uma subpasta por resource** (`resources/academico/cursos/{cursos.controller.ts,cursos.dto.ts}`), com o `<contexto>.module.ts` na raiz do contexto amarrando os três. Um **resource único** (ex.: `grade-horaria` → só `GradeController`) fica flat, sem subpasta.
+
+**Convenções de nome:** casos de uso não-CRUD são `*.use-case.ts` com classe `*UseCase` (ex.: `avaliar-grade.use-case.ts` → `AvaliarGradeUseCase`); CRUD chato fica como service-por-agregado (`CursosService`). DTOs de resposta expõem um `static fromDomain(x): XResponseDto` — **único** ponto que traduz a entidade de domínio no contrato de saída; o controller sempre mapeia por ele (nunca devolve o objeto de domínio cru).
+
+Contextos hoje: `comum`, `academico`, `grade-horaria` (`disponibilidade` é previsto, mas restrição de professor vive por ora em `academico`).
+
+**Path aliases** (`tsconfig` `paths`, resolvidos pelo `nest build` no emit e pelo `moduleNameMapper` do Jest): `@domain/*`, `@application/*`, `@infrastructure/*`, `@resources/*`. Imports **entre camadas** usam alias; imports **dentro** da mesma pasta/contexto seguem relativos. O CLI do TypeORM (data-source, seeds, entidades) NÃO usa alias — roda via `ts-node` puro, então mantenha essa fatia com imports relativos.
+
+**As portas (interfaces de repositório) moram no `domain/`** (ex.: `domain/academico/curso.ts` declara `Curso` + `CursosRepository` + o token `CURSOS_REPOSITORY`; `domain/grade-horaria/ports.ts` declara `SnapshotLoader`, `AceitesRepository`, etc.). A `application/` orquestra sobre essas portas; a ligação porta→implementação é feita no módulo Nest de `resources/`, por token de injeção. `infrastructure/` implementa as portas.
+
+**Regra de dependência inviolável:** `domain/` NÃO importa TypeORM, NÃO importa NestJS, NÃO importa nada de `application/`, `infrastructure/` ou `resources/`. É a peça autoral do TCC e precisa ser testável sem banco. O sentido das dependências é `resources → application → domain` e `infrastructure → domain` (implementa as portas).
 
 **Fonte da verdade dos enums de domínio:** os enums vivem em `domain/` (ex.: `domain/grade-horaria/conflito.ts` define `TipoConflito`/`SeveridadeConflito`). As entidades TypeORM os **re-exportam** a partir do domínio — nunca redefinem.
 

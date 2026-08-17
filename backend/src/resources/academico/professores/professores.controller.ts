@@ -20,12 +20,12 @@ import {
   ApiParam,
   ApiTags,
 } from '@nestjs/swagger';
-import { ProfessoresService } from '../../../application/academico/professores.service';
+import { ProfessoresService } from '@application/academico/professores.service';
 import {
   AtualizarProfessorDto,
   CriarProfessorDto,
   ProfessorResponseDto,
-} from './dtos/professores.dto';
+} from './professores.dto';
 
 @ApiTags('professores')
 @Controller('professores')
@@ -35,8 +35,11 @@ export class ProfessoresController {
   @Get()
   @ApiOperation({ summary: 'Lista todos os professores, ordenados por nome.' })
   @ApiOkResponse({ type: ProfessorResponseDto, isArray: true })
-  listar(): Promise<ProfessorResponseDto[]> {
-    return this.professores.listar();
+  async listar(): Promise<ProfessorResponseDto[]> {
+    const professores = await this.professores.listar();
+    return professores.map((professor) =>
+      ProfessorResponseDto.fromDomain(professor),
+    );
   }
 
   @Get(':id')
@@ -44,10 +47,12 @@ export class ProfessoresController {
   @ApiParam({ name: 'id', format: 'uuid' })
   @ApiOkResponse({ type: ProfessorResponseDto })
   @ApiNotFoundResponse({ description: 'Professor não encontrado.' })
-  buscar(
+  async buscar(
     @Param('id', ParseUUIDPipe) id: string,
   ): Promise<ProfessorResponseDto> {
-    return this.professores.buscarPorId(id);
+    return ProfessorResponseDto.fromDomain(
+      await this.professores.buscarPorId(id),
+    );
   }
 
   @Post()
@@ -56,8 +61,8 @@ export class ProfessoresController {
   @ApiConflictResponse({
     description: 'Já existe professor com o mesmo SIAPE.',
   })
-  criar(@Body() dto: CriarProfessorDto): Promise<ProfessorResponseDto> {
-    return this.professores.criar(dto);
+  async criar(@Body() dto: CriarProfessorDto): Promise<ProfessorResponseDto> {
+    return ProfessorResponseDto.fromDomain(await this.professores.criar(dto));
   }
 
   @Patch(':id')
@@ -68,11 +73,13 @@ export class ProfessoresController {
   @ApiConflictResponse({
     description: 'Já existe professor com o mesmo SIAPE.',
   })
-  atualizar(
+  async atualizar(
     @Param('id', ParseUUIDPipe) id: string,
     @Body() dto: AtualizarProfessorDto,
   ): Promise<ProfessorResponseDto> {
-    return this.professores.atualizar(id, dto);
+    return ProfessorResponseDto.fromDomain(
+      await this.professores.atualizar(id, dto),
+    );
   }
 
   @Delete(':id')

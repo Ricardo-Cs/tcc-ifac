@@ -4,15 +4,15 @@ import {
   AtualizarDisciplinaInput,
   CriarDisciplinaInput,
   Disciplina,
-} from './ports';
-import type { DisciplinasRepository } from './ports';
+} from '@domain/academico/disciplina';
+import type { DisciplinasRepository } from '@domain/academico/disciplina';
 
 @Injectable()
 export class DisciplinasService {
   constructor(
     @Inject(DISCIPLINAS_REPOSITORY)
     private readonly disciplinas: DisciplinasRepository,
-  ) { }
+  ) {}
 
   listar(): Promise<Disciplina[]> {
     return this.disciplinas.listar();

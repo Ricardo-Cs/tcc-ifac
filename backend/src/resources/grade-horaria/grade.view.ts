@@ -4,17 +4,17 @@
  * conflitos. É a fronteira entre o domínio e o mundo HTTP — o controller não
  * devolve o `GradeSnapshot` cru, que é estrutura de trabalho do motor.
  */
-import { ResultadoAvaliacao } from '../../../application/grade-horaria/avaliar-grade.service';
+import { ResultadoAvaliacao } from '@application/grade-horaria/avaliar-grade.use-case';
 import {
   Conflito,
   SeveridadeConflito,
   TipoConflito,
-} from '../../../domain/grade-horaria/conflito';
+} from '@domain/grade-horaria/conflito';
 import {
   CursoSnapshot,
   GradeSnapshot,
   TurmaSnapshot,
-} from '../../../domain/grade-horaria/snapshot';
+} from '@domain/grade-horaria/snapshot';
 
 export interface AulaView {
   id: string;

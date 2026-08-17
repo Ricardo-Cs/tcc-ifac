@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { InjectDataSource } from '@nestjs/typeorm';
 import { DataSource } from 'typeorm';
-import { UsuariosRepository } from '../../../application/grade-horaria/ports';
+import { UsuariosRepository } from '@domain/grade-horaria/ports';
 
 /**
  * Resolução de usuário para o protótipo (sem autenticação): devolve um autor

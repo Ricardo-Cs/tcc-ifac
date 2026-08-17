@@ -1,7 +1,7 @@
 import { Module } from '@nestjs/common';
-import { AvaliarGradeService } from '../../../application/grade-horaria/avaliar-grade.service';
-import { AlterarAlocacaoService } from '../../../application/grade-horaria/alterar-alocacao.service';
-import { AceitarConflitoService } from '../../../application/grade-horaria/aceitar-conflito.service';
+import { AvaliarGradeUseCase } from '@application/grade-horaria/avaliar-grade.use-case';
+import { AlterarAlocacaoUseCase } from '@application/grade-horaria/alterar-alocacao.use-case';
+import { AceitarConflitoUseCase } from '@application/grade-horaria/aceitar-conflito.use-case';
 import {
   ACEITES_REPOSITORY,
   ALOCACOES_REPOSITORY,
@@ -10,14 +10,14 @@ import {
   Regras,
   SNAPSHOT_LOADER,
   USUARIOS_REPOSITORY,
-} from '../../../application/grade-horaria/ports';
-import { SqlSnapshotLoader } from '../../persistence/sql/snapshot.loader';
-import { SqlAceitesRepository } from '../../persistence/sql/aceites.repository';
-import { SqlPeriodosRepository } from '../../persistence/sql/periodos.repository';
-import { SqlAlocacoesRepository } from '../../persistence/sql/alocacoes.repository';
-import { SqlUsuariosRepository } from '../../persistence/sql/usuarios.repository';
-import { RegraProfessorDuplicado } from '../../../domain/grade-horaria/regras/professor-duplicado';
-import { RegraTurmaDuplicada } from '../../../domain/grade-horaria/regras/turma-duplicada';
+} from '@domain/grade-horaria/ports';
+import { SqlSnapshotLoader } from '@infrastructure/persistence/sql/snapshot.loader';
+import { SqlAceitesRepository } from '@infrastructure/persistence/sql/aceites.repository';
+import { SqlPeriodosRepository } from '@infrastructure/persistence/sql/periodos.repository';
+import { SqlAlocacoesRepository } from '@infrastructure/persistence/sql/alocacoes.repository';
+import { SqlUsuariosRepository } from '@infrastructure/persistence/sql/usuarios.repository';
+import { RegraProfessorDuplicado } from '@domain/grade-horaria/regras/professor-duplicado';
+import { RegraTurmaDuplicada } from '@domain/grade-horaria/regras/turma-duplicada';
 import { GradeController } from './grade.controller';
 
 /**
@@ -29,9 +29,9 @@ import { GradeController } from './grade.controller';
 @Module({
   controllers: [GradeController],
   providers: [
-    AvaliarGradeService,
-    AlterarAlocacaoService,
-    AceitarConflitoService,
+    AvaliarGradeUseCase,
+    AlterarAlocacaoUseCase,
+    AceitarConflitoUseCase,
     { provide: SNAPSHOT_LOADER, useClass: SqlSnapshotLoader },
     { provide: ACEITES_REPOSITORY, useClass: SqlAceitesRepository },
     { provide: PERIODOS_REPOSITORY, useClass: SqlPeriodosRepository },

@@ -6,7 +6,7 @@ import {
   AlocacoesRepository,
   CriarAlocacaoInput,
   MoverAlocacaoInput,
-} from '../../../application/grade-horaria/ports';
+} from '@domain/grade-horaria/ports';
 
 /**
  * Escrita de alocações em SQL cru. `id`, `criado_em` e `atualizado_em` vêm dos

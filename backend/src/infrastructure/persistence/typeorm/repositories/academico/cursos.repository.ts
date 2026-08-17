@@ -6,7 +6,7 @@ import {
   CriarCursoInput,
   Curso,
   CursosRepository,
-} from '../../../../../application/academico/ports';
+} from '@domain/academico/curso';
 import { CursoEntity } from '../../entities/academico/curso.entity';
 import {
   isViolacaoChaveEstrangeira,

@@ -6,7 +6,7 @@ import {
   CriarProfessorInput,
   Professor,
   ProfessoresRepository,
-} from '../../../../../application/academico/ports';
+} from '@domain/academico/professor';
 import { ProfessorEntity } from '../../entities/academico/professor.entity';
 import {
   isViolacaoChaveEstrangeira,
