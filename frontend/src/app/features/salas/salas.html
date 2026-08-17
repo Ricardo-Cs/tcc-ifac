@@ -1,0 +1,96 @@
+<div class="p-6">
+  <app-listagem
+    [itens]="salas()"
+    [colunas]="colunas"
+    [filtros]="filtros"
+    [textoBusca]="textoBusca"
+    [mostrarImportar]="false"
+    entidade="salas"
+    (adicionar)="abrirNovo()"
+  >
+    <ng-template appLinhaListagem let-s>
+      <td class="px-4 py-3 font-medium text-foreground">{{ s.nome }}</td>
+      <td class="px-4 py-3 text-muted-foreground">{{ rotuloTipo(s.tipo) }}</td>
+      <td class="px-4 py-3 text-muted-foreground">{{ s.capacidade ?? '—' }}</td>
+      <td class="px-4 py-3">
+        <div class="flex items-center justify-end gap-0.5">
+          <button hlmBtn variant="ghost" size="icon-sm" type="button" title="Editar" (click)="editar(s)">
+            <ng-icon name="lucidePencil" size="1rem" />
+          </button>
+          <button
+            hlmBtn
+            variant="ghost"
+            size="icon-sm"
+            type="button"
+            title="Remover"
+            class="text-muted-foreground hover:text-destructive"
+            (click)="pedirRemocao(s)"
+          >
+            <ng-icon name="lucideTrash2" size="1rem" />
+          </button>
+        </div>
+      </td>
+    </ng-template>
+  </app-listagem>
+</div>
+
+<!-- Criar/editar: um diálogo só, controlado pelo signal `dialogAberto`. -->
+<hlm-dialog [state]="dialogAberto() ? 'open' : 'closed'" (closed)="fecharDialog()">
+  <hlm-dialog-content *hlmDialogPortal class="sm:max-w-md">
+    <hlm-dialog-header>
+      <h3 hlmDialogTitle>{{ tituloDialog() }}</h3>
+      <p hlmDialogDescription>Espaço físico onde uma aula pode ser alocada.</p>
+    </hlm-dialog-header>
+
+    <form class="grid gap-4 py-2" (ngSubmit)="salvar()">
+      <div class="grid gap-1.5">
+        <label class="text-sm font-medium" for="sala-nome">Nome</label>
+        <input hlmInput id="sala-nome" [ngModel]="rascunho().nome" name="nome"
+          (ngModelChange)="atualizar('nome', $event)" placeholder="Ex.: Laboratório 1" />
+      </div>
+
+      <div class="grid gap-1.5">
+        <label class="text-sm font-medium">Tipo</label>
+        <hlm-select [ngModel]="rascunho().tipo" name="tipo"
+          [itemToString]="rotuloTipo" (ngModelChange)="atualizar('tipo', $event)">
+          <hlm-select-trigger class="w-full">
+            <hlm-select-value placeholder="Selecione o tipo" />
+          </hlm-select-trigger>
+          <hlm-select-content *hlmSelectPortal>
+            @for (t of tiposSala; track t.valor) {
+            <hlm-select-item [value]="t.valor">{{ t.rotulo }}</hlm-select-item>
+            }
+          </hlm-select-content>
+        </hlm-select>
+      </div>
+
+      <div class="grid gap-1.5">
+        <label class="text-sm font-medium" for="sala-capacidade">Capacidade (opcional)</label>
+        <input hlmInput id="sala-capacidade" type="number" min="0" step="1"
+          [ngModel]="rascunho().capacidade" name="capacidade"
+          (ngModelChange)="atualizar('capacidade', $event)" placeholder="Ex.: 30" />
+      </div>
+    </form>
+
+    <hlm-dialog-footer>
+      <button hlmBtn variant="outline" type="button" (click)="fecharDialog()">Cancelar</button>
+      <button hlmBtn type="button" [disabled]="salvando()" (click)="salvar()">Salvar</button>
+    </hlm-dialog-footer>
+  </hlm-dialog-content>
+</hlm-dialog>
+
+<!-- Confirmar remoção: destrutivo, então nunca num clique só. -->
+<hlm-dialog [state]="removendo() ? 'open' : 'closed'" (closed)="cancelarRemocao()">
+  <hlm-dialog-content *hlmDialogPortal class="sm:max-w-md">
+    <hlm-dialog-header>
+      <h3 hlmDialogTitle>Remover sala</h3>
+      <p hlmDialogDescription>
+        Remover <strong>{{ removendo()?.nome }}</strong>? Esta ação não pode ser desfeita.
+      </p>
+    </hlm-dialog-header>
+    <hlm-dialog-footer>
+      <button hlmBtn variant="outline" type="button" (click)="cancelarRemocao()">Cancelar</button>
+      <button hlmBtn variant="destructive" type="button" [disabled]="salvando()" (click)="confirmarRemocao()">Remover</button>
+    </hlm-dialog-footer>
+  </hlm-dialog-content>
+</hlm-dialog>

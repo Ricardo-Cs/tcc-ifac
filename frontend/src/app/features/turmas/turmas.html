@@ -1,0 +1,108 @@
+<div class="p-6">
+  <app-listagem
+    [itens]="turmas()"
+    [colunas]="colunas"
+    [filtros]="filtros"
+    [textoBusca]="textoBusca"
+    [mostrarImportar]="false"
+    entidade="turmas"
+    (adicionar)="abrirNovo()"
+  >
+    <ng-template appLinhaListagem let-t>
+      <td class="px-4 py-3">
+        <span
+          class="inline-flex items-center rounded-md bg-primary/10 px-2 py-0.5 text-xs font-semibold tracking-wide text-primary"
+        >{{ t.cursoSigla }}</span>
+      </td>
+      <td class="px-4 py-3 font-medium text-foreground">{{ t.nome }}</td>
+      <td class="px-4 py-3 text-muted-foreground">{{ t.semestreEntrada }}</td>
+      <td class="px-4 py-3 text-muted-foreground">{{ t.quantidadeAlunos ?? '—' }}</td>
+      <td class="px-4 py-3">
+        <div class="flex items-center justify-end gap-0.5">
+          <button hlmBtn variant="ghost" size="icon-sm" type="button" title="Editar" (click)="editar(t)">
+            <ng-icon name="lucidePencil" size="1rem" />
+          </button>
+          <button
+            hlmBtn
+            variant="ghost"
+            size="icon-sm"
+            type="button"
+            title="Remover"
+            class="text-muted-foreground hover:text-destructive"
+            (click)="pedirRemocao(t)"
+          >
+            <ng-icon name="lucideTrash2" size="1rem" />
+          </button>
+        </div>
+      </td>
+    </ng-template>
+  </app-listagem>
+</div>
+
+<!-- Criar/editar: um diálogo só, controlado pelo signal `dialogAberto`. -->
+<hlm-dialog [state]="dialogAberto() ? 'open' : 'closed'" (closed)="fecharDialog()">
+  <hlm-dialog-content *hlmDialogPortal class="sm:max-w-md">
+    <hlm-dialog-header>
+      <h3 hlmDialogTitle>{{ tituloDialog() }}</h3>
+      <p hlmDialogDescription>Turma pertence a um curso (curso › turma da grade).</p>
+    </hlm-dialog-header>
+
+    <form class="grid gap-4 py-2" (ngSubmit)="salvar()">
+      <div class="grid gap-1.5">
+        <label class="text-sm font-medium">Curso</label>
+        <hlm-select [ngModel]="rascunho().cursoId" name="curso"
+          [itemToString]="rotuloCurso" (ngModelChange)="atualizar('cursoId', $event)">
+          <hlm-select-trigger class="w-full">
+            <hlm-select-value placeholder="Selecione o curso" />
+          </hlm-select-trigger>
+          <hlm-select-content *hlmSelectPortal>
+            @for (c of cursos(); track c.id) {
+            <hlm-select-item [value]="c.id">{{ c.sigla }} — {{ c.nome }}</hlm-select-item>
+            }
+          </hlm-select-content>
+        </hlm-select>
+      </div>
+
+      <div class="grid gap-1.5">
+        <label class="text-sm font-medium" for="turma-nome">Nome</label>
+        <input hlmInput id="turma-nome" [ngModel]="rascunho().nome" name="nome"
+          (ngModelChange)="atualizar('nome', $event)" placeholder="Ex.: SI 2024.1" />
+      </div>
+
+      <div class="grid gap-1.5">
+        <label class="text-sm font-medium" for="turma-ingresso">Semestre de ingresso</label>
+        <input hlmInput id="turma-ingresso" [ngModel]="rascunho().semestreEntrada" name="semestreEntrada"
+          (ngModelChange)="atualizar('semestreEntrada', $event)" placeholder="Ex.: 2024.1" />
+      </div>
+
+      <div class="grid gap-1.5">
+        <label class="text-sm font-medium" for="turma-alunos">Quantidade de alunos (opcional)</label>
+        <input hlmInput id="turma-alunos" type="number" min="0" step="1"
+          [ngModel]="rascunho().quantidadeAlunos" name="quantidadeAlunos"
+          (ngModelChange)="atualizar('quantidadeAlunos', $event)" placeholder="Ex.: 40" />
+      </div>
+    </form>
+
+    <hlm-dialog-footer>
+      <button hlmBtn variant="outline" type="button" (click)="fecharDialog()">Cancelar</button>
+      <button hlmBtn type="button" [disabled]="salvando()" (click)="salvar()">Salvar</button>
+    </hlm-dialog-footer>
+  </hlm-dialog-content>
+</hlm-dialog>
+
+<!-- Confirmar remoção: destrutivo, então nunca num clique só. -->
+<hlm-dialog [state]="removendo() ? 'open' : 'closed'" (closed)="cancelarRemocao()">
+  <hlm-dialog-content *hlmDialogPortal class="sm:max-w-md">
+    <hlm-dialog-header>
+      <h3 hlmDialogTitle>Remover turma</h3>
+      <p hlmDialogDescription>
+        Remover <strong>{{ removendo()?.cursoSigla }} — {{ removendo()?.nome }}</strong>? Esta ação
+        não pode ser desfeita.
+      </p>
+    </hlm-dialog-header>
+    <hlm-dialog-footer>
+      <button hlmBtn variant="outline" type="button" (click)="cancelarRemocao()">Cancelar</button>
+      <button hlmBtn variant="destructive" type="button" [disabled]="salvando()" (click)="confirmarRemocao()">Remover</button>
+    </hlm-dialog-footer>
+  </hlm-dialog-content>
+</hlm-dialog>

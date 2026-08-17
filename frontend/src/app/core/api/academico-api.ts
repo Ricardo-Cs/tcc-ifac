@@ -1,17 +1,26 @@
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpParams } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 import { API_BASE } from './api-base';
 import {
   AtualizarCurso,
   AtualizarDisciplina,
+  AtualizarOferta,
   AtualizarProfessor,
+  AtualizarSala,
+  AtualizarTurma,
   CriarCurso,
   CriarDisciplina,
+  CriarOferta,
   CriarProfessor,
+  CriarSala,
+  CriarTurma,
   Curso,
   Disciplina,
+  Oferta,
   Professor,
+  Sala,
+  Turma,
 } from '../models/academico.models';
 
 @Injectable({ providedIn: 'root' })
@@ -73,5 +82,59 @@ export class AcademicoApi {
 
   removerDisciplina(id: string): Observable<void> {
     return this.http.delete<void>(`${API_BASE}/disciplinas/${id}`);
+  }
+
+
+  listarTurmas(): Observable<Turma[]> {
+    return this.http.get<Turma[]>(`${API_BASE}/turmas`);
+  }
+
+  criarTurma(dados: CriarTurma): Observable<Turma> {
+    return this.http.post<Turma>(`${API_BASE}/turmas`, dados);
+  }
+
+  atualizarTurma(id: string, dados: AtualizarTurma): Observable<Turma> {
+    return this.http.patch<Turma>(`${API_BASE}/turmas/${id}`, dados);
+  }
+
+  removerTurma(id: string): Observable<void> {
+    return this.http.delete<void>(`${API_BASE}/turmas/${id}`);
+  }
+
+
+  listarSalas(): Observable<Sala[]> {
+    return this.http.get<Sala[]>(`${API_BASE}/salas`);
+  }
+
+  criarSala(dados: CriarSala): Observable<Sala> {
+    return this.http.post<Sala>(`${API_BASE}/salas`, dados);
+  }
+
+  atualizarSala(id: string, dados: AtualizarSala): Observable<Sala> {
+    return this.http.patch<Sala>(`${API_BASE}/salas/${id}`, dados);
+  }
+
+  removerSala(id: string): Observable<void> {
+    return this.http.delete<void>(`${API_BASE}/salas/${id}`);
+  }
+
+
+  listarOfertas(periodoLetivoId?: string): Observable<Oferta[]> {
+    const params = periodoLetivoId
+      ? new HttpParams().set('periodoLetivoId', periodoLetivoId)
+      : undefined;
+    return this.http.get<Oferta[]>(`${API_BASE}/ofertas`, { params });
+  }
+
+  criarOferta(dados: CriarOferta): Observable<Oferta> {
+    return this.http.post<Oferta>(`${API_BASE}/ofertas`, dados);
+  }
+
+  atualizarOferta(id: string, dados: AtualizarOferta): Observable<Oferta> {
+    return this.http.patch<Oferta>(`${API_BASE}/ofertas/${id}`, dados);
+  }
+
+  removerOferta(id: string): Observable<void> {
+    return this.http.delete<void>(`${API_BASE}/ofertas/${id}`);
   }
 }

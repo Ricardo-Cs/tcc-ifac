@@ -1,0 +1,215 @@
+<div class="flex flex-col gap-4 p-6">
+  <!-- Barra de período: ofertas são recortadas pelo período em foco. -->
+  <div class="flex flex-wrap items-center gap-3">
+    <label class="text-sm font-medium text-muted-foreground">Período letivo</label>
+    <hlm-select
+      [ngModel]="periodoState.selecionado()?.codigo"
+      name="periodo"
+      (ngModelChange)="periodoState.selecionar($event)"
+    >
+      <hlm-select-trigger class="w-44">
+        <hlm-select-value placeholder="Período" />
+      </hlm-select-trigger>
+      <hlm-select-content *hlmSelectPortal>
+        @for (p of periodoState.periodos(); track p.id) {
+        <hlm-select-item [value]="p.codigo">{{ p.codigo }}</hlm-select-item>
+        }
+      </hlm-select-content>
+    </hlm-select>
+    @if (!editavel()) {
+    <span
+      class="inline-flex items-center rounded-md bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground"
+    >Somente leitura — período não é o corrente</span>
+    }
+  </div>
+
+  <app-listagem
+    [itens]="ofertas()"
+    [colunas]="colunas"
+    [filtros]="filtros"
+    [textoBusca]="textoBusca"
+    [mostrarImportar]="false"
+    [mostrarAdicionar]="editavel()"
+    entidade="ofertas"
+    (adicionar)="abrirNovo()"
+  >
+    <ng-template appLinhaListagem let-o>
+      <td class="px-4 py-3">
+        <div class="flex flex-col">
+          <span class="font-medium text-foreground">{{ o.turmaNome }}</span>
+          <span class="text-xs text-muted-foreground">{{ o.cursoSigla }}</span>
+        </div>
+      </td>
+      <td class="px-4 py-3">
+        <div class="flex flex-col">
+          <span class="font-medium text-foreground">{{ o.disciplinaNome }}</span>
+          <span class="text-xs text-muted-foreground">{{ o.disciplinaCodigo }}</span>
+        </div>
+      </td>
+      <td class="px-4 py-3 text-muted-foreground">{{ rotuloRegime(o.regime) }}</td>
+      <td class="px-4 py-3 text-muted-foreground">{{ o.aulasSemana }}</td>
+      <td class="px-4 py-3 text-muted-foreground">{{ resumoProfessores(o) }}</td>
+      <td class="px-4 py-3">
+        @if (editavel()) {
+        <div class="flex items-center justify-end gap-0.5">
+          <button hlmBtn variant="ghost" size="icon-sm" type="button" title="Editar" (click)="editar(o)">
+            <ng-icon name="lucidePencil" size="1rem" />
+          </button>
+          <button
+            hlmBtn
+            variant="ghost"
+            size="icon-sm"
+            type="button"
+            title="Remover"
+            class="text-muted-foreground hover:text-destructive"
+            (click)="pedirRemocao(o)"
+          >
+            <ng-icon name="lucideTrash2" size="1rem" />
+          </button>
+        </div>
+        } @else {
+        <div class="text-right text-xs text-muted-foreground">—</div>
+        }
+      </td>
+    </ng-template>
+  </app-listagem>
+</div>
+
+<!-- Criar/editar: um diálogo só, controlado pelo signal `dialogAberto`. -->
+<hlm-dialog [state]="dialogAberto() ? 'open' : 'closed'" (closed)="fecharDialog()">
+  <hlm-dialog-content *hlmDialogPortal class="sm:max-w-lg">
+    <hlm-dialog-header>
+      <h3 hlmDialogTitle>{{ tituloDialog() }}</h3>
+      <p hlmDialogDescription>
+        Oferta de uma disciplina para uma turma no período em foco, com a codocência.
+      </p>
+    </hlm-dialog-header>
+
+    <form class="grid max-h-[70vh] gap-4 overflow-y-auto py-2 pe-1" (ngSubmit)="salvar()">
+      <div class="grid gap-1.5">
+        <label class="text-sm font-medium">Turma</label>
+        <hlm-select [ngModel]="rascunho().turmaId" name="turma"
+          [itemToString]="rotuloTurma" (ngModelChange)="atualizar('turmaId', $event)">
+          <hlm-select-trigger class="w-full">
+            <hlm-select-value placeholder="Selecione a turma" />
+          </hlm-select-trigger>
+          <hlm-select-content *hlmSelectPortal>
+            @for (t of turmas(); track t.id) {
+            <hlm-select-item [value]="t.id">{{ t.cursoSigla }} — {{ t.nome }}</hlm-select-item>
+            }
+          </hlm-select-content>
+        </hlm-select>
+      </div>
+
+      <div class="grid gap-1.5">
+        <label class="text-sm font-medium">Disciplina</label>
+        <hlm-select [ngModel]="rascunho().disciplinaId" name="disciplina"
+          [itemToString]="rotuloDisciplina" (ngModelChange)="atualizar('disciplinaId', $event)">
+          <hlm-select-trigger class="w-full">
+            <hlm-select-value placeholder="Selecione a disciplina" />
+          </hlm-select-trigger>
+          <hlm-select-content *hlmSelectPortal>
+            @for (d of disciplinas(); track d.id) {
+            <hlm-select-item [value]="d.id">{{ d.codigo }} — {{ d.nome }}</hlm-select-item>
+            }
+          </hlm-select-content>
+        </hlm-select>
+      </div>
+
+      <div class="grid grid-cols-2 gap-4">
+        <div class="grid gap-1.5">
+          <label class="text-sm font-medium">Regime</label>
+          <hlm-select [ngModel]="rascunho().regime" name="regime"
+            [itemToString]="rotuloRegime" (ngModelChange)="atualizar('regime', $event)">
+            <hlm-select-trigger class="w-full">
+              <hlm-select-value placeholder="Regime" />
+            </hlm-select-trigger>
+            <hlm-select-content *hlmSelectPortal>
+              @for (r of regimes; track r.valor) {
+              <hlm-select-item [value]="r.valor">{{ r.rotulo }}</hlm-select-item>
+              }
+            </hlm-select-content>
+          </hlm-select>
+        </div>
+
+        <div class="grid gap-1.5">
+          <label class="text-sm font-medium" for="oferta-aulas">Aulas por semana</label>
+          <input hlmInput id="oferta-aulas" type="number" min="1" step="1"
+            [ngModel]="rascunho().aulasSemana" name="aulasSemana"
+            (ngModelChange)="atualizar('aulasSemana', $event)" placeholder="Ex.: 2" />
+        </div>
+      </div>
+
+      <!-- Codocência: linhas dinâmicas professor + proporção. -->
+      <div class="grid gap-2">
+        <div class="flex items-center justify-between">
+          <label class="text-sm font-medium">Professores (codocência)</label>
+          <span class="text-xs" [class.text-destructive]="somaProporcoes() !== 100"
+            [class.text-muted-foreground]="somaProporcoes() === 100">
+            Soma: {{ somaProporcoes() }}% / 100%
+          </span>
+        </div>
+
+        @for (p of rascunho().professores; track $index) {
+        <div class="flex items-end gap-2">
+          <div class="grid flex-1 gap-1.5">
+            <hlm-select [ngModel]="p.professorId" [name]="'prof-' + $index"
+              [itemToString]="rotuloProfessor"
+              (ngModelChange)="atualizarProfessor($index, 'professorId', $event)">
+              <hlm-select-trigger class="w-full">
+                <hlm-select-value placeholder="Professor" />
+              </hlm-select-trigger>
+              <hlm-select-content *hlmSelectPortal>
+                @for (prof of professores(); track prof.id) {
+                <hlm-select-item [value]="prof.id">{{ prof.nome }}</hlm-select-item>
+                }
+              </hlm-select-content>
+            </hlm-select>
+          </div>
+          <input hlmInput class="w-20" type="number" min="0" max="100" step="0.01"
+            [ngModel]="p.proporcaoCarga" [name]="'prop-' + $index"
+            (ngModelChange)="atualizarProfessor($index, 'proporcaoCarga', $event)" placeholder="%" />
+          <button hlmBtn variant="ghost" size="icon" type="button" title="Remover professor"
+            [disabled]="rascunho().professores.length === 1" (click)="removerProfessor($index)">
+            <ng-icon name="lucideX" size="1rem" />
+          </button>
+        </div>
+        }
+
+        <button hlmBtn variant="outline" size="sm" type="button" class="justify-self-start"
+          (click)="adicionarProfessor()">
+          <ng-icon name="lucidePlus" size="1rem" class="mr-1" /> Adicionar professor
+        </button>
+      </div>
+
+      <div class="grid gap-1.5">
+        <label class="text-sm font-medium" for="oferta-obs">Observações (opcional)</label>
+        <input hlmInput id="oferta-obs" [ngModel]="rascunho().observacoes" name="observacoes"
+          (ngModelChange)="atualizar('observacoes', $event)" placeholder="Anotações da comissão" />
+      </div>
+    </form>
+
+    <hlm-dialog-footer>
+      <button hlmBtn variant="outline" type="button" (click)="fecharDialog()">Cancelar</button>
+      <button hlmBtn type="button" [disabled]="salvando()" (click)="salvar()">Salvar</button>
+    </hlm-dialog-footer>
+  </hlm-dialog-content>
+</hlm-dialog>
+
+<!-- Confirmar remoção: destrutivo, então nunca num clique só. -->
+<hlm-dialog [state]="removendo() ? 'open' : 'closed'" (closed)="cancelarRemocao()">
+  <hlm-dialog-content *hlmDialogPortal class="sm:max-w-md">
+    <hlm-dialog-header>
+      <h3 hlmDialogTitle>Remover oferta</h3>
+      <p hlmDialogDescription>
+        Remover a oferta de <strong>{{ removendo()?.disciplinaCodigo }}</strong> para
+        <strong>{{ removendo()?.turmaNome }}</strong>? Isso apaga também as alocações dessa oferta na
+        grade. Esta ação não pode ser desfeita.
+      </p>
+    </hlm-dialog-header>
+    <hlm-dialog-footer>
+      <button hlmBtn variant="outline" type="button" (click)="cancelarRemocao()">Cancelar</button>
+      <button hlmBtn variant="destructive" type="button" [disabled]="salvando()" (click)="confirmarRemocao()">Remover</button>
+    </hlm-dialog-footer>
+  </hlm-dialog-content>
+</hlm-dialog>

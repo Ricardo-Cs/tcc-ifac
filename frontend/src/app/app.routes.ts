@@ -5,6 +5,9 @@ import { EmConstrucaoComponent } from './features/em-construcao/em-construcao';
 import { PeriodosComponent } from './features/periodos/periodos';
 import { GradeComponent } from './features/grade/grade';
 import { ProfessoresComponent } from './features/professores/professores';
+import { TurmasComponent } from './features/turmas/turmas';
+import { SalasComponent } from './features/salas/salas';
+import { OfertasComponent } from './features/ofertas/ofertas';
 import { ShellComponent } from './layout/shell/shell';
 
 export const routes: Routes = [
@@ -17,14 +20,14 @@ export const routes: Routes = [
       { path: 'cursos', component: CursosComponent, data: { titulo: 'Cursos' } },
       { path: 'professores', component: ProfessoresComponent, data: { titulo: 'Professores' } },
       { path: 'disciplinas', component: DisciplinasComponent, data: { titulo: 'Disciplinas' } },
-      { path: 'turmas', component: EmConstrucaoComponent, data: { titulo: 'Turmas' } },
-      { path: 'salas', component: EmConstrucaoComponent, data: { titulo: 'Salas' } },
+      { path: 'turmas', component: TurmasComponent, data: { titulo: 'Turmas' } },
+      { path: 'salas', component: SalasComponent, data: { titulo: 'Salas' } },
       {
         path: 'periodos',
         component: PeriodosComponent,
         data: { titulo: 'Períodos letivos' },
       },
-      { path: 'ofertas', component: EmConstrucaoComponent, data: { titulo: 'Ofertas' } },
+      { path: 'ofertas', component: OfertasComponent, data: { titulo: 'Ofertas' } },
       {
         path: 'disponibilidades',
         component: EmConstrucaoComponent,
