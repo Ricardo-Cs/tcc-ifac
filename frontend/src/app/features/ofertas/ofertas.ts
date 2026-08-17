@@ -187,6 +187,7 @@ export class OfertasComponent {
   /** Resumo da codocência para a coluna da listagem. */
   resumoProfessores(o: Oferta): string {
     if (o.professores.length === 0) return '—';
+    if (o.professores.length === 1) return o.professores[0].professorNome;
     return o.professores
       .map((p) => `${p.professorNome} (${p.proporcaoCarga}%)`)
       .join(', ');
@@ -205,6 +206,8 @@ export class OfertasComponent {
   readonly tituloDialog = computed(() =>
     this.editando() ? 'Editar oferta' : 'Nova oferta',
   );
+
+  readonly codocencia = computed(() => this.rascunho().professores.length > 1);
 
   /** Soma das proporções digitadas — a UI mostra e trava o salvar em ≠ 100. */
   readonly somaProporcoes = computed(() =>
@@ -306,13 +309,19 @@ export class OfertasComponent {
       );
       return;
     }
-    const soma = professores.reduce((s, p) => s + p.proporcaoCarga, 0);
-    if (Math.round(soma * 100) / 100 !== 100) {
-      this.toast.erro(
-        'Proporções inválidas',
-        `As proporções de carga devem somar 100% (soma atual: ${soma}%).`,
-      );
-      return;
+    // Docente único ⇒ 100% implícito (o campo nem aparece na UI). A soma só é
+    // exigida na codocência, onde o usuário reparte a carga entre os professores.
+    if (professores.length === 1) {
+      professores[0].proporcaoCarga = 100;
+    } else {
+      const soma = professores.reduce((s, p) => s + p.proporcaoCarga, 0);
+      if (Math.round(soma * 100) / 100 !== 100) {
+        this.toast.erro(
+          'Proporções inválidas',
+          `As proporções de carga devem somar 100% (soma atual: ${soma}%).`,
+        );
+        return;
+      }
     }
 
     const dados: CriarOferta = {
