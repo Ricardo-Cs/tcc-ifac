@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { AvaliarGradeUseCase } from '@application/grade-horaria/avaliar-grade.use-case';
 import { AlterarAlocacaoUseCase } from '@application/grade-horaria/alterar-alocacao.use-case';
 import { AceitarConflitoUseCase } from '@application/grade-horaria/aceitar-conflito.use-case';
+import { ListarOfertasAlocaveisUseCase } from '@application/grade-horaria/listar-ofertas-alocaveis.use-case';
 import {
   ACEITES_REPOSITORY,
   ALOCACOES_REPOSITORY,
@@ -33,6 +34,7 @@ import { GradeController } from './grade.controller';
     AvaliarGradeUseCase,
     AlterarAlocacaoUseCase,
     AceitarConflitoUseCase,
+    ListarOfertasAlocaveisUseCase,
     { provide: SNAPSHOT_LOADER, useClass: SqlSnapshotLoader },
     { provide: ACEITES_REPOSITORY, useClass: SqlAceitesRepository },
     { provide: PERIODOS_REPOSITORY, useClass: SqlPeriodosRepository },

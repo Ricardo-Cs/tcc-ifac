@@ -13,12 +13,17 @@ import {
 import { AvaliarGradeUseCase } from '@application/grade-horaria/avaliar-grade.use-case';
 import { AlterarAlocacaoUseCase } from '@application/grade-horaria/alterar-alocacao.use-case';
 import { AceitarConflitoUseCase } from '@application/grade-horaria/aceitar-conflito.use-case';
+import { ListarOfertasAlocaveisUseCase } from '@application/grade-horaria/listar-ofertas-alocaveis.use-case';
 import {
   PERIODOS_REPOSITORY,
   PeriodoResumo,
 } from '@domain/grade-horaria/ports';
 import type { PeriodosRepository } from '@domain/grade-horaria/ports';
 import { GradeView, montarGradeView } from './grade.view';
+import {
+  OfertaAlocavelView,
+  montarOfertasAlocaveisView,
+} from './ofertas-alocaveis.view';
 
 interface CriarAlocacaoBody {
   ofertaId?: string;
@@ -51,6 +56,7 @@ export class GradeController {
     private readonly avaliarGrade: AvaliarGradeUseCase,
     private readonly alterarAlocacao: AlterarAlocacaoUseCase,
     private readonly aceitarConflito: AceitarConflitoUseCase,
+    private readonly listarOfertasAlocaveis: ListarOfertasAlocaveisUseCase,
     @Inject(PERIODOS_REPOSITORY)
     private readonly periodos: PeriodosRepository,
   ) {}
@@ -73,6 +79,28 @@ export class GradeController {
   @Get('grade/:periodoId')
   async grade(@Param('periodoId') periodoId: string): Promise<GradeView> {
     return this.gradeDoPeriodo(periodoId);
+  }
+
+  /**
+   * Catálogo do período ativo — as ofertas com aula a alocar. Atalho de
+   * demonstração, gêmeo de `grade/atual`; declarado ANTES da rota paramétrica
+   * para o roteador casar o segmento estático `atual` primeiro.
+   */
+  @Get('grade/atual/ofertas-alocaveis')
+  async ofertasAlocaveisAtual(): Promise<OfertaAlocavelView[]> {
+    return this.ofertasAlocaveisDoPeriodo(await this.resolverPeriodoAtivo());
+  }
+
+  /**
+   * As ofertas do período que ainda têm aula a pôr na grade — o catálogo do qual
+   * a interface arrasta uma disciplina para uma célula vazia (o POST /alocacoes
+   * grava a aula nova). Só leitura; não recalcula conflito.
+   */
+  @Get('grade/:periodoId/ofertas-alocaveis')
+  async ofertasAlocaveis(
+    @Param('periodoId') periodoId: string,
+  ): Promise<OfertaAlocavelView[]> {
+    return this.ofertasAlocaveisDoPeriodo(periodoId);
   }
 
   @Post('alocacoes')
@@ -132,6 +160,14 @@ export class GradeController {
 
   private async gradeDoPeriodo(periodoId: string): Promise<GradeView> {
     return montarGradeView(await this.avaliarGrade.avaliar(periodoId));
+  }
+
+  private async ofertasAlocaveisDoPeriodo(
+    periodoId: string,
+  ): Promise<OfertaAlocavelView[]> {
+    return montarOfertasAlocaveisView(
+      await this.listarOfertasAlocaveis.listar(periodoId),
+    );
   }
 
   private async resolverPeriodoAtivo(): Promise<string> {
