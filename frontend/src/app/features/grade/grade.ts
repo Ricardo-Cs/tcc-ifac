@@ -107,8 +107,14 @@ export class GradeComponent {
    */
   readonly turmaSelecionada = signal<string | null>(null);
 
-  /** Aula sendo arrastada; a célula sob o cursor destaca-se como alvo. */
+  /** Aula sendo arrastada (mover); a célula sob o cursor destaca-se como alvo. */
   readonly arrastando = signal<Aula | null>(null);
+  /**
+   * Oferta do catálogo sendo arrastada (criar). Só um dos dois arrastes está
+   * ativo por vez — a origem (cartão da grade x cartão do catálogo) decide se o
+   * drop MOVE uma aula existente ou CRIA uma nova.
+   */
+  readonly arrastandoOferta = signal<OfertaAlocavel | null>(null);
   readonly celulaAlvo = signal<string | null>(null);
 
   /** Conflito em foco no painel — realça as aulas envolvidas na grade. */
@@ -362,26 +368,45 @@ export class GradeComponent {
     this.arrastando.set(aula);
   }
 
+  /** Começou a arrastar uma oferta do catálogo — o drop numa célula vai criá-la. */
+  aoIniciarArrasteOferta(oferta: OfertaAlocavel): void {
+    this.arrastandoOferta.set(oferta);
+  }
+
   aoTerminarArraste(): void {
     this.arrastando.set(null);
+    this.arrastandoOferta.set(null);
     this.celulaAlvo.set(null);
   }
 
   aoSobrevoar({ celula, evento }: EventoCelula): void {
-    if (!this.arrastando()) return;
+    // Qualquer um dos dois arrastes (mover aula ou criar do catálogo) habilita a
+    // célula como alvo. preventDefault é o que autoriza o drop no HTML5.
+    if (!this.arrastando() && !this.arrastandoOferta()) return;
     evento.preventDefault();
     this.celulaAlvo.set(chaveCelula(celula.dia, celula.turno, celula.ordem));
   }
 
   aoSoltar({ celula, evento }: EventoCelula): void {
     evento.preventDefault();
+    // Captura as duas origens ANTES de limpar o estado do arraste.
     const aula = this.arrastando();
+    const oferta = this.arrastandoOferta();
     const slotDestino = this.slotPorCelula().get(
       chaveCelula(celula.dia, celula.turno, celula.ordem),
     );
     this.aoTerminarArraste();
-    if (!aula || !slotDestino) return;
-    if (aula.slot?.id === slotDestino.id) return; // soltou no mesmo lugar
+    if (!slotDestino) return;
+
+    // Origem = catálogo: cria a aula nova naquele slot (sala fica nula).
+    if (oferta) {
+      this.executar(() => this.api.criar(oferta.ofertaId, slotDestino.id));
+      return;
+    }
+
+    // Origem = grade: move a aula existente (a menos que solte no mesmo lugar).
+    if (!aula) return;
+    if (aula.slot?.id === slotDestino.id) return;
     this.executar(() => this.api.mover(aula.id, slotDestino.id));
   }
 

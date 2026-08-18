@@ -5,10 +5,12 @@
  * (que dispara o POST /alocacoes) entra numa fatia seguinte, e é por isso que
  * cada oferta já vem como um "cartão" isolável.
  *
- * Componente burro: recebe a lista pronta (já recortada pela turma) e apenas
- * desenha. Quem carrega e filtra é o container da grade.
+ * Componente burro: recebe a lista pronta (já recortada pela turma), desenha e
+ * apenas ANUNCIA o arraste. Quem carrega, filtra e grava a aula nova (no drop
+ * sobre uma célula) é o container da grade — o cartão só diz "comecei/terminei
+ * de arrastar esta oferta".
  */
-import { Component, computed, input } from '@angular/core';
+import { Component, computed, input, output } from '@angular/core';
 import { OfertaAlocavel } from '../../../../core/models/grade.models';
 
 @Component({
@@ -17,6 +19,9 @@ import { OfertaAlocavel } from '../../../../core/models/grade.models';
 })
 export class CatalogoOfertasComponent {
   readonly ofertas = input.required<OfertaAlocavel[]>();
+
+  readonly iniciarArraste = output<OfertaAlocavel>();
+  readonly terminarArraste = output<void>();
 
   readonly vazio = computed(() => this.ofertas().length === 0);
 

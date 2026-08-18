@@ -25,6 +25,17 @@ export class GradeApi {
     return this.http.get<OfertaAlocavel[]>(`${BASE}/grade/${periodoId}/ofertas-alocaveis`);
   }
 
+  /**
+   * Cria uma aula nova: põe uma oferta num slot. Sala fica nula (definida depois);
+   * o servidor devolve a grade já recalculada, com o conflito que porventura acenda.
+   */
+  criar(ofertaId: string, slotHorarioId: string): Observable<Grade> {
+    return this.http.post<Grade>(`${BASE}/alocacoes`, {
+      ofertaId,
+      slotHorarioId,
+    });
+  }
+
   /** Move uma aula para outro slot (UPDATE que preserva o id da alocação). */
   mover(alocacaoId: string, slotHorarioId: string): Observable<Grade> {
     return this.http.patch<Grade>(`${BASE}/alocacoes/${alocacaoId}`, {

@@ -25,7 +25,11 @@
       [class]="periodo.editavel() ? 'lg:grid-cols-[240px_1fr_320px]' : 'lg:grid-cols-[1fr_320px]'"
     >
       @if (periodo.editavel()) {
-        <app-catalogo-ofertas [ofertas]="ofertasCatalogo()" />
+        <app-catalogo-ofertas
+          [ofertas]="ofertasCatalogo()"
+          (iniciarArraste)="aoIniciarArrasteOferta($event)"
+          (terminarArraste)="aoTerminarArraste()"
+        />
       }
 
       <app-grade-tabela
