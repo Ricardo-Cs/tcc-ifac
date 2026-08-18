@@ -4,6 +4,7 @@ import {
   GradeSnapshot,
   Id,
   chaveProfessorSlot,
+  chaveSalaSlot,
   chaveTurmaSlot,
 } from './snapshot';
 
@@ -29,9 +30,19 @@ export function construirSnapshot(dados: DadosSnapshot): GradeSnapshot {
   const porSlot = new Map<Id, AlocacaoSnapshot[]>();
   const porProfessorSlot = new Map<string, AlocacaoSnapshot[]>();
   const porTurmaSlot = new Map<string, AlocacaoSnapshot[]>();
+  const porSalaSlot = new Map<string, AlocacaoSnapshot[]>();
 
   for (const alocacao of dados.alocacoes) {
     agrupar(porSlot, alocacao.slotId, alocacao);
+
+    // Sala não depende da oferta — indexa antes, e só quando há sala definida.
+    if (alocacao.salaId) {
+      agrupar(
+        porSalaSlot,
+        chaveSalaSlot(alocacao.salaId, alocacao.slotId),
+        alocacao,
+      );
+    }
 
     const oferta = dados.ofertas.get(alocacao.ofertaId);
     if (!oferta) {
@@ -55,5 +66,5 @@ export function construirSnapshot(dados: DadosSnapshot): GradeSnapshot {
     }
   }
 
-  return { ...dados, porSlot, porProfessorSlot, porTurmaSlot };
+  return { ...dados, porSlot, porProfessorSlot, porTurmaSlot, porSalaSlot };
 }

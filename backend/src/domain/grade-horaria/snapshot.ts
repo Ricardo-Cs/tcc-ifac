@@ -136,6 +136,11 @@ export function chaveTurmaSlot(turmaId: Id, slotId: Id): string {
   return `${turmaId}:${slotId}`;
 }
 
+/** Chave composta sala+slot. Só alocações COM sala entram neste índice. */
+export function chaveSalaSlot(salaId: Id, slotId: Id): string {
+  return `${salaId}:${slotId}`;
+}
+
 /** Os dados brutos do período; os índices são derivados destes. */
 export interface DadosSnapshot {
   periodoLetivoId: Id;
@@ -171,4 +176,10 @@ export interface GradeSnapshot extends DadosSnapshot {
   porProfessorSlot: Map<string, AlocacaoSnapshot[]>;
   /** Alocações agrupadas por `${turmaId}:${slotId}` (via oferta). */
   porTurmaSlot: Map<string, AlocacaoSnapshot[]>;
+  /**
+   * Alocações agrupadas por `${salaId}:${slotId}`. Só as que TÊM sala entram —
+   * duas aulas "sem sala" no mesmo slot não disputam sala nenhuma, então não são
+   * indexadas aqui (senão a regra as acusaria de ocupar a mesma sala inexistente).
+   */
+  porSalaSlot: Map<string, AlocacaoSnapshot[]>;
 }

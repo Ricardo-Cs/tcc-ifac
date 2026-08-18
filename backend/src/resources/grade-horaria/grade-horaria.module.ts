@@ -18,6 +18,7 @@ import { SqlAlocacoesRepository } from '@infrastructure/persistence/sql/alocacoe
 import { SqlUsuariosRepository } from '@infrastructure/persistence/sql/usuarios.repository';
 import { RegraProfessorDuplicado } from '@domain/grade-horaria/regras/professor-duplicado';
 import { RegraTurmaDuplicada } from '@domain/grade-horaria/regras/turma-duplicada';
+import { RegraSalaOcupada } from '@domain/grade-horaria/regras/sala-ocupada';
 import { GradeController } from './grade.controller';
 
 /**
@@ -42,6 +43,7 @@ import { GradeController } from './grade.controller';
       useValue: [
         new RegraProfessorDuplicado(),
         new RegraTurmaDuplicada(),
+        new RegraSalaOcupada(),
       ] satisfies Regras,
     },
   ],
