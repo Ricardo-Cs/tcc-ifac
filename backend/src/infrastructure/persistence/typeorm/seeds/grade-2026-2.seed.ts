@@ -126,6 +126,13 @@ const PROFESSORES: ProfessorSeed[] = [
     nome: 'Cristiane Nogueira',
     grupoRegime: GrupoRegime.G1,
   },
+  // Professores das OFERTAS SOLTAS (as que nascem no catálogo, sem aula posta).
+  // Sem nenhuma outra alocação de propósito: arrastar a oferta deles para uma
+  // célula não acende PROFESSOR_DUPLICADO, deixando o teste do arraste limpo.
+  { siape: '10000020', nome: 'Sônia Duarte', grupoRegime: GrupoRegime.G1 },
+  { siape: '10000021', nome: 'Paulo Menezes', grupoRegime: GrupoRegime.G1 },
+  { siape: '10000022', nome: 'Lucas Farias', grupoRegime: GrupoRegime.G1 },
+  { siape: '10000023', nome: 'Renata Bastos', grupoRegime: GrupoRegime.G1 },
 ];
 
 interface SalaSeed {
@@ -165,6 +172,14 @@ interface DisciplinaSeed {
   /** Tamanhos dos blocos semanais (ex.: [2,2] = duas geminadas). Usado só
    *  quando o curso não traz uma grade explícita. */
   blocos?: number[];
+  /**
+   * Carga semanal EXPLÍCITA da oferta, em nº de aulas. Quando presente, sobrepõe
+   * a contagem derivada da grade. Serve para semear OFERTAS SOLTAS: uma
+   * disciplina sem grade nem blocos fica com zero alocações e `aulasSemana` aqui
+   * — a oferta nasce inteira no catálogo de "a alocar", para testar o arraste do
+   * catálogo para uma célula vazia (criar aula).
+   */
+  aulasSemana?: number;
 }
 
 // Uma disciplina ocupando um bloco contíguo de ordens num dia. Blocos com mais
@@ -306,6 +321,16 @@ const CURSOS: CursoSeed[] = [
             tipoSala: TipoSala.LABORATORIO,
             professores: ['10000005'],
             sala: 'LAB 5',
+          },
+          // Oferta SOLTA (catálogo "a alocar") — não entra na `grade` abaixo.
+          {
+            codigo: 'OPT',
+            nome: 'Optativa: Tópicos em Programação',
+            cargaHoraria: 40,
+            tipoSala: TipoSala.LABORATORIO,
+            professores: ['10000021'],
+            sala: 'LAB 5',
+            aulasSemana: 3,
           },
         ],
         grade: [
@@ -526,6 +551,27 @@ const CURSOS: CursoSeed[] = [
             sala: 'QUADRA',
             blocos: [2],
           },
+          // Ofertas SOLTAS: sem grade nem blocos, entram no catálogo "a alocar"
+          // com a carga inteira por pôr — para testar o arraste do catálogo para
+          // uma célula vazia. INFO é a visão que abre por padrão (manhã).
+          {
+            codigo: 'ART',
+            nome: 'Artes',
+            cargaHoraria: 40,
+            tipoSala: TipoSala.COMUM,
+            professores: ['10000020'],
+            sala: 'SALA 2',
+            aulasSemana: 2,
+          },
+          {
+            codigo: 'FIL',
+            nome: 'Filosofia',
+            cargaHoraria: 40,
+            tipoSala: TipoSala.COMUM,
+            professores: ['10000023'],
+            sala: 'SALA 2',
+            aulasSemana: 2,
+          },
         ],
       },
     ],
@@ -589,6 +635,16 @@ const CURSOS: CursoSeed[] = [
             professores: ['10000006'],
             sala: 'SALA 2',
             blocos: [1, 1],
+          },
+          // Oferta SOLTA (catálogo "a alocar") — sem blocos, fica fora da grade gerada.
+          {
+            codigo: 'ING',
+            nome: 'Inglês Técnico',
+            cargaHoraria: 40,
+            tipoSala: TipoSala.COMUM,
+            professores: ['10000022'],
+            sala: 'SALA 1',
+            aulasSemana: 2,
           },
         ],
       },
@@ -792,7 +848,10 @@ export async function seedGrade2026(dataSource: DataSource): Promise<void> {
               disciplina: disc,
               periodoLetivo: periodo,
               regime: c.regime,
-              aulasSemana: aulasPorDisciplina.get(d.codigo) ?? 0,
+              // Oferta solta (sem grade) usa a carga explícita; as demais derivam
+              // da contagem de slots na grade.
+              aulasSemana:
+                d.aulasSemana ?? aulasPorDisciplina.get(d.codigo) ?? 0,
             },
           );
           ofertasPorDisciplina.set(d.codigo, oferta);
