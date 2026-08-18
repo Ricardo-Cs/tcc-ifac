@@ -20,7 +20,14 @@
   @if (carregando() && !grade()) {
     <div class="mx-6 mt-4 text-sm text-muted-foreground">Carregando a grade…</div>
   } @else if (grade()) {
-    <div class="grid items-start gap-5 p-6 lg:grid-cols-[1fr_320px]">
+    <div
+      class="grid items-start gap-5 p-6"
+      [class]="periodo.editavel() ? 'lg:grid-cols-[240px_1fr_320px]' : 'lg:grid-cols-[1fr_320px]'"
+    >
+      @if (periodo.editavel()) {
+        <app-catalogo-ofertas [ofertas]="ofertasCatalogo()" />
+      }
+
       <app-grade-tabela
         [linhas]="linhas()"
         [celulaAlvo]="celulaAlvo()"

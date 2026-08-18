@@ -19,6 +19,7 @@ import {
   Conflito,
   Curso,
   Grade,
+  OfertaAlocavel,
   Severidade,
   Slot,
   Turma,
@@ -26,6 +27,7 @@ import {
 import { GradeToolbarComponent } from './components/grade-toolbar/grade-toolbar';
 import { GradeTabelaComponent, EventoCelula } from './components/grade-tabela/grade-tabela';
 import { ConflitosPainelComponent } from './components/conflitos-painel/conflitos-painel';
+import { CatalogoOfertasComponent } from './components/catalogo-ofertas/catalogo-ofertas';
 import { SEVERIDADE_RANK } from './severidade';
 import {
   AulaVm,
@@ -44,7 +46,12 @@ import {
 
 @Component({
   selector: 'app-grade',
-  imports: [GradeToolbarComponent, GradeTabelaComponent, ConflitosPainelComponent],
+  imports: [
+    GradeToolbarComponent,
+    GradeTabelaComponent,
+    ConflitosPainelComponent,
+    CatalogoOfertasComponent,
+  ],
   templateUrl: './grade.html',
 })
 export class GradeComponent {
@@ -59,6 +66,14 @@ export class GradeComponent {
   readonly grade = signal<Grade | null>(null);
   readonly carregando = signal(false);
   readonly erro = signal<string | null>(null);
+
+  /**
+   * Catálogo de ofertas a alocar do período (todas as turmas). Vem de um
+   * endpoint próprio porque a `Grade` só conhece as aulas JÁ postas — uma oferta
+   * sem nenhuma aula, ou o total `aulasSemana`, não estão nela. O recorte por
+   * turma é feito no `ofertasCatalogo`, como as aulas.
+   */
+  readonly catalogo = signal<OfertaAlocavel[]>([]);
 
   /** Id do período já carregado — evita recarregar quando o foco não mudou. */
   private periodoCarregado: string | null | undefined;
@@ -141,6 +156,19 @@ export class GradeComponent {
     if (turma && turma !== this.TODAS) return todas.filter((a) => a.turmaId === turma);
     if (!curso || curso === this.TODOS) return todas;
     return todas.filter((a) => a.cursoId === curso);
+  });
+
+  /**
+   * O catálogo recortado para a visão atual — mesma regra de `aulasVisiveis`:
+   * turma em foco, senão o curso, senão tudo. É o que a paleta lateral desenha.
+   */
+  readonly ofertasCatalogo = computed<OfertaAlocavel[]>(() => {
+    const todas = this.catalogo();
+    const curso = this.cursoSelecionado();
+    const turma = this.turmaSelecionada();
+    if (turma && turma !== this.TODAS) return todas.filter((o) => o.turmaId === turma);
+    if (!curso || curso === this.TODOS) return todas;
+    return todas.filter((o) => o.cursoId === curso);
   });
 
   /** Todas as aulas por id (inclusive as ocultas) — resolve os envolvidos num conflito. */
@@ -419,6 +447,24 @@ export class GradeComponent {
     if (!turmaValida) {
       this.turmaSelecionada.set(this.primeiraTurmaDoCurso(cursoResolvido ?? this.TODOS));
     }
+
+    // Toda grade nova (carga ou escrita) pode ter mudado a carga restante das
+    // ofertas — remover uma aula devolve uma vaga ao catálogo. Recarrega por
+    // aqui, o choke point por onde toda grade passa. Usa o id JÁ resolvido que
+    // o servidor devolve (funciona mesmo quando a carga veio de `gradeAtual`).
+    this.carregarCatalogo(g.periodoLetivoId);
+  }
+
+  /**
+   * Busca o catálogo de ofertas a alocar. É auxiliar: se falhar, esvazia a
+   * paleta em silêncio em vez de derrubar a tela da grade — a grade em si já
+   * carregou e o erro dela tem tratamento próprio.
+   */
+  private carregarCatalogo(periodoId: string): void {
+    this.api.ofertasAlocaveis(periodoId).subscribe({
+      next: (ofertas) => this.catalogo.set(ofertas),
+      error: () => this.catalogo.set([]),
+    });
   }
 
   private falhar(e: unknown): void {

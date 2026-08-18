@@ -1,7 +1,7 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
-import { Grade, Periodo } from '../models/grade.models';
+import { Grade, OfertaAlocavel, Periodo } from '../models/grade.models';
 import { API_BASE as BASE } from './api-base';
 
 @Injectable({ providedIn: 'root' })
@@ -18,6 +18,11 @@ export class GradeApi {
 
   grade(periodoId: string): Observable<Grade> {
     return this.http.get<Grade>(`${BASE}/grade/${periodoId}`);
+  }
+
+  /** Catálogo de ofertas com aula a alocar no período — a fonte do arraste. */
+  ofertasAlocaveis(periodoId: string): Observable<OfertaAlocavel[]> {
+    return this.http.get<OfertaAlocavel[]>(`${BASE}/grade/${periodoId}/ofertas-alocaveis`);
   }
 
   /** Move uma aula para outro slot (UPDATE que preserva o id da alocação). */

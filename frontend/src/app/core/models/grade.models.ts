@@ -91,3 +91,21 @@ export interface Periodo {
   status: string;
   ativo: boolean;
 }
+
+/**
+ * Uma oferta que ainda tem aula a pôr na grade — item do catálogo do qual a
+ * comissão arrasta uma disciplina para uma célula vazia. Espelha
+ * `OfertaAlocavelView` do backend. `aulasRestantes` é sempre > 0 (o servidor já
+ * filtra as ofertas completas).
+ */
+export interface OfertaAlocavel {
+  ofertaId: string;
+  turmaId: string | null;
+  turma: string | null;
+  cursoId: string | null;
+  disciplina: Disciplina | null;
+  professores: string[];
+  aulasSemana: number;
+  aulasAlocadas: number;
+  aulasRestantes: number;
+}
