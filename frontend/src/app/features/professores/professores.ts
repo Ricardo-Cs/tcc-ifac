@@ -136,6 +136,10 @@ export class ProfessoresComponent {
     this.dialogAberto.set(true);
   }
 
+  abrirImportar(): void {
+    this.toast.aviso("Funcionalidade de importar ainda não implementada...");
+  }
+
   editar(professor: Professor): void {
     this.editando.set(professor);
     this.rascunho.set({

@@ -4,9 +4,10 @@
     [colunas]="colunas"
     [filtros]="filtros"
     [textoBusca]="textoBusca"
-    [mostrarImportar]="false"
+    [mostrarImportar]="true"
     entidade="professores"
     (adicionar)="abrirNovo()"
+    (importar)="abrirImportar()"
   >
     <ng-template appLinhaListagem let-p>
       <td class="px-4 py-3">

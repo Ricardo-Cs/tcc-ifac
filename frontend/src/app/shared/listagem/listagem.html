@@ -47,14 +47,14 @@
 
     <div class="flex items-center gap-2">
       @if (mostrarImportar()) {
-        <button hlmBtn variant="outline" size="sm" class="gap-1.5" type="button" (click)="importar.emit()">
-          <ng-icon name="lucideUpload" size="0.95rem" />
+        <button hlmBtn variant="outline" size="lg" class="gap-1.5" type="button" (click)="importar.emit()">
+          <ng-icon name="lucideUpload" size="1rem" />
           Importar
         </button>
       }
       @if (mostrarAdicionar()) {
-        <button hlmBtn size="sm" class="gap-1.5" type="button" (click)="adicionar.emit()">
-          <ng-icon name="lucidePlus" size="0.95rem" />
+        <button hlmBtn size="lg" class="gap-1.5" type="button" (click)="adicionar.emit()">
+          <ng-icon name="lucidePlus" size="1rem" />
           Adicionar
         </button>
       }
