@@ -68,6 +68,12 @@ export interface LinhaVm {
   /** Faixa horária já formatada ("13:30 – 14:20"). */
   faixa: string;
   celulas: CelulaVm[];
+  /**
+   * Primeira linha de um turno que vem depois de outro — a tabela desenha um
+   * respiro antes dela, separando manhã/tarde/noite visualmente. Falso na
+   * primeira linha da grade (não há turno anterior de que se separar).
+   */
+  iniciaTurno: boolean;
 }
 
 /** Um conflito já com as turmas de fora resolvidas para o painel. */
@@ -150,6 +156,7 @@ export function montarLinhas(
     (a, b) => (TURNO_RANK[a.turno] ?? 9) - (TURNO_RANK[b.turno] ?? 9) || a.ordem - b.ordem,
   );
 
+  let turnoAnterior: string | null = null;
   return ordenadas.map(({ turno, ordem }) => {
     const celulas: CelulaVm[] = DIAS.map((dia) => {
       const slot = slotPorCelula.get(chaveCelula(dia.num, turno, ordem));
@@ -158,6 +165,8 @@ export function montarLinhas(
     });
     const modelo = slotPorCelula.get(chaveCelula(DIAS[0].num, turno, ordem));
     const faixa = modelo ? `${hhmm(modelo.horaInicio)} – ${hhmm(modelo.horaFim)}` : '';
-    return { turnoRotulo: TURNO_ROTULO[turno] ?? turno, faixa, celulas };
+    const iniciaTurno = turnoAnterior !== null && turno !== turnoAnterior;
+    turnoAnterior = turno;
+    return { turnoRotulo: TURNO_ROTULO[turno] ?? turno, faixa, celulas, iniciaTurno };
   });
 }
