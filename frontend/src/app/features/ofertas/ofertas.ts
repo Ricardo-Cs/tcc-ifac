@@ -12,9 +12,8 @@
 import { Component, computed, effect, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { NgIcon, provideIcons } from '@ng-icons/core';
-import { lucidePencil, lucidePlus, lucideTrash2, lucideX } from '@ng-icons/lucide';
+import { lucideLayers, lucidePencil, lucidePlus, lucideTrash2, lucideX } from '@ng-icons/lucide';
 import { HlmButton } from '@spartan-ng/helm/button';
-import { HlmDialogImports } from '@spartan-ng/helm/dialog';
 import { HlmInput } from '@spartan-ng/helm/input';
 import { HlmSelectImports } from '@spartan-ng/helm/select';
 import { AcademicoApi } from '../../core/api/academico-api';
@@ -29,11 +28,9 @@ import {
 } from '../../core/models/academico.models';
 import { PeriodoState } from '../../core/state/periodo-state';
 import { ToastService } from '../../core/toast';
-import {
-  ColunaListagem,
-  FiltroListagem,
-  ListagemComponent,
-} from '../../shared/listagem/listagem';
+import { ConfirmDialogComponent } from '../../shared/confirm-dialog/confirm-dialog';
+import { FormDialogComponent } from '../../shared/form-dialog/form-dialog';
+import { ColunaListagem, FiltroListagem, ListagemComponent } from '../../shared/listagem/listagem';
 import { ListagemLinhaDirective } from '../../shared/listagem/listagem-linha';
 
 /** Regimes de oferta — código do domínio + rótulo humano. */
@@ -79,14 +76,13 @@ const rascunhoVazio = (): RascunhoOferta => ({
     NgIcon,
     HlmButton,
     HlmInput,
+    FormDialogComponent,
+    ConfirmDialogComponent,
     ListagemComponent,
     ListagemLinhaDirective,
     ...HlmSelectImports,
-    ...HlmDialogImports,
   ],
-  providers: [
-    provideIcons({ lucidePencil, lucideTrash2, lucidePlus, lucideX }),
-  ],
+  providers: [provideIcons({ lucideLayers, lucidePencil, lucideTrash2, lucidePlus, lucideX })],
   templateUrl: './ofertas.html',
 })
 export class OfertasComponent {
@@ -144,10 +140,7 @@ export class OfertasComponent {
     this.api.listarOfertas(periodoLetivoId).subscribe({
       next: (ofertas) => this.ofertas.set(ofertas),
       error: (err) =>
-        this.toast.erro(
-          'Falha ao carregar ofertas',
-          mensagemErro(err, 'Tente novamente.'),
-        ),
+        this.toast.erro('Falha ao carregar ofertas', mensagemErro(err, 'Tente novamente.')),
     });
   }
 
@@ -188,9 +181,7 @@ export class OfertasComponent {
   resumoProfessores(o: Oferta): string {
     if (o.professores.length === 0) return '—';
     if (o.professores.length === 1) return o.professores[0].professorNome;
-    return o.professores
-      .map((p) => `${p.professorNome} (${p.proporcaoCarga}%)`)
-      .join(', ');
+    return o.professores.map((p) => `${p.professorNome} (${p.proporcaoCarga}%)`).join(', ');
   }
 
   // ---- Diálogo de formulário --------------------------------------------
@@ -199,28 +190,22 @@ export class OfertasComponent {
   readonly editando = signal<Oferta | null>(null);
   readonly dialogAberto = signal(false);
   readonly rascunho = signal<RascunhoOferta>(rascunhoVazio());
+  /** Erro do formulário — acende dentro do diálogo (além do toast). */
+  readonly erroForm = signal<string | null>(null);
 
   /** Oferta à espera de confirmação de remoção — abre o diálogo de confirmar. */
   readonly removendo = signal<Oferta | null>(null);
 
-  readonly tituloDialog = computed(() =>
-    this.editando() ? 'Editar oferta' : 'Nova oferta',
-  );
+  readonly tituloDialog = computed(() => (this.editando() ? 'Editar oferta' : 'Nova oferta'));
 
   readonly codocencia = computed(() => this.rascunho().professores.length > 1);
 
   /** Soma das proporções digitadas — a UI mostra e trava o salvar em ≠ 100. */
   readonly somaProporcoes = computed(() =>
-    this.rascunho().professores.reduce(
-      (s, p) => s + (p.proporcaoCarga ?? 0),
-      0,
-    ),
+    this.rascunho().professores.reduce((s, p) => s + (p.proporcaoCarga ?? 0), 0),
   );
 
-  atualizar<K extends keyof RascunhoOferta>(
-    campo: K,
-    valor: RascunhoOferta[K],
-  ): void {
+  atualizar<K extends keyof RascunhoOferta>(campo: K, valor: RascunhoOferta[K]): void {
     this.rascunho.update((r) => ({ ...r, [campo]: valor }));
   }
 
@@ -245,15 +230,14 @@ export class OfertasComponent {
   ): void {
     this.rascunho.update((r) => ({
       ...r,
-      professores: r.professores.map((p, i) =>
-        i === indice ? { ...p, [campo]: valor } : p,
-      ),
+      professores: r.professores.map((p, i) => (i === indice ? { ...p, [campo]: valor } : p)),
     }));
   }
 
   abrirNovo(): void {
     this.editando.set(null);
     this.rascunho.set(rascunhoVazio());
+    this.erroForm.set(null);
     this.dialogAberto.set(true);
   }
 
@@ -270,6 +254,7 @@ export class OfertasComponent {
         proporcaoCarga: p.proporcaoCarga,
       })),
     });
+    this.erroForm.set(null);
     this.dialogAberto.set(true);
   }
 
@@ -280,19 +265,16 @@ export class OfertasComponent {
   salvar(): void {
     const periodo = this.periodoState.selecionado();
     if (!periodo) {
-      this.toast.erro('Nenhum período em foco', 'Selecione um período letivo.');
+      this.erroForm.set('Selecione um período letivo.');
       return;
     }
     const r = this.rascunho();
     if (!r.turmaId || !r.disciplinaId || !r.regime) {
-      this.toast.erro(
-        'Preencha os campos obrigatórios',
-        'Turma, disciplina e regime são obrigatórios.',
-      );
+      this.erroForm.set('Turma, disciplina e regime são obrigatórios.');
       return;
     }
     if (r.aulasSemana == null || r.aulasSemana < 1) {
-      this.toast.erro('Aulas por semana inválido', 'Informe um valor ≥ 1.');
+      this.erroForm.set('Informe as aulas por semana (valor ≥ 1).');
       return;
     }
 
@@ -303,10 +285,7 @@ export class OfertasComponent {
         proporcaoCarga: p.proporcaoCarga ?? 0,
       }));
     if (professores.length === 0) {
-      this.toast.erro(
-        'Informe ao menos um professor',
-        'A oferta precisa de pelo menos um docente.',
-      );
+      this.erroForm.set('A oferta precisa de pelo menos um docente.');
       return;
     }
     // Docente único ⇒ 100% implícito (o campo nem aparece na UI). A soma só é
@@ -316,13 +295,11 @@ export class OfertasComponent {
     } else {
       const soma = professores.reduce((s, p) => s + p.proporcaoCarga, 0);
       if (Math.round(soma * 100) / 100 !== 100) {
-        this.toast.erro(
-          'Proporções inválidas',
-          `As proporções de carga devem somar 100% (soma atual: ${soma}%).`,
-        );
+        this.erroForm.set(`As proporções de carga devem somar 100% (soma atual: ${soma}%).`);
         return;
       }
     }
+    this.erroForm.set(null);
 
     const dados: CriarOferta = {
       turmaId: r.turmaId,
@@ -343,9 +320,7 @@ export class OfertasComponent {
     requisicao.subscribe({
       next: (oferta) => {
         this.ofertas.update((lista) =>
-          alvo
-            ? lista.map((o) => (o.id === oferta.id ? oferta : o))
-            : [...lista, oferta],
+          alvo ? lista.map((o) => (o.id === oferta.id ? oferta : o)) : [...lista, oferta],
         );
         this.toast.sucesso(
           `Oferta ${alvo ? 'atualizada' : 'cadastrada'}`,
@@ -355,10 +330,7 @@ export class OfertasComponent {
         this.fecharDialog();
       },
       error: (err) => {
-        this.toast.erro(
-          alvo ? 'Falha ao atualizar' : 'Falha ao cadastrar',
-          mensagemErro(err, 'Não foi possível salvar a oferta.'),
-        );
+        this.erroForm.set(mensagemErro(err, 'Não foi possível salvar a oferta.'));
         this.salvando.set(false);
       },
     });

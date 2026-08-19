@@ -1,0 +1,44 @@
+<hlm-dialog [state]="aberto() ? 'open' : 'closed'" (closed)="fechar.emit()">
+  <!-- p-0/gap-0 zeram o padding padrão do content; cada seção pede o seu, para os
+       separadores (border) irem de ponta a ponta. -->
+  <hlm-dialog-content *hlmDialogPortal [class]="'gap-0 p-0 ' + larguraClasse()">
+    <hlm-dialog-header
+      class="flex flex-row items-start gap-3 space-y-0 border-b border-border p-4 text-left"
+    >
+      <span class="grid size-9 shrink-0 place-items-center rounded-lg bg-primary/10 text-primary">
+        <ng-content select="[formDialogIcone]" />
+      </span>
+      <span class="flex min-w-0 flex-col gap-1">
+        <h3 hlmDialogTitle class="text-base leading-none">{{ titulo() }}</h3>
+        @if (descricao()) {
+          <p hlmDialogDescription class="text-xs leading-snug">{{ descricao() }}</p>
+        }
+      </span>
+    </hlm-dialog-header>
+
+    <!-- O formulário da tela é projetado aqui. -->
+    <div class="p-4">
+      @if (erro()) {
+        <div
+          class="mb-4 flex items-start gap-2 rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-xs text-destructive"
+        >
+          <ng-icon name="lucideCircleAlert" size="0.9rem" class="mt-0.5 shrink-0" />
+          <span>{{ erro() }}</span>
+        </div>
+      }
+      <ng-content />
+    </div>
+
+    <hlm-dialog-footer class="border-t border-border p-4">
+      <button hlmBtn variant="outline" type="button" (click)="fechar.emit()">Cancelar</button>
+      <button hlmBtn type="button" class="gap-1.5" [disabled]="salvando()" (click)="salvar.emit()">
+        @if (salvando()) {
+          <ng-icon name="lucideLoaderCircle" size="1rem" class="animate-spin" />
+          Salvando…
+        } @else {
+          {{ rotuloSalvar() }}
+        }
+      </button>
+    </hlm-dialog-footer>
+  </hlm-dialog-content>
+</hlm-dialog>

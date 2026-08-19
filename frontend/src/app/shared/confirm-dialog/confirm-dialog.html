@@ -1,0 +1,37 @@
+<hlm-dialog [state]="aberto() ? 'open' : 'closed'" (closed)="fechar.emit()">
+  <hlm-dialog-content *hlmDialogPortal class="gap-0 p-0 sm:max-w-md">
+    <hlm-dialog-header
+      class="flex flex-row items-start gap-3 space-y-0 border-b border-border p-4 text-left"
+    >
+      <span
+        class="grid size-9 shrink-0 place-items-center rounded-lg bg-destructive/10 text-destructive"
+      >
+        <ng-icon name="lucideTriangleAlert" size="1.15rem" />
+      </span>
+      <h3 hlmDialogTitle class="mt-1 text-base leading-none">{{ titulo() }}</h3>
+    </hlm-dialog-header>
+
+    <p hlmDialogDescription class="p-4 text-xs leading-relaxed">
+      <ng-content />
+    </p>
+
+    <hlm-dialog-footer class="border-t border-border p-4">
+      <button hlmBtn variant="outline" type="button" (click)="fechar.emit()">Cancelar</button>
+      <button
+        hlmBtn
+        variant="destructive"
+        type="button"
+        class="gap-1.5"
+        [disabled]="processando()"
+        (click)="confirmar.emit()"
+      >
+        @if (processando()) {
+          <ng-icon name="lucideLoaderCircle" size="1rem" class="animate-spin" />
+          Removendo…
+        } @else {
+          {{ rotuloConfirmar() }}
+        }
+      </button>
+    </hlm-dialog-footer>
+  </hlm-dialog-content>
+</hlm-dialog>

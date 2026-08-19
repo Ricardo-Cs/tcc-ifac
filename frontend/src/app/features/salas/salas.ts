@@ -7,20 +7,17 @@
 import { Component, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { NgIcon, provideIcons } from '@ng-icons/core';
-import { lucidePencil, lucideTrash2 } from '@ng-icons/lucide';
+import { lucideDoorOpen, lucidePencil, lucideTrash2 } from '@ng-icons/lucide';
 import { HlmButton } from '@spartan-ng/helm/button';
-import { HlmDialogImports } from '@spartan-ng/helm/dialog';
 import { HlmInput } from '@spartan-ng/helm/input';
 import { HlmSelectImports } from '@spartan-ng/helm/select';
 import { AcademicoApi } from '../../core/api/academico-api';
 import { mensagemErro } from '../../core/api/erro-http';
 import { Sala, TipoSala } from '../../core/models/academico.models';
 import { ToastService } from '../../core/toast';
-import {
-  ColunaListagem,
-  FiltroListagem,
-  ListagemComponent,
-} from '../../shared/listagem/listagem';
+import { ColunaListagem, FiltroListagem, ListagemComponent } from '../../shared/listagem/listagem';
+import { ConfirmDialogComponent } from '../../shared/confirm-dialog/confirm-dialog';
+import { FormDialogComponent } from '../../shared/form-dialog/form-dialog';
 import { ListagemLinhaDirective } from '../../shared/listagem/listagem-linha';
 
 /** Tipos de sala — código do domínio + rótulo humano para exibir/filtrar. */
@@ -47,12 +44,13 @@ const RASCUNHO_VAZIO: RascunhoSala = { nome: '', tipo: '', capacidade: null };
     NgIcon,
     HlmButton,
     HlmInput,
+    FormDialogComponent,
+    ConfirmDialogComponent,
     ListagemComponent,
     ListagemLinhaDirective,
     ...HlmSelectImports,
-    ...HlmDialogImports,
   ],
-  providers: [provideIcons({ lucidePencil, lucideTrash2 })],
+  providers: [provideIcons({ lucideDoorOpen, lucidePencil, lucideTrash2 })],
   templateUrl: './salas.html',
 })
 export class SalasComponent {
@@ -86,10 +84,7 @@ export class SalasComponent {
     this.api.listarSalas().subscribe({
       next: (salas) => this.salas.set(salas),
       error: (err) =>
-        this.toast.erro(
-          'Falha ao carregar salas',
-          mensagemErro(err, 'Tente novamente.'),
-        ),
+        this.toast.erro('Falha ao carregar salas', mensagemErro(err, 'Tente novamente.')),
     });
   }
 
@@ -104,24 +99,22 @@ export class SalasComponent {
   readonly editando = signal<Sala | null>(null);
   readonly dialogAberto = signal(false);
   readonly rascunho = signal<RascunhoSala>(RASCUNHO_VAZIO);
+  /** Erro do formulário — acende dentro do diálogo (além do toast). */
+  readonly erroForm = signal<string | null>(null);
 
   /** Sala à espera de confirmação de remoção — abre o diálogo de confirmar. */
   readonly removendo = signal<Sala | null>(null);
 
-  readonly tituloDialog = computed(() =>
-    this.editando() ? 'Editar sala' : 'Nova sala',
-  );
+  readonly tituloDialog = computed(() => (this.editando() ? 'Editar sala' : 'Nova sala'));
 
-  atualizar<K extends keyof RascunhoSala>(
-    campo: K,
-    valor: RascunhoSala[K],
-  ): void {
+  atualizar<K extends keyof RascunhoSala>(campo: K, valor: RascunhoSala[K]): void {
     this.rascunho.update((r) => ({ ...r, [campo]: valor }));
   }
 
   abrirNovo(): void {
     this.editando.set(null);
     this.rascunho.set(RASCUNHO_VAZIO);
+    this.erroForm.set(null);
     this.dialogAberto.set(true);
   }
 
@@ -129,6 +122,7 @@ export class SalasComponent {
     this.editando.set(sala);
     const { nome, tipo, capacidade } = sala;
     this.rascunho.set({ nome, tipo, capacidade });
+    this.erroForm.set(null);
     this.dialogAberto.set(true);
   }
 
@@ -140,12 +134,10 @@ export class SalasComponent {
     const r = this.rascunho();
     const nome = r.nome.trim();
     if (!nome || !r.tipo) {
-      this.toast.erro(
-        'Preencha os campos obrigatórios',
-        'Nome e tipo são obrigatórios.',
-      );
+      this.erroForm.set('Nome e tipo são obrigatórios.');
       return;
     }
+    this.erroForm.set(null);
 
     const dados = {
       nome,
@@ -155,26 +147,19 @@ export class SalasComponent {
     const alvo = this.editando();
     this.salvando.set(true);
 
-    const requisicao = alvo
-      ? this.api.atualizarSala(alvo.id, dados)
-      : this.api.criarSala(dados);
+    const requisicao = alvo ? this.api.atualizarSala(alvo.id, dados) : this.api.criarSala(dados);
 
     requisicao.subscribe({
       next: (sala) => {
         this.salas.update((lista) =>
-          alvo
-            ? lista.map((s) => (s.id === sala.id ? sala : s))
-            : [...lista, sala],
+          alvo ? lista.map((s) => (s.id === sala.id ? sala : s)) : [...lista, sala],
         );
         this.toast.sucesso(`${sala.nome} ${alvo ? 'atualizada' : 'cadastrada'}`);
         this.salvando.set(false);
         this.fecharDialog();
       },
       error: (err) => {
-        this.toast.erro(
-          alvo ? 'Falha ao atualizar' : 'Falha ao cadastrar',
-          mensagemErro(err, 'Não foi possível salvar a sala.'),
-        );
+        this.erroForm.set(mensagemErro(err, 'Não foi possível salvar a sala.'));
         this.salvando.set(false);
       },
     });
@@ -202,10 +187,7 @@ export class SalasComponent {
         this.removendo.set(null);
       },
       error: (err) => {
-        this.toast.erro(
-          'Falha ao remover',
-          mensagemErro(err, 'Não foi possível remover a sala.'),
-        );
+        this.toast.erro('Falha ao remover', mensagemErro(err, 'Não foi possível remover a sala.'));
         this.salvando.set(false);
         this.removendo.set(null);
       },

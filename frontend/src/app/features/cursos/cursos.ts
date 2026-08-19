@@ -10,15 +10,16 @@
 import { Component, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { NgIcon, provideIcons } from '@ng-icons/core';
-import { lucidePencil, lucideTrash2 } from '@ng-icons/lucide';
+import { lucidePencil, lucideSchool, lucideTrash2 } from '@ng-icons/lucide';
 import { HlmButton } from '@spartan-ng/helm/button';
-import { HlmDialogImports } from '@spartan-ng/helm/dialog';
 import { HlmInput } from '@spartan-ng/helm/input';
 import { HlmSelectImports } from '@spartan-ng/helm/select';
 import { AcademicoApi } from '../../core/api/academico-api';
 import { mensagemErro } from '../../core/api/erro-http';
 import { Curso, Modalidade, Turno } from '../../core/models/academico.models';
 import { ToastService } from '../../core/toast';
+import { ConfirmDialogComponent } from '../../shared/confirm-dialog/confirm-dialog';
+import { FormDialogComponent } from '../../shared/form-dialog/form-dialog';
 import { ColunaListagem, FiltroListagem, ListagemComponent } from '../../shared/listagem/listagem';
 import { ListagemLinhaDirective } from '../../shared/listagem/listagem-linha';
 
@@ -53,12 +54,13 @@ const RASCUNHO_VAZIO: RascunhoCurso = { nome: '', sigla: '', modalidade: '', tur
     NgIcon,
     HlmButton,
     HlmInput,
+    FormDialogComponent,
+    ConfirmDialogComponent,
     ListagemComponent,
     ListagemLinhaDirective,
     ...HlmSelectImports,
-    ...HlmDialogImports,
   ],
-  providers: [provideIcons({ lucidePencil, lucideTrash2 })],
+  providers: [provideIcons({ lucidePencil, lucideSchool, lucideTrash2 })],
   templateUrl: './cursos.html',
 })
 export class CursosComponent {
@@ -81,7 +83,11 @@ export class CursosComponent {
   ];
 
   readonly filtros: FiltroListagem<Curso>[] = [
-    { chave: 'modalidade', rotulo: 'Modalidade', valor: (c) => this.rotuloModalidade(c.modalidade) },
+    {
+      chave: 'modalidade',
+      rotulo: 'Modalidade',
+      valor: (c) => this.rotuloModalidade(c.modalidade),
+    },
     { chave: 'turno', rotulo: 'Turno', valor: (c) => this.rotuloTurno(c.turnoPadrao) },
   ];
 
@@ -114,13 +120,13 @@ export class CursosComponent {
   readonly editando = signal<Curso | null>(null);
   readonly dialogAberto = signal(false);
   readonly rascunho = signal<RascunhoCurso>(RASCUNHO_VAZIO);
+  /** Erro do formulário — acende dentro do diálogo (além do toast). */
+  readonly erroForm = signal<string | null>(null);
 
   /** Curso à espera de confirmação de remoção — abre o diálogo de confirmar. */
   readonly removendo = signal<Curso | null>(null);
 
-  readonly tituloDialog = computed(() =>
-    this.editando() ? 'Editar curso' : 'Novo curso',
-  );
+  readonly tituloDialog = computed(() => (this.editando() ? 'Editar curso' : 'Novo curso'));
 
   atualizar<K extends keyof RascunhoCurso>(campo: K, valor: RascunhoCurso[K]): void {
     this.rascunho.update((r) => ({ ...r, [campo]: valor }));
@@ -129,6 +135,7 @@ export class CursosComponent {
   abrirNovo(): void {
     this.editando.set(null);
     this.rascunho.set(RASCUNHO_VAZIO);
+    this.erroForm.set(null);
     this.dialogAberto.set(true);
   }
 
@@ -136,6 +143,7 @@ export class CursosComponent {
     this.editando.set(curso);
     const { nome, sigla, modalidade, turnoPadrao } = curso;
     this.rascunho.set({ nome, sigla, modalidade, turnoPadrao });
+    this.erroForm.set(null);
     this.dialogAberto.set(true);
   }
 
@@ -148,9 +156,10 @@ export class CursosComponent {
     const nome = r.nome.trim();
     const sigla = r.sigla.trim().toUpperCase();
     if (!nome || !sigla || !r.modalidade || !r.turnoPadrao) {
-      this.toast.erro('Preencha todos os campos', 'Nome, sigla, modalidade e turno são obrigatórios.');
+      this.erroForm.set('Nome, sigla, modalidade e turno são obrigatórios.');
       return;
     }
+    this.erroForm.set(null);
 
     const dados = {
       nome,
@@ -161,9 +170,7 @@ export class CursosComponent {
     const alvo = this.editando();
     this.salvando.set(true);
 
-    const requisicao = alvo
-      ? this.api.atualizarCurso(alvo.id, dados)
-      : this.api.criarCurso(dados);
+    const requisicao = alvo ? this.api.atualizarCurso(alvo.id, dados) : this.api.criarCurso(dados);
 
     requisicao.subscribe({
       next: (curso) => {
@@ -177,10 +184,7 @@ export class CursosComponent {
         this.fecharDialog();
       },
       error: (err) => {
-        this.toast.erro(
-          alvo ? 'Falha ao atualizar' : 'Falha ao cadastrar',
-          mensagemErro(err, 'Não foi possível salvar o curso.'),
-        );
+        this.erroForm.set(mensagemErro(err, 'Não foi possível salvar o curso.'));
         this.salvando.set(false);
       },
     });

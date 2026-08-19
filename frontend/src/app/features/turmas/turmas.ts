@@ -8,20 +8,17 @@
 import { Component, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { NgIcon, provideIcons } from '@ng-icons/core';
-import { lucidePencil, lucideTrash2 } from '@ng-icons/lucide';
+import { lucideGraduationCap, lucidePencil, lucideTrash2 } from '@ng-icons/lucide';
 import { HlmButton } from '@spartan-ng/helm/button';
-import { HlmDialogImports } from '@spartan-ng/helm/dialog';
 import { HlmInput } from '@spartan-ng/helm/input';
 import { HlmSelectImports } from '@spartan-ng/helm/select';
 import { AcademicoApi } from '../../core/api/academico-api';
 import { mensagemErro } from '../../core/api/erro-http';
 import { Curso, Turma } from '../../core/models/academico.models';
 import { ToastService } from '../../core/toast';
-import {
-  ColunaListagem,
-  FiltroListagem,
-  ListagemComponent,
-} from '../../shared/listagem/listagem';
+import { ConfirmDialogComponent } from '../../shared/confirm-dialog/confirm-dialog';
+import { FormDialogComponent } from '../../shared/form-dialog/form-dialog';
+import { ColunaListagem, FiltroListagem, ListagemComponent } from '../../shared/listagem/listagem';
 import { ListagemLinhaDirective } from '../../shared/listagem/listagem-linha';
 
 /** O rascunho do formulário — os campos editáveis de uma turma. */
@@ -46,12 +43,13 @@ const RASCUNHO_VAZIO: RascunhoTurma = {
     NgIcon,
     HlmButton,
     HlmInput,
+    FormDialogComponent,
+    ConfirmDialogComponent,
     ListagemComponent,
     ListagemLinhaDirective,
     ...HlmSelectImports,
-    ...HlmDialogImports,
   ],
-  providers: [provideIcons({ lucidePencil, lucideTrash2 })],
+  providers: [provideIcons({ lucideGraduationCap, lucidePencil, lucideTrash2 })],
   templateUrl: './turmas.html',
 })
 export class TurmasComponent {
@@ -87,10 +85,7 @@ export class TurmasComponent {
     this.api.listarTurmas().subscribe({
       next: (turmas) => this.turmas.set(turmas),
       error: (err) =>
-        this.toast.erro(
-          'Falha ao carregar turmas',
-          mensagemErro(err, 'Tente novamente.'),
-        ),
+        this.toast.erro('Falha ao carregar turmas', mensagemErro(err, 'Tente novamente.')),
     });
   }
 
@@ -118,24 +113,22 @@ export class TurmasComponent {
   readonly editando = signal<Turma | null>(null);
   readonly dialogAberto = signal(false);
   readonly rascunho = signal<RascunhoTurma>(RASCUNHO_VAZIO);
+  /** Erro do formulário — acende dentro do diálogo (além do toast). */
+  readonly erroForm = signal<string | null>(null);
 
   /** Turma à espera de confirmação de remoção — abre o diálogo de confirmar. */
   readonly removendo = signal<Turma | null>(null);
 
-  readonly tituloDialog = computed(() =>
-    this.editando() ? 'Editar turma' : 'Nova turma',
-  );
+  readonly tituloDialog = computed(() => (this.editando() ? 'Editar turma' : 'Nova turma'));
 
-  atualizar<K extends keyof RascunhoTurma>(
-    campo: K,
-    valor: RascunhoTurma[K],
-  ): void {
+  atualizar<K extends keyof RascunhoTurma>(campo: K, valor: RascunhoTurma[K]): void {
     this.rascunho.update((r) => ({ ...r, [campo]: valor }));
   }
 
   abrirNovo(): void {
     this.editando.set(null);
     this.rascunho.set(RASCUNHO_VAZIO);
+    this.erroForm.set(null);
     this.dialogAberto.set(true);
   }
 
@@ -143,6 +136,7 @@ export class TurmasComponent {
     this.editando.set(turma);
     const { cursoId, nome, semestreEntrada, quantidadeAlunos } = turma;
     this.rascunho.set({ cursoId, nome, semestreEntrada, quantidadeAlunos });
+    this.erroForm.set(null);
     this.dialogAberto.set(true);
   }
 
@@ -155,12 +149,10 @@ export class TurmasComponent {
     const nome = r.nome.trim();
     const semestreEntrada = r.semestreEntrada.trim();
     if (!r.cursoId || !nome || !semestreEntrada) {
-      this.toast.erro(
-        'Preencha os campos obrigatórios',
-        'Curso, nome e semestre de ingresso são obrigatórios.',
-      );
+      this.erroForm.set('Curso, nome e semestre de ingresso são obrigatórios.');
       return;
     }
+    this.erroForm.set(null);
 
     const dados = {
       cursoId: r.cursoId,
@@ -171,28 +163,21 @@ export class TurmasComponent {
     const alvo = this.editando();
     this.salvando.set(true);
 
-    const requisicao = alvo
-      ? this.api.atualizarTurma(alvo.id, dados)
-      : this.api.criarTurma(dados);
+    const requisicao = alvo ? this.api.atualizarTurma(alvo.id, dados) : this.api.criarTurma(dados);
 
     requisicao.subscribe({
       next: (turma) => {
         // O servidor devolve a turma com o curso já resolvido (sigla/nome) — é
         // a fonte da verdade; refletimos exatamente ela na lista.
         this.turmas.update((lista) =>
-          alvo
-            ? lista.map((t) => (t.id === turma.id ? turma : t))
-            : [...lista, turma],
+          alvo ? lista.map((t) => (t.id === turma.id ? turma : t)) : [...lista, turma],
         );
         this.toast.sucesso(`${turma.nome} ${alvo ? 'atualizada' : 'cadastrada'}`);
         this.salvando.set(false);
         this.fecharDialog();
       },
       error: (err) => {
-        this.toast.erro(
-          alvo ? 'Falha ao atualizar' : 'Falha ao cadastrar',
-          mensagemErro(err, 'Não foi possível salvar a turma.'),
-        );
+        this.erroForm.set(mensagemErro(err, 'Não foi possível salvar a turma.'));
         this.salvando.set(false);
       },
     });
@@ -220,10 +205,7 @@ export class TurmasComponent {
         this.removendo.set(null);
       },
       error: (err) => {
-        this.toast.erro(
-          'Falha ao remover',
-          mensagemErro(err, 'Não foi possível remover a turma.'),
-        );
+        this.toast.erro('Falha ao remover', mensagemErro(err, 'Não foi possível remover a turma.'));
         this.salvando.set(false);
         this.removendo.set(null);
       },

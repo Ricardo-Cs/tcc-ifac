@@ -7,20 +7,17 @@
 import { Component, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { NgIcon, provideIcons } from '@ng-icons/core';
-import { lucidePencil, lucideTrash2 } from '@ng-icons/lucide';
+import { lucidePencil, lucideTrash2, lucideUsers } from '@ng-icons/lucide';
 import { HlmButton } from '@spartan-ng/helm/button';
-import { HlmDialogImports } from '@spartan-ng/helm/dialog';
 import { HlmInput } from '@spartan-ng/helm/input';
 import { HlmSelectImports } from '@spartan-ng/helm/select';
 import { AcademicoApi } from '../../core/api/academico-api';
 import { mensagemErro } from '../../core/api/erro-http';
 import { GrupoRegime, Professor } from '../../core/models/academico.models';
 import { ToastService } from '../../core/toast';
-import {
-  ColunaListagem,
-  FiltroListagem,
-  ListagemComponent,
-} from '../../shared/listagem/listagem';
+import { ConfirmDialogComponent } from '../../shared/confirm-dialog/confirm-dialog';
+import { FormDialogComponent } from '../../shared/form-dialog/form-dialog';
+import { ColunaListagem, FiltroListagem, ListagemComponent } from '../../shared/listagem/listagem';
 import { ListagemLinhaDirective } from '../../shared/listagem/listagem-linha';
 
 /** Grupos de regime (RAD) — código do domínio + rótulo humano para exibir/filtrar. */
@@ -58,12 +55,13 @@ const RASCUNHO_VAZIO: RascunhoProfessor = {
     NgIcon,
     HlmButton,
     HlmInput,
+    FormDialogComponent,
+    ConfirmDialogComponent,
     ListagemComponent,
     ListagemLinhaDirective,
     ...HlmSelectImports,
-    ...HlmDialogImports,
   ],
-  providers: [provideIcons({ lucidePencil, lucideTrash2 })],
+  providers: [provideIcons({ lucidePencil, lucideTrash2, lucideUsers })],
   templateUrl: './professores.html',
 })
 export class ProfessoresComponent {
@@ -119,12 +117,12 @@ export class ProfessoresComponent {
   readonly editando = signal<Professor | null>(null);
   readonly dialogAberto = signal(false);
   readonly rascunho = signal<RascunhoProfessor>(RASCUNHO_VAZIO);
+  /** Erro do formulário — acende dentro do diálogo (além do toast). */
+  readonly erroForm = signal<string | null>(null);
 
   readonly removendo = signal<Professor | null>(null);
 
-  readonly tituloDialog = computed(() =>
-    this.editando() ? 'Editar professor' : 'Novo professor',
-  );
+  readonly tituloDialog = computed(() => (this.editando() ? 'Editar professor' : 'Novo professor'));
 
   atualizar<K extends keyof RascunhoProfessor>(campo: K, valor: RascunhoProfessor[K]): void {
     this.rascunho.update((r) => ({ ...r, [campo]: valor }));
@@ -133,11 +131,12 @@ export class ProfessoresComponent {
   abrirNovo(): void {
     this.editando.set(null);
     this.rascunho.set(RASCUNHO_VAZIO);
+    this.erroForm.set(null);
     this.dialogAberto.set(true);
   }
 
   abrirImportar(): void {
-    this.toast.aviso("Funcionalidade de importar ainda não implementada...");
+    this.toast.aviso('Funcionalidade de importar ainda não implementada...');
   }
 
   editar(professor: Professor): void {
@@ -149,6 +148,7 @@ export class ProfessoresComponent {
       titulacao: professor.titulacao ?? '',
       grupoRegime: professor.grupoRegime,
     });
+    this.erroForm.set(null);
     this.dialogAberto.set(true);
   }
 
@@ -161,13 +161,14 @@ export class ProfessoresComponent {
     const nome = r.nome.trim();
     const siape = r.siape.trim();
     if (!nome || !siape || !r.grupoRegime) {
-      this.toast.erro('Preencha os campos obrigatórios', 'Nome, SIAPE e regime são obrigatórios.');
+      this.erroForm.set('Nome, SIAPE e regime são obrigatórios.');
       return;
     }
     if (!/^\d{7,8}$/.test(siape)) {
-      this.toast.erro('SIAPE inválido', 'O SIAPE deve ter 7 ou 8 dígitos.');
+      this.erroForm.set('O SIAPE deve ter 7 ou 8 dígitos.');
       return;
     }
+    this.erroForm.set(null);
 
     // Campos opcionais viram null quando vazios — o backend distingue ausente de
     // string vazia, e null é o "sem valor" que a coluna nullable espera.
@@ -195,10 +196,7 @@ export class ProfessoresComponent {
         this.fecharDialog();
       },
       error: (err) => {
-        this.toast.erro(
-          alvo ? 'Falha ao atualizar' : 'Falha ao cadastrar',
-          mensagemErro(err, 'Não foi possível salvar o professor.'),
-        );
+        this.erroForm.set(mensagemErro(err, 'Não foi possível salvar o professor.'));
         this.salvando.set(false);
       },
     });
@@ -226,7 +224,10 @@ export class ProfessoresComponent {
         this.removendo.set(null);
       },
       error: (err) => {
-        this.toast.erro('Falha ao remover', mensagemErro(err, 'Não foi possível remover o professor.'));
+        this.toast.erro(
+          'Falha ao remover',
+          mensagemErro(err, 'Não foi possível remover o professor.'),
+        );
         this.salvando.set(false);
         this.removendo.set(null);
       },

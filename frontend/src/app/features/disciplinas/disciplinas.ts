@@ -7,20 +7,17 @@
 import { Component, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { NgIcon, provideIcons } from '@ng-icons/core';
-import { lucidePencil, lucideTrash2 } from '@ng-icons/lucide';
+import { lucideBookOpen, lucidePencil, lucideTrash2 } from '@ng-icons/lucide';
 import { HlmButton } from '@spartan-ng/helm/button';
-import { HlmDialogImports } from '@spartan-ng/helm/dialog';
 import { HlmInput } from '@spartan-ng/helm/input';
 import { HlmSelectImports } from '@spartan-ng/helm/select';
 import { AcademicoApi } from '../../core/api/academico-api';
 import { mensagemErro } from '../../core/api/erro-http';
 import { Disciplina, TipoSala } from '../../core/models/academico.models';
 import { ToastService } from '../../core/toast';
-import {
-  ColunaListagem,
-  FiltroListagem,
-  ListagemComponent,
-} from '../../shared/listagem/listagem';
+import { ConfirmDialogComponent } from '../../shared/confirm-dialog/confirm-dialog';
+import { FormDialogComponent } from '../../shared/form-dialog/form-dialog';
+import { ColunaListagem, FiltroListagem, ListagemComponent } from '../../shared/listagem/listagem';
 import { ListagemLinhaDirective } from '../../shared/listagem/listagem-linha';
 
 /**
@@ -59,12 +56,13 @@ const RASCUNHO_VAZIO: RascunhoDisciplina = {
     NgIcon,
     HlmButton,
     HlmInput,
+    FormDialogComponent,
+    ConfirmDialogComponent,
     ListagemComponent,
     ListagemLinhaDirective,
     ...HlmSelectImports,
-    ...HlmDialogImports,
   ],
-  providers: [provideIcons({ lucidePencil, lucideTrash2 })],
+  providers: [provideIcons({ lucideBookOpen, lucidePencil, lucideTrash2 })],
   templateUrl: './disciplinas.html',
 })
 export class DisciplinasComponent {
@@ -87,7 +85,11 @@ export class DisciplinasComponent {
   ];
 
   readonly filtros: FiltroListagem<Disciplina>[] = [
-    { chave: 'tipoSala', rotulo: 'Tipo de sala', valor: (d) => this.rotuloTipoSala(d.tipoSalaRequerido) },
+    {
+      chave: 'tipoSala',
+      rotulo: 'Tipo de sala',
+      valor: (d) => this.rotuloTipoSala(d.tipoSalaRequerido),
+    },
   ];
 
   readonly textoBusca = (d: Disciplina): string => `${d.codigo} ${d.nome}`;
@@ -123,6 +125,8 @@ export class DisciplinasComponent {
   readonly editando = signal<Disciplina | null>(null);
   readonly dialogAberto = signal(false);
   readonly rascunho = signal<RascunhoDisciplina>(RASCUNHO_VAZIO);
+  /** Erro do formulário — acende dentro do diálogo (além do toast). */
+  readonly erroForm = signal<string | null>(null);
 
   readonly removendo = signal<Disciplina | null>(null);
 
@@ -137,6 +141,7 @@ export class DisciplinasComponent {
   abrirNovo(): void {
     this.editando.set(null);
     this.rascunho.set(RASCUNHO_VAZIO);
+    this.erroForm.set(null);
     this.dialogAberto.set(true);
   }
 
@@ -148,6 +153,7 @@ export class DisciplinasComponent {
       cargaHoraria: disciplina.cargaHoraria,
       tipoSalaRequerido: disciplina.tipoSalaRequerido ?? '',
     });
+    this.erroForm.set(null);
     this.dialogAberto.set(true);
   }
 
@@ -160,13 +166,14 @@ export class DisciplinasComponent {
     const codigo = r.codigo.trim().toUpperCase();
     const nome = r.nome.trim();
     if (!codigo || !nome) {
-      this.toast.erro('Preencha os campos obrigatórios', 'Código e nome são obrigatórios.');
+      this.erroForm.set('Código e nome são obrigatórios.');
       return;
     }
     if (r.cargaHoraria == null || r.cargaHoraria <= 0) {
-      this.toast.erro('Carga horária inválida', 'Informe a carga horária em horas (maior que zero).');
+      this.erroForm.set('Informe a carga horária em horas (maior que zero).');
       return;
     }
+    this.erroForm.set(null);
 
     // "Sem exigência" vira null — a coluna nullable distingue "sala comum"
     // (null) de um tipo específico exigido.
@@ -186,17 +193,16 @@ export class DisciplinasComponent {
     requisicao.subscribe({
       next: (disciplina) => {
         this.disciplinas.update((lista) =>
-          alvo ? lista.map((d) => (d.id === disciplina.id ? disciplina : d)) : [...lista, disciplina],
+          alvo
+            ? lista.map((d) => (d.id === disciplina.id ? disciplina : d))
+            : [...lista, disciplina],
         );
         this.toast.sucesso(`${disciplina.codigo} ${alvo ? 'atualizada' : 'cadastrada'}`);
         this.salvando.set(false);
         this.fecharDialog();
       },
       error: (err) => {
-        this.toast.erro(
-          alvo ? 'Falha ao atualizar' : 'Falha ao cadastrar',
-          mensagemErro(err, 'Não foi possível salvar a disciplina.'),
-        );
+        this.erroForm.set(mensagemErro(err, 'Não foi possível salvar a disciplina.'));
         this.salvando.set(false);
       },
     });
@@ -224,7 +230,10 @@ export class DisciplinasComponent {
         this.removendo.set(null);
       },
       error: (err) => {
-        this.toast.erro('Falha ao remover', mensagemErro(err, 'Não foi possível remover a disciplina.'));
+        this.toast.erro(
+          'Falha ao remover',
+          mensagemErro(err, 'Não foi possível remover a disciplina.'),
+        );
         this.salvando.set(false);
         this.removendo.set(null);
       },

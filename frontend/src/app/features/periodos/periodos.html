@@ -14,16 +14,24 @@
       <td class="px-4 py-3 text-muted-foreground">{{ rotuloStatus(p.status) }}</td>
       <td class="px-4 py-3">
         @if (p.ativo) {
-        <span
-          class="inline-flex items-center rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-medium text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-400"
-        >Corrente</span>
+          <span
+            class="inline-flex items-center rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-medium text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-400"
+            >Corrente</span
+          >
         } @else {
-        <span class="text-xs text-muted-foreground">—</span>
+          <span class="text-xs text-muted-foreground">—</span>
         }
       </td>
       <td class="px-4 py-3">
         <div class="flex items-center justify-end gap-0.5">
-          <button hlmBtn variant="ghost" size="icon-sm" type="button" title="Editar" (click)="editar(p)">
+          <button
+            hlmBtn
+            variant="ghost"
+            size="icon-sm"
+            type="button"
+            title="Editar"
+            (click)="editar(p)"
+          >
             <ng-icon name="lucidePencil" size="1rem" />
           </button>
           <button
@@ -43,72 +51,98 @@
   </app-listagem>
 </div>
 
-<!-- Criar/editar período -->
-<hlm-dialog [state]="dialogAberto() ? 'open' : 'closed'" (closed)="fecharDialog()">
-  <hlm-dialog-content *hlmDialogPortal class="sm:max-w-md">
-    <hlm-dialog-header>
-      <h3 hlmDialogTitle>{{ tituloDialog() }}</h3>
-      <p hlmDialogDescription>O período em foco recorta ofertas, disponibilidades e a grade.</p>
-    </hlm-dialog-header>
+<!-- Criar/editar: o cromo vem do app-form-dialog; aqui só o ícone e o formulário. -->
+<app-form-dialog
+  [aberto]="dialogAberto()"
+  [titulo]="tituloDialog()"
+  descricao="O período em foco recorta ofertas, disponibilidades e a grade."
+  [erro]="erroForm()"
+  (fechar)="fecharDialog()"
+  (salvar)="salvar()"
+>
+  <ng-icon formDialogIcone name="lucideCalendarRange" size="1.15rem" />
 
-    <form class="grid gap-4 py-2" (ngSubmit)="salvar()">
+  <form class="grid gap-4" (ngSubmit)="salvar()">
+    <div class="grid gap-4 sm:grid-cols-2">
       <div class="grid gap-1.5">
-        <label class="text-sm font-medium" for="periodo-codigo">Código</label>
-        <input hlmInput id="periodo-codigo" [ngModel]="rascunho().codigo" name="codigo"
-          (ngModelChange)="atualizar('codigo', $event)" placeholder="Ex.: 2026.2" />
+        <label
+          class="text-[0.7rem] font-semibold uppercase tracking-wide text-muted-foreground"
+          for="periodo-codigo"
+          >Código</label
+        >
+        <input
+          hlmInput
+          id="periodo-codigo"
+          [ngModel]="rascunho().codigo"
+          name="codigo"
+          (ngModelChange)="atualizar('codigo', $event)"
+          placeholder="Ex.: 2026.2"
+        />
       </div>
 
       <div class="grid gap-1.5">
-        <label class="text-sm font-medium" for="periodo-descricao">Descrição</label>
-        <input hlmInput id="periodo-descricao" [ngModel]="rascunho().descricao ?? ''" name="descricao"
-          (ngModelChange)="atualizar('descricao', $event)" placeholder="Ex.: Segundo semestre de 2026" />
-      </div>
-
-      <div class="grid gap-1.5">
-        <label class="text-sm font-medium">Status</label>
-        <hlm-select [ngModel]="rascunho().status" name="status" [itemToString]="rotuloStatus" (ngModelChange)="atualizar('status', $event)">
+        <label class="text-[0.7rem] font-semibold uppercase tracking-wide text-muted-foreground"
+          >Status</label
+        >
+        <hlm-select
+          [ngModel]="rascunho().status"
+          name="status"
+          [itemToString]="rotuloStatus"
+          (ngModelChange)="atualizar('status', $event)"
+        >
           <hlm-select-trigger class="w-full">
             <hlm-select-value placeholder="Selecione o status" />
           </hlm-select-trigger>
           <hlm-select-content *hlmSelectPortal>
             @for (s of statusOpcoes; track s.valor) {
-            <hlm-select-item [value]="s.valor">{{ s.rotulo }}</hlm-select-item>
+              <hlm-select-item [value]="s.valor">{{ s.rotulo }}</hlm-select-item>
             }
           </hlm-select-content>
         </hlm-select>
       </div>
+    </div>
 
-      <label class="flex items-center gap-2.5 rounded-lg border border-border p-3 text-sm">
-        <input type="checkbox" class="size-4 accent-primary" [ngModel]="rascunho().ativo" name="ativo"
-          (ngModelChange)="atualizar('ativo', $event)" />
-        <span>
-          <span class="font-medium">Período corrente do sistema</span>
-          <span class="block text-xs text-muted-foreground">
-            Vira o padrão do seletor no cabeçalho. Só um período é corrente por vez.
-          </span>
+    <div class="grid gap-1.5">
+      <label
+        class="text-[0.7rem] font-semibold uppercase tracking-wide text-muted-foreground"
+        for="periodo-descricao"
+        >Descrição</label
+      >
+      <input
+        hlmInput
+        id="periodo-descricao"
+        [ngModel]="rascunho().descricao ?? ''"
+        name="descricao"
+        (ngModelChange)="atualizar('descricao', $event)"
+        placeholder="Ex.: Segundo semestre de 2026"
+      />
+    </div>
+
+    <label class="flex items-center gap-2.5 rounded-lg border border-border p-3 text-sm">
+      <input
+        type="checkbox"
+        class="size-4 accent-primary"
+        [ngModel]="rascunho().ativo"
+        name="ativo"
+        (ngModelChange)="atualizar('ativo', $event)"
+      />
+      <span>
+        <span class="font-medium">Período corrente do sistema</span>
+        <span class="block text-xs text-muted-foreground">
+          Vira o padrão do seletor no cabeçalho. Só um período é corrente por vez.
         </span>
-      </label>
-    </form>
-
-    <hlm-dialog-footer>
-      <button hlmBtn variant="outline" type="button" (click)="fecharDialog()">Cancelar</button>
-      <button hlmBtn type="button" (click)="salvar()">Salvar</button>
-    </hlm-dialog-footer>
-  </hlm-dialog-content>
-</hlm-dialog>
+      </span>
+    </label>
+  </form>
+</app-form-dialog>
 
 <!-- Confirmar remoção -->
-<hlm-dialog [state]="removendo() ? 'open' : 'closed'" (closed)="cancelarRemocao()">
-  <hlm-dialog-content *hlmDialogPortal class="sm:max-w-md">
-    <hlm-dialog-header>
-      <h3 hlmDialogTitle>Remover período</h3>
-      <p hlmDialogDescription>
-        Remover <strong>{{ removendo()?.codigo }}</strong>? Esta ação não pode ser desfeita.
-      </p>
-    </hlm-dialog-header>
-    <hlm-dialog-footer>
-      <button hlmBtn variant="outline" type="button" (click)="cancelarRemocao()">Cancelar</button>
-      <button hlmBtn variant="destructive" type="button" (click)="confirmarRemocao()">Remover</button>
-    </hlm-dialog-footer>
-  </hlm-dialog-content>
-</hlm-dialog>
+<app-confirm-dialog
+  [aberto]="removendo() !== null"
+  titulo="Remover período"
+  (fechar)="cancelarRemocao()"
+  (confirmar)="confirmarRemocao()"
+>
+  Remover <strong>{{ removendo()?.codigo }}</strong
+  >? Esta ação não pode ser desfeita.
+</app-confirm-dialog>

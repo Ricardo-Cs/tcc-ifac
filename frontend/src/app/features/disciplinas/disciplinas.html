@@ -12,14 +12,24 @@
       <td class="px-4 py-3">
         <span
           class="inline-flex items-center rounded-md bg-primary/10 px-2 py-0.5 text-xs font-semibold tracking-wide text-primary"
-        >{{ d.codigo }}</span>
+          >{{ d.codigo }}</span
+        >
       </td>
       <td class="px-4 py-3 font-medium text-foreground">{{ d.nome }}</td>
-      <td class="px-4 py-3 text-right tabular-nums text-muted-foreground">{{ cargaFormatada(d.cargaHoraria) }}</td>
+      <td class="px-4 py-3 text-right tabular-nums text-muted-foreground">
+        {{ cargaFormatada(d.cargaHoraria) }}
+      </td>
       <td class="px-4 py-3 text-muted-foreground">{{ rotuloTipoSala(d.tipoSalaRequerido) }}</td>
       <td class="px-4 py-3">
         <div class="flex items-center justify-end gap-0.5">
-          <button hlmBtn variant="ghost" size="icon-sm" type="button" title="Editar" (click)="editar(d)">
+          <button
+            hlmBtn
+            variant="ghost"
+            size="icon-sm"
+            type="button"
+            title="Editar"
+            (click)="editar(d)"
+          >
             <ng-icon name="lucidePencil" size="1rem" />
           </button>
           <button
@@ -39,71 +49,105 @@
   </app-listagem>
 </div>
 
-<!-- Criar/editar: um diálogo só, controlado pelo signal `dialogAberto`. -->
-<hlm-dialog [state]="dialogAberto() ? 'open' : 'closed'" (closed)="fecharDialog()">
-  <hlm-dialog-content *hlmDialogPortal class="sm:max-w-md">
-    <hlm-dialog-header>
-      <h3 hlmDialogTitle>{{ tituloDialog() }}</h3>
-      <p hlmDialogDescription>Disciplina ofertada às turmas; a carga é em horas de 60 min.</p>
-    </hlm-dialog-header>
+<!-- Criar/editar: o cromo vem do app-form-dialog; aqui só o ícone e o formulário. -->
+<app-form-dialog
+  [aberto]="dialogAberto()"
+  [titulo]="tituloDialog()"
+  descricao="Disciplina ofertada às turmas; a carga é em horas de 60 min."
+  [salvando]="salvando()"
+  [erro]="erroForm()"
+  (fechar)="fecharDialog()"
+  (salvar)="salvar()"
+>
+  <ng-icon formDialogIcone name="lucideBookOpen" size="1.15rem" />
 
-    <form class="grid gap-4 py-2" (ngSubmit)="salvar()">
+  <form class="grid gap-4" (ngSubmit)="salvar()">
+    <div class="grid gap-4 sm:grid-cols-[1fr_140px]">
       <div class="grid gap-1.5">
-        <label class="text-sm font-medium" for="disc-codigo">Código</label>
-        <input hlmInput id="disc-codigo" [ngModel]="rascunho().codigo" name="codigo"
-          (ngModelChange)="atualizar('codigo', $event)" placeholder="Ex.: COMP.001" class="uppercase" />
+        <label
+          class="text-[0.7rem] font-semibold uppercase tracking-wide text-muted-foreground"
+          for="disc-codigo"
+          >Código</label
+        >
+        <input
+          hlmInput
+          id="disc-codigo"
+          [ngModel]="rascunho().codigo"
+          name="codigo"
+          (ngModelChange)="atualizar('codigo', $event)"
+          placeholder="Ex.: COMP.001"
+          class="uppercase"
+        />
       </div>
 
       <div class="grid gap-1.5">
-        <label class="text-sm font-medium" for="disc-nome">Nome</label>
-        <input hlmInput id="disc-nome" [ngModel]="rascunho().nome" name="nome"
-          (ngModelChange)="atualizar('nome', $event)" placeholder="Ex.: Algoritmos e Programação" />
+        <label
+          class="text-[0.7rem] font-semibold uppercase tracking-wide text-muted-foreground"
+          for="disc-carga"
+          >Carga (h)</label
+        >
+        <input
+          hlmInput
+          id="disc-carga"
+          type="number"
+          min="0"
+          step="0.01"
+          [ngModel]="rascunho().cargaHoraria"
+          name="cargaHoraria"
+          (ngModelChange)="atualizar('cargaHoraria', $event)"
+          placeholder="Ex.: 80"
+        />
       </div>
+    </div>
 
-      <div class="grid gap-1.5">
-        <label class="text-sm font-medium" for="disc-carga">Carga horária (horas)</label>
-        <input hlmInput id="disc-carga" type="number" min="0" step="0.01"
-          [ngModel]="rascunho().cargaHoraria" name="cargaHoraria"
-          (ngModelChange)="atualizar('cargaHoraria', $event)" placeholder="Ex.: 80" />
-      </div>
+    <div class="grid gap-1.5">
+      <label
+        class="text-[0.7rem] font-semibold uppercase tracking-wide text-muted-foreground"
+        for="disc-nome"
+        >Nome</label
+      >
+      <input
+        hlmInput
+        id="disc-nome"
+        [ngModel]="rascunho().nome"
+        name="nome"
+        (ngModelChange)="atualizar('nome', $event)"
+        placeholder="Ex.: Algoritmos e Programação"
+      />
+    </div>
 
-      <div class="grid gap-1.5">
-        <label class="text-sm font-medium">Tipo de sala exigido</label>
-        <hlm-select [ngModel]="rascunho().tipoSalaRequerido" name="tipoSala"
-          [itemToString]="rotuloTipoSala" (ngModelChange)="atualizar('tipoSalaRequerido', $event)">
-          <hlm-select-trigger class="w-full">
-            <hlm-select-value placeholder="Qualquer sala (comum)" />
-          </hlm-select-trigger>
-          <hlm-select-content *hlmSelectPortal>
-            <hlm-select-item [value]="semExigencia">Qualquer sala (comum)</hlm-select-item>
-            @for (t of tiposSala; track t.valor) {
+    <div class="grid gap-1.5">
+      <label class="text-[0.7rem] font-semibold uppercase tracking-wide text-muted-foreground"
+        >Tipo de sala exigido</label
+      >
+      <hlm-select
+        [ngModel]="rascunho().tipoSalaRequerido"
+        name="tipoSala"
+        [itemToString]="rotuloTipoSala"
+        (ngModelChange)="atualizar('tipoSalaRequerido', $event)"
+      >
+        <hlm-select-trigger class="w-full">
+          <hlm-select-value placeholder="Qualquer sala (comum)" />
+        </hlm-select-trigger>
+        <hlm-select-content *hlmSelectPortal>
+          <hlm-select-item [value]="semExigencia">Qualquer sala (comum)</hlm-select-item>
+          @for (t of tiposSala; track t.valor) {
             <hlm-select-item [value]="t.valor">{{ t.rotulo }}</hlm-select-item>
-            }
-          </hlm-select-content>
-        </hlm-select>
-      </div>
-    </form>
-
-    <hlm-dialog-footer>
-      <button hlmBtn variant="outline" type="button" (click)="fecharDialog()">Cancelar</button>
-      <button hlmBtn type="button" [disabled]="salvando()" (click)="salvar()">Salvar</button>
-    </hlm-dialog-footer>
-  </hlm-dialog-content>
-</hlm-dialog>
+          }
+        </hlm-select-content>
+      </hlm-select>
+    </div>
+  </form>
+</app-form-dialog>
 
 <!-- Confirmar remoção: destrutivo, então nunca num clique só. -->
-<hlm-dialog [state]="removendo() ? 'open' : 'closed'" (closed)="cancelarRemocao()">
-  <hlm-dialog-content *hlmDialogPortal class="sm:max-w-md">
-    <hlm-dialog-header>
-      <h3 hlmDialogTitle>Remover disciplina</h3>
-      <p hlmDialogDescription>
-        Remover <strong>{{ removendo()?.codigo }} — {{ removendo()?.nome }}</strong>? Esta ação não
-        pode ser desfeita.
-      </p>
-    </hlm-dialog-header>
-    <hlm-dialog-footer>
-      <button hlmBtn variant="outline" type="button" (click)="cancelarRemocao()">Cancelar</button>
-      <button hlmBtn variant="destructive" type="button" [disabled]="salvando()" (click)="confirmarRemocao()">Remover</button>
-    </hlm-dialog-footer>
-  </hlm-dialog-content>
-</hlm-dialog>
+<app-confirm-dialog
+  [aberto]="removendo() !== null"
+  titulo="Remover disciplina"
+  [processando]="salvando()"
+  (fechar)="cancelarRemocao()"
+  (confirmar)="confirmarRemocao()"
+>
+  Remover <strong>{{ removendo()?.codigo }} — {{ removendo()?.nome }}</strong
+  >? Esta ação não pode ser desfeita.
+</app-confirm-dialog>

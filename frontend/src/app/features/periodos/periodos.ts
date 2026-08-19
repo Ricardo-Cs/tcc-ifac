@@ -12,13 +12,14 @@
 import { Component, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { NgIcon, provideIcons } from '@ng-icons/core';
-import { lucidePencil, lucideTrash2 } from '@ng-icons/lucide';
+import { lucideCalendarRange, lucidePencil, lucideTrash2 } from '@ng-icons/lucide';
 import { HlmButton } from '@spartan-ng/helm/button';
-import { HlmDialogImports } from '@spartan-ng/helm/dialog';
 import { HlmInput } from '@spartan-ng/helm/input';
 import { HlmSelectImports } from '@spartan-ng/helm/select';
 import { Periodo } from '../../core/models/grade.models';
 import { ToastService } from '../../core/toast';
+import { ConfirmDialogComponent } from '../../shared/confirm-dialog/confirm-dialog';
+import { FormDialogComponent } from '../../shared/form-dialog/form-dialog';
 import { ColunaListagem, FiltroListagem, ListagemComponent } from '../../shared/listagem/listagem';
 import { ListagemLinhaDirective } from '../../shared/listagem/listagem-linha';
 
@@ -41,9 +42,27 @@ const RASCUNHO_VAZIO: RascunhoPeriodo = {
 
 /** Retrato representativo (dados fictícios): um corrente e dois já fechados. */
 const PERIODOS: Periodo[] = [
-  { id: '2026-2', codigo: '2026.2', descricao: 'Segundo semestre de 2026', status: 'ABERTO', ativo: true },
-  { id: '2026-1', codigo: '2026.1', descricao: 'Primeiro semestre de 2026', status: 'FECHADO', ativo: false },
-  { id: '2025-2', codigo: '2025.2', descricao: 'Segundo semestre de 2025', status: 'FECHADO', ativo: false },
+  {
+    id: '2026-2',
+    codigo: '2026.2',
+    descricao: 'Segundo semestre de 2026',
+    status: 'ABERTO',
+    ativo: true,
+  },
+  {
+    id: '2026-1',
+    codigo: '2026.1',
+    descricao: 'Primeiro semestre de 2026',
+    status: 'FECHADO',
+    ativo: false,
+  },
+  {
+    id: '2025-2',
+    codigo: '2025.2',
+    descricao: 'Segundo semestre de 2025',
+    status: 'FECHADO',
+    ativo: false,
+  },
 ];
 
 @Component({
@@ -53,12 +72,13 @@ const PERIODOS: Periodo[] = [
     NgIcon,
     HlmButton,
     HlmInput,
+    FormDialogComponent,
+    ConfirmDialogComponent,
     ListagemComponent,
     ListagemLinhaDirective,
     ...HlmSelectImports,
-    ...HlmDialogImports,
   ],
-  providers: [provideIcons({ lucidePencil, lucideTrash2 })],
+  providers: [provideIcons({ lucideCalendarRange, lucidePencil, lucideTrash2 })],
   templateUrl: './periodos.html',
 })
 export class PeriodosComponent {
@@ -87,12 +107,12 @@ export class PeriodosComponent {
   readonly editando = signal<Periodo | null>(null);
   readonly dialogAberto = signal(false);
   readonly rascunho = signal<RascunhoPeriodo>(RASCUNHO_VAZIO);
+  /** Erro do formulário — acende dentro do diálogo. */
+  readonly erroForm = signal<string | null>(null);
 
   readonly removendo = signal<Periodo | null>(null);
 
-  readonly tituloDialog = computed(() =>
-    this.editando() ? 'Editar período' : 'Novo período',
-  );
+  readonly tituloDialog = computed(() => (this.editando() ? 'Editar período' : 'Novo período'));
 
   // Arrow field para servir de `itemToString` do hlm-select: o trigger deriva o
   // texto do VALOR selecionado, não do conteúdo do item — sem isto mostraria o
@@ -107,6 +127,7 @@ export class PeriodosComponent {
   abrirNovo(): void {
     this.editando.set(null);
     this.rascunho.set(RASCUNHO_VAZIO);
+    this.erroForm.set(null);
     this.dialogAberto.set(true);
   }
 
@@ -114,6 +135,7 @@ export class PeriodosComponent {
     this.editando.set(periodo);
     const { codigo, descricao, status, ativo } = periodo;
     this.rascunho.set({ codigo, descricao, status, ativo });
+    this.erroForm.set(null);
     this.dialogAberto.set(true);
   }
 
@@ -125,18 +147,17 @@ export class PeriodosComponent {
     const r = this.rascunho();
     const codigo = r.codigo.trim();
     if (!codigo || !r.status) {
-      this.toast.erro('Preencha os campos', 'Código e status são obrigatórios.');
+      this.erroForm.set('Código e status são obrigatórios.');
       return;
     }
 
     const alvo = this.editando();
-    const duplicado = this.periodos().some(
-      (p) => p.codigo === codigo && p.id !== alvo?.id,
-    );
+    const duplicado = this.periodos().some((p) => p.codigo === codigo && p.id !== alvo?.id);
     if (duplicado) {
-      this.toast.erro('Código já usado', `Já existe o período ${codigo}.`);
+      this.erroForm.set(`Já existe o período ${codigo}.`);
       return;
     }
+    this.erroForm.set(null);
 
     const descricao = r.descricao?.trim() ? r.descricao.trim() : null;
     const salvo: Periodo = alvo
@@ -146,7 +167,9 @@ export class PeriodosComponent {
     this.periodos.update((lista) => {
       const proxima = alvo ? lista.map((p) => (p.id === alvo.id ? salvo : p)) : [...lista, salvo];
       // Só um corrente: marcar este como ativo apaga o de todos os outros.
-      return salvo.ativo ? proxima.map((p) => (p.id === salvo.id ? p : { ...p, ativo: false })) : proxima;
+      return salvo.ativo
+        ? proxima.map((p) => (p.id === salvo.id ? p : { ...p, ativo: false }))
+        : proxima;
     });
 
     this.toast.sucesso(
@@ -170,12 +193,18 @@ export class PeriodosComponent {
     const alvo = this.removendo();
     if (!alvo) return;
     if (alvo.ativo) {
-      this.toast.erro('Período corrente', 'Defina outro período como corrente antes de remover este.');
+      this.toast.erro(
+        'Período corrente',
+        'Defina outro período como corrente antes de remover este.',
+      );
       this.removendo.set(null);
       return;
     }
     this.periodos.update((lista) => lista.filter((p) => p.id !== alvo.id));
-    this.toast.sucesso(`${alvo.codigo} removido`, 'Remoção só na tela — sem endpoint de períodos ainda.');
+    this.toast.sucesso(
+      `${alvo.codigo} removido`,
+      'Remoção só na tela — sem endpoint de períodos ainda.',
+    );
     this.removendo.set(null);
   }
 }
