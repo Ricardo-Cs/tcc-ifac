@@ -35,6 +35,16 @@ export const NAV: readonly GrupoNav[] = [
     ],
   },
   {
+    // Consultas: a grade já montada, lida por outra dimensão que o planejamento
+    // (curso › turma) não mostra — a semana de um professor, a ocupação de uma
+    // sala. Só leitura; conflitos acendem igual.
+    titulo: 'Consultas',
+    itens: [
+      { rota: '/horarios-professor', rotulo: 'Grade por professor', icone: 'lucideUserRound' },
+      { rota: '/horarios-sala', rotulo: 'Grade por sala', icone: 'lucideDoorOpen' },
+    ],
+  },
+  {
     titulo: null,
     itens: [{ rota: '/configuracoes', rotulo: 'Configurações', icone: 'lucideSettings' }],
   },
