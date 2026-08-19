@@ -12,9 +12,8 @@
  * conviver com um conflito é ação de edição, feita no Planejamento.
  */
 import { Component, computed, effect, inject, signal } from '@angular/core';
-import { FormsModule } from '@angular/forms';
 import { ActivatedRoute } from '@angular/router';
-import { HlmSelectImports } from '@spartan-ng/helm/select';
+import { HlmComboboxImports } from '@spartan-ng/helm/combobox';
 import { GradeApi } from '../../core/api/grade-api';
 import { PeriodoState } from '../../core/state/periodo-state';
 import { Aula, Conflito, Grade } from '../../core/models/grade.models';
@@ -26,7 +25,7 @@ type Dimensao = 'professor' | 'sala';
 
 @Component({
   selector: 'app-grade-consulta',
-  imports: [FormsModule, GradeTabelaComponent, ...HlmSelectImports],
+  imports: [GradeTabelaComponent, ...HlmComboboxImports],
   templateUrl: './grade-consulta.html',
 })
 export class GradeConsultaComponent {
@@ -127,8 +126,8 @@ export class GradeConsultaComponent {
       .sort((a, b) => SEVERIDADE_RANK[a.severidade] - SEVERIDADE_RANK[b.severidade]);
   });
 
-  selecionar(nome: string): void {
-    this.selecionado.set(nome);
+  selecionar(nome: string | null | undefined): void {
+    this.selecionado.set(nome ?? null);
   }
 
   pill = (sev: Conflito['severidade']): string => pillSeveridade(sev);
