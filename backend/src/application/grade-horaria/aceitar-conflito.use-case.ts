@@ -10,6 +10,7 @@ import {
   chaveDoAceite,
 } from '../../domain/grade-horaria/aceite-conflito';
 import { AvaliarGradeUseCase } from './avaliar-grade.use-case';
+import { PeriodoEditavelGuard } from './periodo-editavel.guard';
 import {
   ACEITES_REPOSITORY,
   USUARIOS_REPOSITORY,
@@ -34,6 +35,7 @@ export class AceitarConflitoUseCase {
     private readonly aceites: AceitesRepository,
     @Inject(USUARIOS_REPOSITORY)
     private readonly usuarios: UsuariosRepository,
+    private readonly periodoEditavel: PeriodoEditavelGuard,
   ) {}
 
   async aceitar(
@@ -41,6 +43,10 @@ export class AceitarConflitoUseCase {
     chave: string,
     justificativa: string,
   ): Promise<void> {
+    // Aceitar um conflito grava uma decisão: é escrita, então segue a mesma
+    // trava — só o período corrente aceita. Barra antes de reavaliar a grade.
+    await this.periodoEditavel.garantir(periodoLetivoId);
+
     const { conflitos } = await this.avaliarGrade.avaliar(periodoLetivoId);
     const conflito = conflitos.find((c) => c.chave === chave);
     if (!conflito) {
