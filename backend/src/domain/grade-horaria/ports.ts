@@ -71,6 +71,12 @@ export interface AlocacoesRepository {
   criar(input: CriarAlocacaoInput): Promise<AlocacaoAlterada>;
   mover(id: string, input: MoverAlocacaoInput): Promise<AlocacaoAlterada>;
   remover(id: string): Promise<AlocacaoAlterada>;
+  /** Período da oferta, para a trava de escrita ANTES de criar. `null` se a
+   * oferta não existe. */
+  periodoDaOferta(ofertaId: string): Promise<string | null>;
+  /** Período da alocação, para a trava de escrita ANTES de mover/remover. `null`
+   * se a alocação não existe. */
+  periodoDaAlocacao(id: string): Promise<string | null>;
 }
 
 /** Resolução de usuário. No protótipo (sem auth) resolve um autor padrão para

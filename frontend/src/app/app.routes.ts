@@ -4,6 +4,7 @@ import { DisciplinasComponent } from './features/disciplinas/disciplinas';
 import { EmConstrucaoComponent } from './features/em-construcao/em-construcao';
 import { PeriodosComponent } from './features/periodos/periodos';
 import { GradeComponent } from './features/grade/grade';
+import { GradeConsultaComponent } from './features/grade-consulta/grade-consulta';
 import { ProfessoresComponent } from './features/professores/professores';
 import { TurmasComponent } from './features/turmas/turmas';
 import { SalasComponent } from './features/salas/salas';
@@ -41,13 +42,13 @@ export const routes: Routes = [
       { path: 'horarios', component: EmConstrucaoComponent, data: { titulo: 'Grade da turma' } },
       {
         path: 'horarios-professor',
-        component: EmConstrucaoComponent,
-        data: { titulo: 'Grade por professor' },
+        component: GradeConsultaComponent,
+        data: { titulo: 'Grade por professor', dimensao: 'professor' },
       },
       {
         path: 'horarios-sala',
-        component: EmConstrucaoComponent,
-        data: { titulo: 'Grade por sala' },
+        component: GradeConsultaComponent,
+        data: { titulo: 'Grade por sala', dimensao: 'sala' },
       },
       {
         path: 'configuracoes',

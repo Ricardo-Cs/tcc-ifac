@@ -3,6 +3,7 @@ import { AvaliarGradeUseCase } from '@application/grade-horaria/avaliar-grade.us
 import { AlterarAlocacaoUseCase } from '@application/grade-horaria/alterar-alocacao.use-case';
 import { AceitarConflitoUseCase } from '@application/grade-horaria/aceitar-conflito.use-case';
 import { ListarOfertasAlocaveisUseCase } from '@application/grade-horaria/listar-ofertas-alocaveis.use-case';
+import { PeriodoEditavelGuard } from '@application/grade-horaria/periodo-editavel.guard';
 import {
   ACEITES_REPOSITORY,
   ALOCACOES_REPOSITORY,
@@ -35,6 +36,7 @@ import { GradeController } from './grade.controller';
     AlterarAlocacaoUseCase,
     AceitarConflitoUseCase,
     ListarOfertasAlocaveisUseCase,
+    PeriodoEditavelGuard,
     { provide: SNAPSHOT_LOADER, useClass: SqlSnapshotLoader },
     { provide: ACEITES_REPOSITORY, useClass: SqlAceitesRepository },
     { provide: PERIODOS_REPOSITORY, useClass: SqlPeriodosRepository },

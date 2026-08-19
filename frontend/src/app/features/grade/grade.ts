@@ -30,18 +30,14 @@ import { ConflitosPainelComponent } from './components/conflitos-painel/conflito
 import { CatalogoOfertasComponent } from './components/catalogo-ofertas/catalogo-ofertas';
 import { SEVERIDADE_RANK } from './severidade';
 import {
-  AulaVm,
-  CelulaVm,
   ConflitoVm,
-  DIAS,
   EscopoConflitos,
   LinhaVm,
   TODAS_AS_TURMAS,
   TODOS_OS_CURSOS,
-  TURNO_RANK,
-  TURNO_ROTULO,
   chaveCelula,
-  hhmm,
+  mapaSeveridadePorAula,
+  montarLinhas,
 } from './grade.view';
 
 @Component({
@@ -239,74 +235,26 @@ export class GradeComponent {
     return mapa;
   });
 
-  private readonly aulasPorSlot = computed(() => {
-    const mapa = new Map<string, Aula[]>();
-    for (const a of this.aulasVisiveis()) {
-      if (!a.slot) continue;
-      const lista = mapa.get(a.slot.id) ?? [];
-      lista.push(a);
-      mapa.set(a.slot.id, lista);
-    }
-    return mapa;
-  });
-
   /** Pior severidade que toca cada aula — governa a cor do cartão. */
-  private readonly severidadePorAula = computed(() => {
-    const mapa = new Map<string, Severidade>();
-    for (const c of this.grade()?.conflitos ?? []) {
-      for (const id of c.alocacoesEnvolvidas) {
-        const atual = mapa.get(id);
-        if (atual === undefined || SEVERIDADE_RANK[c.severidade] < SEVERIDADE_RANK[atual]) {
-          mapa.set(id, c.severidade);
-        }
-      }
-    }
-    return mapa;
-  });
+  private readonly severidadePorAula = computed(() =>
+    mapaSeveridadePorAula(this.grade()?.conflitos ?? []),
+  );
 
   /**
    * As linhas prontas da tabela: uma por (turno, ordem) do turno em exibição, já
-   * com as cinco células (Seg–Sex) e as aulas de cada uma resolvidas. É o que a
-   * tabela recebe e apenas desenha.
+   * com as cinco células (Seg–Sex) e as aulas resolvidas. A montagem em si é
+   * compartilhada com as consultas de grade (`montarLinhas`); aqui só se decide o
+   * recorte — as aulas visíveis e os turnos do curso em foco.
    */
-  readonly linhas = computed<LinhaVm[]>(() => {
-    const slots = this.grade()?.slots ?? [];
-    const turnos = this.turnosVisiveis();
-    const severidade = this.severidadePorAula();
-    const siglas = this.siglaPorCurso();
-    const slotPorCelula = this.slotPorCelula();
-    const aulasPorSlot = this.aulasPorSlot();
-
-    const aulaVm = (aula: Aula): AulaVm => ({
-      aula,
-      severidade: severidade.get(aula.id) ?? null,
-      sigla: aula.cursoId ? siglas.get(aula.cursoId) ?? null : null,
-    });
-
-    // Linhas distintas (turno, ordem) dos slots visíveis, ordenadas.
-    const vistas = new Map<string, { turno: string; ordem: number }>();
-    for (const s of slots) {
-      if (turnos && !turnos.has(s.turno)) continue;
-      const chave = `${s.turno}-${s.ordem}`;
-      if (!vistas.has(chave)) vistas.set(chave, { turno: s.turno, ordem: s.ordem });
-    }
-    const ordenadas = [...vistas.values()].sort(
-      (a, b) =>
-        (TURNO_RANK[a.turno] ?? 9) - (TURNO_RANK[b.turno] ?? 9) || a.ordem - b.ordem,
-    );
-
-    return ordenadas.map(({ turno, ordem }) => {
-      const celulas: CelulaVm[] = DIAS.map((dia) => {
-        const slot = slotPorCelula.get(chaveCelula(dia.num, turno, ordem));
-        const aulas = slot ? (aulasPorSlot.get(slot.id) ?? []).map(aulaVm) : [];
-        return { dia: dia.num, turno, ordem, aulas };
-      });
-      // A faixa horária vem de qualquer slot da linha — todos compartilham o horário.
-      const modelo = slotPorCelula.get(chaveCelula(DIAS[0].num, turno, ordem));
-      const faixa = modelo ? `${hhmm(modelo.horaInicio)} – ${hhmm(modelo.horaFim)}` : '';
-      return { turnoRotulo: TURNO_ROTULO[turno] ?? turno, faixa, celulas };
-    });
-  });
+  readonly linhas = computed<LinhaVm[]>(() =>
+    montarLinhas(
+      this.aulasVisiveis(),
+      this.grade()?.slots ?? [],
+      this.severidadePorAula(),
+      this.siglaPorCurso(),
+      this.turnosVisiveis(),
+    ),
+  );
 
   /** Ids das aulas envolvidas no conflito em foco — a tabela as realça. */
   readonly idsEmFoco = computed<Set<string>>(
@@ -467,8 +415,7 @@ export class GradeComponent {
     // sobrou de outro curso, a tabela viria vazia sem nada explicando por quê.
     const turma = this.turmaSelecionada();
     const turmaValida =
-      turma === this.TODAS ||
-      g.turmas.some((t) => t.id === turma && t.cursoId === cursoResolvido);
+      turma === this.TODAS || g.turmas.some((t) => t.id === turma && t.cursoId === cursoResolvido);
     if (!turmaValida) {
       this.turmaSelecionada.set(this.primeiraTurmaDoCurso(cursoResolvido ?? this.TODOS));
     }

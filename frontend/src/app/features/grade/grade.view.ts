@@ -3,7 +3,8 @@
  * e as entrega aos componentes de apresentação, que só desenham. Manter o cálculo
  * de um lado e o desenho do outro é o que deixa a tabela e o painel burros.
  */
-import { Aula, Conflito, Severidade } from '../../core/models/grade.models';
+import { Aula, Conflito, Severidade, Slot } from '../../core/models/grade.models';
+import { SEVERIDADE_RANK } from './severidade';
 
 /**
  * Visão "todos os cursos" — a grade inteira do campus numa tabela só. Não é o
@@ -84,4 +85,79 @@ export interface EscopoConflitos {
   nivel: 'turma' | 'curso' | 'todos';
   /** Nome da turma ou sigla do curso; `null` na visão "todos". */
   rotulo: string | null;
+}
+
+/**
+ * Pior severidade que toca cada aula (id da alocação → severidade) — governa a
+ * cor do cartão. Uma aula em vários conflitos fica com a mais grave (o menor
+ * rank). Compartilhada entre o planejamento e as consultas de grade.
+ */
+export function mapaSeveridadePorAula(conflitos: Conflito[]): Map<string, Severidade> {
+  const mapa = new Map<string, Severidade>();
+  for (const c of conflitos) {
+    for (const id of c.alocacoesEnvolvidas) {
+      const atual = mapa.get(id);
+      if (atual === undefined || SEVERIDADE_RANK[c.severidade] < SEVERIDADE_RANK[atual]) {
+        mapa.set(id, c.severidade);
+      }
+    }
+  }
+  return mapa;
+}
+
+/**
+ * Monta as linhas da tabela (uma por turno×ordem) a partir de um conjunto de
+ * aulas. Função pura, compartilhada pela grade de planejamento e pelas consultas
+ * (por professor, por sala): todas desenham a MESMA tabela, mudando só o recorte
+ * de aulas que entra aqui. `turnos` limita quais faixas aparecem (`null` = todas
+ * as presentes nos slots). A faixa horária de cada linha vem de qualquer slot
+ * dela — todos compartilham o horário.
+ */
+export function montarLinhas(
+  aulas: Aula[],
+  slots: Slot[],
+  severidadePorAula: Map<string, Severidade>,
+  siglaPorCurso: Map<string, string>,
+  turnos: Set<string> | null,
+): LinhaVm[] {
+  const slotPorCelula = new Map<string, Slot>();
+  for (const s of slots) {
+    slotPorCelula.set(chaveCelula(s.diaSemana, s.turno, s.ordem), s);
+  }
+
+  const aulasPorSlot = new Map<string, Aula[]>();
+  for (const a of aulas) {
+    if (!a.slot) continue;
+    const lista = aulasPorSlot.get(a.slot.id) ?? [];
+    lista.push(a);
+    aulasPorSlot.set(a.slot.id, lista);
+  }
+
+  const aulaVm = (aula: Aula): AulaVm => ({
+    aula,
+    severidade: severidadePorAula.get(aula.id) ?? null,
+    sigla: aula.cursoId ? (siglaPorCurso.get(aula.cursoId) ?? null) : null,
+  });
+
+  // Linhas distintas (turno, ordem) dos slots visíveis, ordenadas.
+  const vistas = new Map<string, { turno: string; ordem: number }>();
+  for (const s of slots) {
+    if (turnos && !turnos.has(s.turno)) continue;
+    const chave = `${s.turno}-${s.ordem}`;
+    if (!vistas.has(chave)) vistas.set(chave, { turno: s.turno, ordem: s.ordem });
+  }
+  const ordenadas = [...vistas.values()].sort(
+    (a, b) => (TURNO_RANK[a.turno] ?? 9) - (TURNO_RANK[b.turno] ?? 9) || a.ordem - b.ordem,
+  );
+
+  return ordenadas.map(({ turno, ordem }) => {
+    const celulas: CelulaVm[] = DIAS.map((dia) => {
+      const slot = slotPorCelula.get(chaveCelula(dia.num, turno, ordem));
+      const aulasDaCelula = slot ? (aulasPorSlot.get(slot.id) ?? []).map(aulaVm) : [];
+      return { dia: dia.num, turno, ordem, aulas: aulasDaCelula };
+    });
+    const modelo = slotPorCelula.get(chaveCelula(DIAS[0].num, turno, ordem));
+    const faixa = modelo ? `${hhmm(modelo.horaInicio)} – ${hhmm(modelo.horaFim)}` : '';
+    return { turnoRotulo: TURNO_ROTULO[turno] ?? turno, faixa, celulas };
+  });
 }

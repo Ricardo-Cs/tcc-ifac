@@ -86,6 +86,22 @@ export class SqlAlocacoesRepository implements AlocacoesRepository {
     }
     return { id: rows[0].id, periodoLetivoId: rows[0].periodo_letivo_id };
   }
+
+  async periodoDaOferta(ofertaId: string): Promise<string | null> {
+    const rows = await this.dataSource.query(
+      `SELECT periodo_letivo_id FROM oferta_disciplina WHERE id = $1`,
+      [ofertaId],
+    );
+    return rows[0]?.periodo_letivo_id ?? null;
+  }
+
+  async periodoDaAlocacao(id: string): Promise<string | null> {
+    const rows = await this.dataSource.query(
+      `SELECT periodo_letivo_id FROM alocacao_aula WHERE id = $1`,
+      [id],
+    );
+    return rows[0]?.periodo_letivo_id ?? null;
+  }
 }
 
 /**
