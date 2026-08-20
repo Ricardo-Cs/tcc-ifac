@@ -1,4 +1,4 @@
-import { Component, inject, signal } from '@angular/core';
+import { Component, computed, inject, signal } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, NavigationEnd, Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
@@ -28,6 +28,7 @@ import { HlmToaster } from '@spartan-ng/helm/sonner';
 import { filter, map, startWith } from 'rxjs';
 import { PeriodoState } from '../../core/state/periodo-state';
 import { Sessao } from '../../core/auth/sessao';
+import { ConfirmDialogComponent } from '../../shared/confirm-dialog/confirm-dialog';
 import { NAV } from '../nav';
 
 /** Onde o estado recolhido da barra sobrevive a um F5. */
@@ -35,7 +36,7 @@ const CHAVE_RECOLHIDA = 'chronos:sidebar-recolhida';
 
 @Component({
   selector: 'app-shell',
-  imports: [NgIcon, RouterLink, RouterLinkActive, RouterOutlet, HlmToaster, FormsModule, ...HlmSelectImports],
+  imports: [NgIcon, RouterLink, RouterLinkActive, RouterOutlet, HlmToaster, FormsModule, ConfirmDialogComponent, ...HlmSelectImports],
   providers: [
     provideIcons({
       lucideBookOpen,
@@ -65,8 +66,18 @@ export class ShellComponent {
   private readonly rota = inject(ActivatedRoute);
   private readonly sessao = inject(Sessao);
 
-  /** Usuário autenticado — o rodapé da barra o exibe. */
+  /** Usuário autenticado — o rodapé da barra e o header o exibem. */
   readonly usuario = this.sessao.usuario;
+
+  /** Iniciais do usuário para o avatar do header (1ª e última palavra do nome). */
+  readonly iniciais = computed(() => {
+    const nome = this.usuario()?.nome.trim();
+    if (!nome) return '?';
+    const palavras = nome.split(/\s+/);
+    const primeira = palavras[0][0];
+    const ultima = palavras.length > 1 ? palavras[palavras.length - 1][0] : palavras[0][1] ?? '';
+    return (primeira + ultima).toUpperCase();
+  });
 
   /** Período em foco no sistema inteiro — o header o exibe e permite trocar. */
   readonly periodo = inject(PeriodoState);
@@ -81,6 +92,9 @@ export class ShellComponent {
   };
 
   readonly recolhida = signal(localStorage.getItem(CHAVE_RECOLHIDA) === '1');
+
+  /** Confirmação de saída — sair só depois do "Sair" no modal, nunca num clique. */
+  readonly confirmandoSaida = signal(false);
 
   /** Título da rota mais profunda em exibição — alimenta a trilha e o <h1>. */
   readonly titulo = toSignal(
@@ -99,6 +113,7 @@ export class ShellComponent {
   }
 
   sair(): void {
+    this.confirmandoSaida.set(false);
     this.sessao.sair();
     void this.router.navigate(['/login']);
   }

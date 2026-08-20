@@ -14,17 +14,15 @@
 
     <form class="mt-6 grid gap-4" (ngSubmit)="entrar()">
       <div class="grid gap-1.5">
-        <label class="text-[0.7rem] font-semibold uppercase tracking-wide text-muted-foreground"
-          for="login-email">E-mail</label>
-        <input hlmInput class="h-9" id="login-email" type="email" autocomplete="email" [ngModel]="email()" name="email"
+        <label class="text-[0.7rem] font-bold uppercase tracking-wide " for="login-email">E-mail</label>
+        <input hlmInput class="h-9 bg-white" id="login-email" type="email" [ngModel]="email()" name="email"
           (ngModelChange)="email.set($event)" placeholder="Insira seu e-mail" />
       </div>
 
       <div class="grid gap-1.5">
-        <label class="text-[0.7rem] font-semibold uppercase tracking-wide text-muted-foreground"
-          for="login-senha">Senha</label>
-        <input hlmInput class="h-9" id="login-senha" type="password" autocomplete="current-password" [ngModel]="senha()"
-          name="senha" (ngModelChange)="senha.set($event)" placeholder="Insira sua senha" />
+        <label class="text-[0.7rem] font-bold uppercase tracking-wide " for="login-senha">Senha</label>
+        <input hlmInput class="h-9 bg-white" id="login-senha" type="password" [ngModel]="senha()" name="senha"
+          (ngModelChange)="senha.set($event)" placeholder="Insira sua senha" />
       </div>
 
       <div class="flex justify-end">

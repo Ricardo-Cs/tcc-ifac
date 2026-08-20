@@ -138,4 +138,31 @@
       'liga' 1,
       'calt' 1;
   }
+
+  /**
+   * O Tailwind v4 tirou o `cursor: pointer` padrão dos elementos interativos
+   * (passou a seguir o default do browser) e o Spartan não o recoloca — então
+   * botões, selects, itens de menu etc. ficavam sem indicar que são clicáveis.
+   * Restauramos aqui, uma vez, para o app inteiro; o estado desabilitado
+   * (`disabled`/`aria-disabled`/`data-disabled` do Spartan) vira `not-allowed`.
+   */
+  button,
+  [role='button'],
+  [role='option'],
+  [role='menuitem'],
+  [role='menuitemcheckbox'],
+  [role='menuitemradio'],
+  [role='combobox'],
+  [role='tab'],
+  [role='switch'],
+  a[href],
+  summary {
+    cursor: pointer;
+  }
+
+  button:disabled,
+  [aria-disabled='true'],
+  [data-disabled] {
+    cursor: not-allowed;
+  }
 }
