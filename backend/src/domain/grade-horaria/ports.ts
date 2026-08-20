@@ -84,13 +84,6 @@ export interface AlocacoesRepository {
   periodoDaAlocacao(id: string): Promise<string | null>;
 }
 
-/** Resolução de usuário. No protótipo (sem auth) resolve um autor padrão para
- * `criadoPor`/`aceitoPor`; quando a autenticação entrar, o autor virá do token. */
-export const USUARIOS_REPOSITORY = Symbol('USUARIOS_REPOSITORY');
-export interface UsuariosRepository {
-  padraoId(): Promise<string | null>;
-}
-
 /** Resumo de um período letivo para navegação/seleção na interface. */
 export interface PeriodoResumo {
   id: string;

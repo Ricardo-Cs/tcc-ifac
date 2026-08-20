@@ -2,7 +2,6 @@ import {
   Inject,
   Injectable,
   NotFoundException,
-  ServiceUnavailableException,
   UnprocessableEntityException,
 } from '@nestjs/common';
 import {
@@ -11,14 +10,8 @@ import {
 } from '../../domain/grade-horaria/aceite-conflito';
 import { AvaliarGradeUseCase } from './avaliar-grade.use-case';
 import { PeriodoEditavelGuard } from './periodo-editavel.guard';
-import {
-  ACEITES_REPOSITORY,
-  USUARIOS_REPOSITORY,
-} from '@domain/grade-horaria/ports';
-import type {
-  AceitesRepository,
-  UsuariosRepository,
-} from '@domain/grade-horaria/ports';
+import { ACEITES_REPOSITORY } from '@domain/grade-horaria/ports';
+import type { AceitesRepository } from '@domain/grade-horaria/ports';
 
 /**
  * Registra a decisão da comissão de conviver com um conflito. A severidade é
@@ -33,8 +26,6 @@ export class AceitarConflitoUseCase {
     private readonly avaliarGrade: AvaliarGradeUseCase,
     @Inject(ACEITES_REPOSITORY)
     private readonly aceites: AceitesRepository,
-    @Inject(USUARIOS_REPOSITORY)
-    private readonly usuarios: UsuariosRepository,
     private readonly periodoEditavel: PeriodoEditavelGuard,
   ) {}
 
@@ -42,6 +33,7 @@ export class AceitarConflitoUseCase {
     periodoLetivoId: string,
     chave: string,
     justificativa: string,
+    aceitoPorId: string,
   ): Promise<void> {
     // Aceitar um conflito grava uma decisão: é escrita, então segue a mesma
     // trava — só o período corrente aceita. Barra antes de reavaliar a grade.
@@ -64,13 +56,6 @@ export class AceitarConflitoUseCase {
         throw new UnprocessableEntityException(erro.message);
       }
       throw erro;
-    }
-
-    const aceitoPorId = await this.usuarios.padraoId();
-    if (!aceitoPorId) {
-      throw new ServiceUnavailableException(
-        'Nenhum usuário disponível para registrar o aceite.',
-      );
     }
 
     await this.aceites.registrar({

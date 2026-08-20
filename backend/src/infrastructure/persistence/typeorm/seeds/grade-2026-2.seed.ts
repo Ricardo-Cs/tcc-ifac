@@ -551,9 +551,6 @@ const CURSOS: CursoSeed[] = [
             sala: 'QUADRA',
             blocos: [2],
           },
-          // Ofertas SOLTAS: sem grade nem blocos, entram no catálogo "a alocar"
-          // com a carga inteira por pôr — para testar o arraste do catálogo para
-          // uma célula vazia. INFO é a visão que abre por padrão (manhã).
           {
             codigo: 'ART',
             nome: 'Artes',
@@ -899,9 +896,9 @@ export async function seedGrade2026(dataSource: DataSource): Promise<void> {
 
     console.log(
       `Seed concluída: ${CURSOS.length} cursos, ${totalTurmas} turmas, ` +
-        `${totalDisciplinas} disciplinas, ${PROFESSORES.length} professores, ` +
-        `${SALAS.length} salas, ${slotsPorChave.size} slots e ${totalAlocacoes} ` +
-        `alocações no período ${periodo.codigo}.`,
+      `${totalDisciplinas} disciplinas, ${PROFESSORES.length} professores, ` +
+      `${SALAS.length} salas, ${slotsPorChave.size} slots e ${totalAlocacoes} ` +
+      `alocações no período ${periodo.codigo}.`,
     );
   });
 }

@@ -25,6 +25,8 @@ import {
   OfertaAlocavelView,
   montarOfertasAlocaveisView,
 } from './ofertas-alocaveis.view';
+import { UsuarioAtual } from '@resources/auth/usuario-atual.decorator';
+import type { PayloadToken } from '@application/auth/auth.service';
 
 interface CriarAlocacaoBody {
   ofertaId?: string;
@@ -107,19 +109,25 @@ export class GradeController {
   }
 
   @Post('alocacoes')
-  async criarAlocacao(@Body() body: CriarAlocacaoBody): Promise<GradeView> {
+  async criarAlocacao(
+    @Body() body: CriarAlocacaoBody,
+    @UsuarioAtual() usuario: PayloadToken,
+  ): Promise<GradeView> {
     if (!body?.ofertaId || !body?.slotHorarioId) {
       throw new BadRequestException(
         'ofertaId e slotHorarioId são obrigatórios.',
       );
     }
-    const { periodoLetivoId } = await this.alterarAlocacao.criar({
-      ofertaId: body.ofertaId,
-      slotHorarioId: body.slotHorarioId,
-      salaId: body.salaId,
-      grupoBloco: body.grupoBloco,
-      observacoes: body.observacoes,
-    });
+    const { periodoLetivoId } = await this.alterarAlocacao.criar(
+      {
+        ofertaId: body.ofertaId,
+        slotHorarioId: body.slotHorarioId,
+        salaId: body.salaId,
+        grupoBloco: body.grupoBloco,
+        observacoes: body.observacoes,
+      },
+      usuario.sub,
+    );
     return this.gradeDoPeriodo(periodoLetivoId);
   }
 
@@ -155,7 +163,10 @@ export class GradeController {
   }
 
   @Post('conflitos/aceite')
-  async aceitar(@Body() body: AceitarConflitoBody): Promise<GradeView> {
+  async aceitar(
+    @Body() body: AceitarConflitoBody,
+    @UsuarioAtual() usuario: PayloadToken,
+  ): Promise<GradeView> {
     if (!body?.chave || !body?.justificativa?.trim()) {
       throw new BadRequestException('chave e justificativa são obrigatórias.');
     }
@@ -165,6 +176,7 @@ export class GradeController {
       periodoId,
       body.chave,
       body.justificativa.trim(),
+      usuario.sub,
     );
     return this.gradeDoPeriodo(periodoId);
   }

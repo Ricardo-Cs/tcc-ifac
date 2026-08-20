@@ -1,23 +1,16 @@
-import {
-  Inject,
-  Injectable,
-  NotFoundException,
-  ServiceUnavailableException,
-} from '@nestjs/common';
+import { Inject, Injectable, NotFoundException } from '@nestjs/common';
 import {
   ALOCACOES_REPOSITORY,
   AlocacaoAlterada,
   MoverAlocacaoInput,
-  USUARIOS_REPOSITORY,
 } from '@domain/grade-horaria/ports';
 import type {
   AlocacoesRepository,
   CriarAlocacaoInput,
-  UsuariosRepository,
 } from '@domain/grade-horaria/ports';
 import { PeriodoEditavelGuard } from './periodo-editavel.guard';
 
-/** O que o cliente envia para criar uma aula — sem o autor, resolvido aqui. */
+/** O que o cliente envia para criar uma aula — o autor vem do token, à parte. */
 export type NovaAlocacao = Omit<CriarAlocacaoInput, 'criadoPorId'>;
 
 /**
@@ -31,12 +24,13 @@ export class AlterarAlocacaoUseCase {
   constructor(
     @Inject(ALOCACOES_REPOSITORY)
     private readonly alocacoes: AlocacoesRepository,
-    @Inject(USUARIOS_REPOSITORY)
-    private readonly usuarios: UsuariosRepository,
     private readonly periodoEditavel: PeriodoEditavelGuard,
   ) {}
 
-  async criar(comando: NovaAlocacao): Promise<AlocacaoAlterada> {
+  async criar(
+    comando: NovaAlocacao,
+    criadoPorId: string,
+  ): Promise<AlocacaoAlterada> {
     // Trava de escrita ANTES de inserir: resolve o período pela oferta e recusa
     // se não for o corrente. `null` = oferta inexistente, mesmo 404 do INSERT.
     const periodoId = await this.alocacoes.periodoDaOferta(comando.ofertaId);
@@ -45,12 +39,6 @@ export class AlterarAlocacaoUseCase {
     }
     await this.periodoEditavel.garantir(periodoId);
 
-    const criadoPorId = await this.usuarios.padraoId();
-    if (!criadoPorId) {
-      throw new ServiceUnavailableException(
-        'Nenhum usuário disponível para registrar a alocação.',
-      );
-    }
     return this.alocacoes.criar({ ...comando, criadoPorId });
   }
 
