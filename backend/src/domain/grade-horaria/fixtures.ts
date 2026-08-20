@@ -23,7 +23,7 @@ export function alocacao(
   p: Partial<AlocacaoSnapshot> &
     Pick<AlocacaoSnapshot, 'id' | 'ofertaId' | 'slotId'>,
 ): AlocacaoSnapshot {
-  return { salaId: null, grupoBloco: null, ...p };
+  return { salaId: null, grupoBloco: null, version: 1, ...p };
 }
 
 /**

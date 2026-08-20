@@ -9,6 +9,7 @@ import {
   Param,
   Patch,
   Post,
+  Query,
 } from '@nestjs/common';
 import { AvaliarGradeUseCase } from '@application/grade-horaria/avaliar-grade.use-case';
 import { AlterarAlocacaoUseCase } from '@application/grade-horaria/alterar-alocacao.use-case';
@@ -36,6 +37,8 @@ interface CriarAlocacaoBody {
 interface MoverAlocacaoBody {
   slotHorarioId?: string;
   salaId?: string | null;
+  /** Versão que a interface viu — concorrência otimista (ver AlocacaoAulaEntity). */
+  versao?: number;
 }
 
 interface AceitarConflitoBody {
@@ -133,13 +136,21 @@ export class GradeController {
     const { periodoLetivoId } = await this.alterarAlocacao.mover(id, {
       slotHorarioId: body.slotHorarioId,
       salaId: body.salaId,
+      versaoBase: body.versao,
     });
     return this.gradeDoPeriodo(periodoLetivoId);
   }
 
   @Delete('alocacoes/:id')
-  async removerAlocacao(@Param('id') id: string): Promise<GradeView> {
-    const { periodoLetivoId } = await this.alterarAlocacao.remover(id);
+  async removerAlocacao(
+    @Param('id') id: string,
+    @Query('versao') versao?: string,
+  ): Promise<GradeView> {
+    // DELETE não carrega corpo por convenção — a versão vem como query param.
+    const { periodoLetivoId } = await this.alterarAlocacao.remover(
+      id,
+      versao !== undefined ? Number(versao) : undefined,
+    );
     return this.gradeDoPeriodo(periodoLetivoId);
   }
 

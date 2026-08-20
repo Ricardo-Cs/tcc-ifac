@@ -64,6 +64,15 @@ export class AlocacaoAulaEntity extends AbstractEntity {
   @Column({ type: 'text', nullable: true })
   observacoes: string | null;
 
+  // Token de concorrência otimista: guarda contra sobrescrita silenciosa quando
+  // duas pessoas mexem na mesma grade. Quem move/remove envia a versão que viu;
+  // o UPDATE/DELETE casa por ela e a incrementa, então a segunda escrita sobre um
+  // estado velho não acha a linha e vira 409 em vez de apagar o trabalho da outra.
+  // Não é `@VersionColumn` porque a escrita da grade é SQL cru (fora do
+  // EntityManager, que é quem o auto-incrementaria) — o bump é manual no repo.
+  @Column({ type: 'int', default: 1 })
+  version: number;
+
   @ManyToOne(() => UsuarioEntity, { nullable: false, onDelete: 'RESTRICT' })
   criadoPor: Relation<UsuarioEntity>;
 

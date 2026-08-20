@@ -355,11 +355,11 @@ export class GradeComponent {
     // Origem = grade: move a aula existente (a menos que solte no mesmo lugar).
     if (!aula) return;
     if (aula.slot?.id === slotDestino.id) return;
-    this.executar(() => this.api.mover(aula.id, slotDestino.id));
+    this.executar(() => this.api.mover(aula.id, slotDestino.id, aula.version));
   }
 
   remover(aula: Aula): void {
-    this.executar(() => this.api.remover(aula.id));
+    this.executar(() => this.api.remover(aula.id, aula.version));
   }
 
   abrirAceite(conflito: Conflito): void {
@@ -394,7 +394,30 @@ export class GradeComponent {
     this.erro.set(null);
     acao().subscribe({
       next: (g) => this.aplicarGrade(g),
-      error: (e) => this.falhar(e),
+      error: (e) => this.aoFalharEscrita(e),
+    });
+  }
+
+  /**
+   * Falha de uma escrita. O 409 é o caso da concorrência otimista: outra pessoa
+   * alterou (ou fechou o período d)a aula desde que esta tela carregou. Mostra o
+   * aviso do servidor E recarrega a grade — assim a tela reflete o estado novo e
+   * a próxima ação já parte da versão certa, em vez de bater no mesmo 409.
+   */
+  private aoFalharEscrita(e: unknown): void {
+    this.falhar(e);
+    if ((e as { status?: number })?.status === 409) {
+      this.recarregarGrade();
+    }
+  }
+
+  /** Recarrega a grade do período em foco — usado após um 409 de concorrência. */
+  private recarregarGrade(): void {
+    const id = this.periodoCarregado ?? null;
+    const fonte = id ? this.api.grade(id) : this.api.gradeAtual();
+    fonte.subscribe({
+      next: (g) => this.aplicarGrade(g),
+      error: () => {},
     });
   }
 

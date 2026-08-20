@@ -58,7 +58,7 @@ export class SqlSnapshotLoader implements SnapshotLoader {
       coletaRows,
     ] = await Promise.all([
       this.dataSource.query(
-        `SELECT id, oferta_id, slot_horario_id, sala_id, grupo_bloco
+        `SELECT id, oferta_id, slot_horario_id, sala_id, grupo_bloco, version
            FROM alocacao_aula
           WHERE periodo_letivo_id = $1`,
         [periodoLetivoId],
@@ -125,6 +125,7 @@ export class SqlSnapshotLoader implements SnapshotLoader {
       slotId: row.slot_horario_id,
       salaId: row.sala_id,
       grupoBloco: row.grupo_bloco,
+      version: row.version,
     }));
 
     const ofertas = new Map<Id, OfertaSnapshot>(

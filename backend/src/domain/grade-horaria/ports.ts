@@ -58,6 +58,10 @@ export interface CriarAlocacaoInput {
 export interface MoverAlocacaoInput {
   slotHorarioId?: string;
   salaId?: string | null;
+  /** Versão que o cliente viu (concorrência otimista). Ausente = sem checagem —
+   * o UPDATE segue como antes. Presente e divergente = a linha mudou no meio
+   * tempo: o repositório recusa (409), sem sobrescrever o trabalho da outra pessoa. */
+  versaoBase?: number;
 }
 
 /** Resultado de uma escrita de alocação, com o período afetado para recálculo. */
@@ -70,7 +74,8 @@ export const ALOCACOES_REPOSITORY = Symbol('ALOCACOES_REPOSITORY');
 export interface AlocacoesRepository {
   criar(input: CriarAlocacaoInput): Promise<AlocacaoAlterada>;
   mover(id: string, input: MoverAlocacaoInput): Promise<AlocacaoAlterada>;
-  remover(id: string): Promise<AlocacaoAlterada>;
+  /** `versaoBase` ausente = remove sem checar; presente e divergente = 409. */
+  remover(id: string, versaoBase?: number): Promise<AlocacaoAlterada>;
   /** Período da oferta, para a trava de escrita ANTES de criar. `null` se a
    * oferta não existe. */
   periodoDaOferta(ofertaId: string): Promise<string | null>;

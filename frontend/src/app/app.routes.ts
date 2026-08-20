@@ -9,12 +9,16 @@ import { ProfessoresComponent } from './features/professores/professores';
 import { TurmasComponent } from './features/turmas/turmas';
 import { SalasComponent } from './features/salas/salas';
 import { OfertasComponent } from './features/ofertas/ofertas';
+import { LoginComponent } from './features/login/login';
 import { ShellComponent } from './layout/shell/shell';
+import { authGuard } from './core/auth/auth-guard';
 
 export const routes: Routes = [
+  { path: 'login', component: LoginComponent },
   {
     path: '',
     component: ShellComponent,
+    canActivate: [authGuard],
     children: [
       { path: '', pathMatch: 'full', redirectTo: 'planejamento' },
       { path: 'dashboard', component: EmConstrucaoComponent, data: { titulo: 'Dashboard' } },

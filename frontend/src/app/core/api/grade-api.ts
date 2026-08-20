@@ -36,15 +36,21 @@ export class GradeApi {
     });
   }
 
-  /** Move uma aula para outro slot (UPDATE que preserva o id da alocação). */
-  mover(alocacaoId: string, slotHorarioId: string): Observable<Grade> {
+  /**
+   * Move uma aula para outro slot (UPDATE que preserva o id da alocação). Envia a
+   * `versao` que a interface viu: se a aula mudou nesse meio tempo, o servidor
+   * recusa com 409 em vez de sobrescrever o trabalho de outra pessoa.
+   */
+  mover(alocacaoId: string, slotHorarioId: string, versao: number): Observable<Grade> {
     return this.http.patch<Grade>(`${BASE}/alocacoes/${alocacaoId}`, {
       slotHorarioId,
+      versao,
     });
   }
 
-  remover(alocacaoId: string): Observable<Grade> {
-    return this.http.delete<Grade>(`${BASE}/alocacoes/${alocacaoId}`);
+  /** Remove a aula. `versao` viaja como query param (DELETE não leva corpo). */
+  remover(alocacaoId: string, versao: number): Observable<Grade> {
+    return this.http.delete<Grade>(`${BASE}/alocacoes/${alocacaoId}?versao=${versao}`);
   }
 
   /** Registra a decisão da comissão de conviver com um conflito aceitável. */

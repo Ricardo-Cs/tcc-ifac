@@ -62,9 +62,9 @@ export class AlterarAlocacaoUseCase {
     return this.alocacoes.mover(id, input);
   }
 
-  async remover(id: string): Promise<AlocacaoAlterada> {
+  async remover(id: string, versaoBase?: number): Promise<AlocacaoAlterada> {
     await this.garantirCorrente(id);
-    return this.alocacoes.remover(id);
+    return this.alocacoes.remover(id, versaoBase);
   }
 
   /**

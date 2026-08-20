@@ -27,6 +27,7 @@ import { HlmSelectImports } from '@spartan-ng/helm/select';
 import { HlmToaster } from '@spartan-ng/helm/sonner';
 import { filter, map, startWith } from 'rxjs';
 import { PeriodoState } from '../../core/state/periodo-state';
+import { Sessao } from '../../core/auth/sessao';
 import { NAV } from '../nav';
 
 /** Onde o estado recolhido da barra sobrevive a um F5. */
@@ -62,6 +63,10 @@ const CHAVE_RECOLHIDA = 'chronos:sidebar-recolhida';
 export class ShellComponent {
   private readonly router = inject(Router);
   private readonly rota = inject(ActivatedRoute);
+  private readonly sessao = inject(Sessao);
+
+  /** Usuário autenticado — o rodapé da barra o exibe. */
+  readonly usuario = this.sessao.usuario;
 
   /** Período em foco no sistema inteiro — o header o exibe e permite trocar. */
   readonly periodo = inject(PeriodoState);
@@ -91,6 +96,11 @@ export class ShellComponent {
     const proxima = !this.recolhida();
     this.recolhida.set(proxima);
     localStorage.setItem(CHAVE_RECOLHIDA, proxima ? '1' : '0');
+  }
+
+  sair(): void {
+    this.sessao.sair();
+    void this.router.navigate(['/login']);
   }
 
   /**

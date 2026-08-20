@@ -52,7 +52,10 @@
 
     <!-- Saída -->
     <div class="shrink-0 border-t border-sidebar-border p-3">
-      <button type="button"
+      @if (!recolhida() && usuario(); as u) {
+      <p class="truncate px-3 pb-1 text-xs font-medium text-sidebar-foreground/70">{{ u.nome }}</p>
+      }
+      <button type="button" (click)="sair()"
         class="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm text-sidebar-foreground/85 transition-colors hover:bg-sidebar-accent hover:text-sidebar-foreground"
         [class.justify-center]="recolhida()" [title]="recolhida() ? 'Sair do sistema' : ''">
         <ng-icon name="lucideLogOut" size="1.15rem" class="shrink-0" />

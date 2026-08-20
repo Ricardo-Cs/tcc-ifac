@@ -28,6 +28,12 @@ export interface Slot {
 export interface Aula {
   id: string;
   ofertaId: string;
+  /**
+   * Versão da linha (concorrência otimista). A interface a devolve ao mover ou
+   * remover; se outra pessoa já alterou a aula, o servidor recusa (409) em vez de
+   * apagar o trabalho dela — a grade é então recarregada.
+   */
+  version: number;
   grupoBloco: string | null;
   disciplina: Disciplina | null;
   /** Nome da turma — o rótulo impresso no cartão da aula. */

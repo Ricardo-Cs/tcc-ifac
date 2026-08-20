@@ -24,6 +24,8 @@ export interface AlocacaoSnapshot {
   salaId: Id | null;
   /** Aulas geminadas compartilham o mesmo valor; null = aula avulsa. */
   grupoBloco: string | null;
+  /** Versão da linha (concorrência otimista); a interface a devolve ao mover/remover. */
+  version: number;
 }
 
 /**

@@ -19,6 +19,8 @@ import {
 export interface AulaView {
   id: string;
   ofertaId: string;
+  /** Versão da linha; a interface a devolve ao mover/remover (concorrência otimista). */
+  version: number;
   grupoBloco: string | null;
   disciplina: { codigo: string; nome: string } | null;
   /** Nome da turma — o rótulo que a interface imprime no cartão da aula. */
@@ -129,6 +131,7 @@ function montarAula(snapshot: GradeSnapshot, alocacao): AulaView {
   return {
     id: alocacao.id,
     ofertaId: alocacao.ofertaId,
+    version: alocacao.version,
     grupoBloco: alocacao.grupoBloco,
     disciplina: disciplina
       ? { codigo: disciplina.codigo, nome: disciplina.nome }

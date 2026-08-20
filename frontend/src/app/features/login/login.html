@@ -1,0 +1,39 @@
+<div class="grid min-h-screen place-items-center bg-primary-900 p-4" style="
+    background-image:
+      radial-gradient(circle at 50% 38%, var(--color-primary-700) 0%, transparent 55%),
+      linear-gradient(160deg, var(--color-primary-800), var(--color-primary-900));
+  ">
+  <div class="w-full max-w-sm rounded-2xl bg-card p-8 shadow-2xl">
+    <div class="mb-6 flex items-center gap-2">
+      <img src="logo-alter.svg" alt="Chronos" class="size-9" />
+      <span class="font-brand text-2xl font-semibold tracking-tight text-foreground">Chronos</span>
+    </div>
+
+    <h1 class="text-xl font-bold text-foreground">Bem-vindo(a)!</h1>
+    <p class="mt-1 text-sm text-muted-foreground">Informe seus dados para acessar</p>
+
+    <form class="mt-6 grid gap-4" (ngSubmit)="entrar()">
+      <div class="grid gap-1.5">
+        <label class="text-[0.7rem] font-semibold uppercase tracking-wide text-muted-foreground"
+          for="login-email">E-mail</label>
+        <input hlmInput class="h-9" id="login-email" type="email" autocomplete="email" [ngModel]="email()" name="email"
+          (ngModelChange)="email.set($event)" placeholder="Insira seu e-mail" />
+      </div>
+
+      <div class="grid gap-1.5">
+        <label class="text-[0.7rem] font-semibold uppercase tracking-wide text-muted-foreground"
+          for="login-senha">Senha</label>
+        <input hlmInput class="h-9" id="login-senha" type="password" autocomplete="current-password" [ngModel]="senha()"
+          name="senha" (ngModelChange)="senha.set($event)" placeholder="Insira sua senha" />
+      </div>
+
+      <div class="flex justify-end">
+        <span class="cursor-default text-xs text-primary/60" title="Disponível em breve">Esqueci minha senha</span>
+      </div>
+
+      <button hlmBtn size="lg" type="submit" class="h-10 w-full" [disabled]="carregando()">
+        {{ carregando() ? 'Entrando…' : 'Entrar' }}
+      </button>
+    </form>
+  </div>
+</div>
