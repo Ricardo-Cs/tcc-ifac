@@ -44,6 +44,7 @@
         (iniciarArraste)="aoIniciarArraste($event)"
         (terminarArraste)="aoTerminarArraste()"
         (remover)="remover($event)"
+        (definirSala)="abrirSala($event)"
       />
 
       <app-conflitos-painel
@@ -58,3 +59,12 @@
     </div>
   }
 </div>
+
+<app-sala-dialog
+  [aula]="definindoSala()"
+  [salas]="salas()"
+  [ocupadas]="salasOcupadas()"
+  [salvando]="salvandoSala()"
+  (fechar)="fecharSala()"
+  (confirmar)="confirmarSala($event)"
+/>

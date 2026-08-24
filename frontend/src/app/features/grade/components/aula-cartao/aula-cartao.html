@@ -15,22 +15,24 @@
       @if (vendoTodos() && vm().sigla) {
         <span
           class="rounded bg-muted px-1 py-0.5 text-[0.6rem] font-semibold tracking-wide text-muted-foreground"
-        >{{ vm().sigla }}</span>
+          >{{ vm().sigla }}</span
+        >
       }
     </span>
     @if (editavel()) {
-    <button
-      hlmBtn
-      variant="ghost"
-      size="icon-xs"
-      type="button"
-      title="Remover alocação"
-      (click)="remover.emit(aula())"
-    >×</button>
+      <button
+        hlmBtn
+        variant="ghost"
+        size="icon-xs"
+        type="button"
+        title="Remover alocação"
+        (click)="remover.emit(aula())"
+      >
+        ×
+      </button>
     }
   </div>
   <span class="font-medium">{{ aula().disciplina?.nome }}</span>
-  <!-- A turma só precisa ser dita quando há mais de uma na tabela. -->
   @if (vendoVariasTurmas() && aula().turma) {
     <span class="text-[0.7rem] font-medium text-muted-foreground">
       {{ aula().turma }}
@@ -41,7 +43,17 @@
       {{ aula().professores.join(', ') }}
     </span>
   }
-  @if (aula().sala) {
+  @if (editavel()) {
+    <button
+      type="button"
+      class="mt-0.5 w-fit rounded px-1 py-px text-left text-[0.7rem] underline decoration-dotted underline-offset-2 transition-colors hover:bg-background/60 hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+      [class]="aula().sala ? 'text-muted-foreground' : 'text-muted-foreground/70'"
+      [title]="aula().sala ? 'Trocar a sala' : 'Definir a sala'"
+      (click)="definirSala.emit(aula())"
+    >
+      {{ aula().sala ?? 'Definir sala' }}
+    </button>
+  } @else if (aula().sala) {
     <span class="text-[0.7rem] text-muted-foreground">{{ aula().sala }}</span>
   }
 </article>

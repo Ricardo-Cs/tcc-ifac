@@ -1,9 +1,3 @@
-/**
- * Monta o modelo de leitura que a interface consome: a grade "achatada" com
- * nomes já resolvidos (disciplina, turma, professores, sala, slot) e a lista de
- * conflitos. É a fronteira entre o domínio e o mundo HTTP — o controller não
- * devolve o `GradeSnapshot` cru, que é estrutura de trabalho do motor.
- */
 import { ResultadoAvaliacao } from '@application/grade-horaria/avaliar-grade.use-case';
 import {
   Conflito,
@@ -19,26 +13,15 @@ import {
 export interface AulaView {
   id: string;
   ofertaId: string;
-  /** Versão da linha; a interface a devolve ao mover/remover (concorrência otimista). */
   version: number;
   grupoBloco: string | null;
   disciplina: { codigo: string; nome: string } | null;
-  /** Nome da turma — o rótulo que a interface imprime no cartão da aula. */
   turma: string | null;
-  /**
-   * Id da turma. É por ele que a grade se separa DE FATO: um curso tem várias
-   * turmas correndo no mesmo período (SI tem 1º, 3º e 6º ao mesmo tempo), cada
-   * uma com sua própria grade. Filtrar só por curso empilha as três na mesma
-   * célula e faz parecer conflito o que é só sobreposição de visões.
-   */
   turmaId: string | null;
-  /**
-   * Id do curso da turma — o primeiro nível do recorte. Só o id: o rótulo vem
-   * de `GradeView.cursos`, para não repetir nome e sigla em cada aula.
-   */
   cursoId: string | null;
   professores: string[];
   sala: string | null;
+  salaId: string | null;
   slot: {
     id: string;
     codigo: string;
@@ -57,42 +40,24 @@ export interface ConflitoView {
   aceitavel: boolean;
 }
 
-/**
- * Catálogo de horários do período — TODOS os slots, não só os ocupados. É o que
- * permite à interface desenhar a grade inteira (inclusive células vazias) e
- * saber o `id` de destino ao mover uma aula para um horário ainda livre; sem
- * isso o front só conheceria os slots que já têm aula.
- */
 export interface SlotView {
   id: string;
   codigo: string;
   diaSemana: number;
   turno: string;
   ordem: number;
-  /** Faixa horária "HH:MM:SS" — a interface exibe no cabeçalho da linha. */
   horaInicio: string;
   horaFim: string;
 }
 
-/**
- * Os cursos que têm aula neste período — o menu de visões da interface. Vêm da
- * grade (não do catálogo inteiro) porque um curso sem oferta no período não
- * rende nenhuma tabela para desenhar.
- */
 export interface CursoView {
   id: string;
   nome: string;
   sigla: string;
   modalidade: string;
-  /** Turno em que o curso funciona — a interface desenha as linhas dele. */
   turnoPadrao: string;
 }
 
-/**
- * As turmas com oferta no período — o segundo nível do menu de visões. Uma
- * turma é a unidade que de fato tem "uma grade": é dela o horário que o aluno
- * recebe e que a comissão monta.
- */
 export interface TurmaView {
   id: string;
   nome: string;
@@ -141,6 +106,7 @@ function montarAula(snapshot: GradeSnapshot, alocacao): AulaView {
     cursoId: turma?.cursoId ?? null,
     professores: nomesProfessores(snapshot, alocacao.ofertaId),
     sala: sala?.nome ?? null,
+    salaId: alocacao.salaId ?? null,
     slot: slot
       ? {
           id: slot.id,
@@ -160,17 +126,10 @@ function montarConflito(conflito: Conflito & { chave: string }): ConflitoView {
     severidade: conflito.severidade,
     mensagem: conflito.mensagem,
     alocacoesEnvolvidas: conflito.alocacoesEnvolvidas,
-    // FORTE nunca é aceitável — a interface esconde o botão de aceitar.
     aceitavel: conflito.severidade !== SeveridadeConflito.FORTE,
   };
 }
 
-/**
- * Os cursos alcançados pelas ofertas do período, em ordem de sigla. Sai das
- * OFERTAS (não das alocações) para que um curso já cadastrado apareça na
- * interface mesmo antes de ter a primeira aula posta na grade — do contrário a
- * comissão não teria onde soltar a primeira aula dele.
- */
 function cursosDaGrade(snapshot: GradeSnapshot): CursoView[] {
   const ids = new Set<string>();
   for (const oferta of snapshot.ofertas.values()) {
@@ -190,12 +149,6 @@ function cursosDaGrade(snapshot: GradeSnapshot): CursoView[] {
     .sort((a, b) => a.sigla.localeCompare(b.sigla));
 }
 
-/**
- * As turmas alcançadas pelas ofertas do período, em ordem de nome. Mesma razão
- * de `cursosDaGrade`: sai das OFERTAS, não das alocações, para que uma turma
- * ainda sem aula posta apareça na interface — do contrário a comissão não teria
- * onde soltar a primeira aula dela.
- */
 function turmasDaGrade(snapshot: GradeSnapshot): TurmaView[] {
   const ids = new Set<string>();
   for (const oferta of snapshot.ofertas.values()) {
