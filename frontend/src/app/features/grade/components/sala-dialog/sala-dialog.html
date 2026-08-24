@@ -1,53 +1,36 @@
-<app-form-dialog
-  [aberto]="aula() !== null"
-  titulo="Sala da aula"
-  [descricao]="descricao()"
-  [salvando]="salvando()"
-  rotuloSalvar="Definir"
-  (fechar)="fechar.emit()"
-  (salvar)="submeter()"
->
+<app-form-dialog [aberto]="aula() !== null" titulo="Sala da aula" [descricao]="descricao()" [salvando]="salvando()"
+  rotuloSalvar="Definir" (fechar)="fechar.emit()" (salvar)="submeter()">
   <ng-icon formDialogIcone name="lucideDoorOpen" size="1.15rem" />
 
   <form class="grid gap-3" (ngSubmit)="submeter()">
     <div class="grid gap-1.5">
-      <label class="text-[0.7rem] font-semibold tracking-wide text-muted-foreground uppercase"
-        >Sala</label
-      >
-      <hlm-select
-        [ngModel]="escolha()"
-        name="sala"
-        [itemToString]="rotuloSala"
-        (ngModelChange)="escolha.set($event)"
-      >
+      <label class="text-[0.7rem] font-semibold tracking-wide text-muted-foreground uppercase">Sala</label>
+      <hlm-select [ngModel]="escolha()" name="sala" [itemToString]="rotuloSala" (ngModelChange)="escolha.set($event)">
         <hlm-select-trigger class="w-full">
           <hlm-select-value placeholder="Selecione a sala" />
         </hlm-select-trigger>
         <hlm-select-content *hlmSelectPortal>
           <hlm-select-item [value]="semSala">Sem sala</hlm-select-item>
           @for (s of opcoes(); track s.id) {
-            <hlm-select-item [value]="s.id">
-              <span class="flex w-full items-center gap-2">
-                <span>{{ s.nome }}</span>
-                @if (detalhe(s)) {
-                  <span class="text-xs text-muted-foreground">{{ detalhe(s) }}</span>
-                }
-                @if (ocupada(s)) {
-                  <span
-                    class="ms-auto rounded bg-destructive/10 px-1.5 py-0.5 text-[0.65rem] font-semibold text-destructive"
-                    >ocupada</span
-                  >
-                }
-              </span>
-            </hlm-select-item>
+          <hlm-select-item [value]="s.id" [disabled]="ocupada(s)">
+            <span class="flex w-full items-center gap-2">
+              <span>{{ s.nome }}</span>
+              @if (detalhe(s)) {
+              <span class="text-xs text-muted-foreground">{{ detalhe(s) }}</span>
+              }
+              @if (ocupada(s)) {
+              <span
+                class="ms-auto rounded bg-destructive/10 px-1.5 py-0.5 text-[0.65rem] font-semibold text-destructive">ocupada</span>
+              }
+            </span>
+          </hlm-select-item>
           }
         </hlm-select-content>
       </hlm-select>
     </div>
 
     <p class="text-xs text-muted-foreground">
-      Escolher uma sala já ocupada neste horário é permitido — o conflito acende na grade em vez de
-      barrar a decisão da comissão.
+      Escolha uma sala para a disciplina.
     </p>
   </form>
 </app-form-dialog>
