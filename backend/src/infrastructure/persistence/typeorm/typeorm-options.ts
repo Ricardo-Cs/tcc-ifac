@@ -58,6 +58,9 @@ export function buildDataSourceOptions(env: DatabaseEnv): DataSourceOptions {
     username: env.username,
     password: env.password,
     database: env.database,
+    // Neon (e a maioria dos Postgres gerenciados) exige SSL; o Postgres
+    // local do docker-compose não suporta, por isso só liga em produção.
+    ssl: isProduction ? { rejectUnauthorized: false } : false,
     namingStrategy: new SnakeNamingStrategy(),
     synchronize: true,
     migrationsRun: false,
