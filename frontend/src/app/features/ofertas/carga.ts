@@ -1,4 +1,4 @@
-import { RegimeOferta } from '../../core/models/academico.models';
+import { Modalidade, RegimeOferta } from '../../core/models/academico.models';
 
 export const AULAS_POR_HORA = 6 / 5;
 
@@ -6,6 +6,10 @@ export const SEMANAS_POR_REGIME: Record<RegimeOferta, number> = {
   SEMESTRAL: 18,
   ANUAL: 36,
 };
+
+export function regimeDaModalidade(modalidade: Modalidade): RegimeOferta {
+  return modalidade === 'INTEGRADO' ? 'ANUAL' : 'SEMESTRAL';
+}
 
 export interface SugestaoAulasSemana {
   aulasSemana: number;

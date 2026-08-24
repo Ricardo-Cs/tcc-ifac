@@ -17,11 +17,6 @@ import {
   isViolacaoUnicidade,
 } from '../postgres-error';
 
-/**
- * Adaptador TypeORM da porta `TurmasRepository`. O `cursoId` do modelo vira a
- * relação `curso` da entidade; a leitura traz o curso junto (relations) para o
- * registro plano carregar sigla/nome sem um segundo request.
- */
 @Injectable()
 export class TypeormTurmasRepository implements TurmasRepository {
   constructor(
@@ -58,8 +53,6 @@ export class TypeormTurmasRepository implements TurmasRepository {
     id: string,
     input: AtualizarTurmaInput,
   ): Promise<Turma | null> {
-    // preload carrega a turma e sobrepõe só os campos enviados; devolve
-    // undefined quando o id não existe (vira 404 no serviço).
     const entidade = await this.repo.preload({ id, ...toEntity(input) });
     if (!entidade) {
       return null;
@@ -86,18 +79,15 @@ export class TypeormTurmasRepository implements TurmasRepository {
     }
   }
 
-  /** Relê a turma com o curso resolvido para devolver o registro plano completo. */
   private async recarregar(id: string): Promise<Turma> {
     const linha = await this.repo.findOne({
       where: { id },
       relations: { curso: true },
     });
-    // A turma acabou de ser gravada nesta mesma transação lógica; sempre existe.
     return toModel(linha!);
   }
 }
 
-/** Converte os campos planos da aplicação para o shape de entidade (curso → relação). */
 function toEntity(
   input: CriarTurmaInput | AtualizarTurmaInput,
 ): DeepPartial<TurmaEntity> {
@@ -126,6 +116,7 @@ function toModel(e: TurmaEntity): Turma {
     cursoId: e.curso.id,
     cursoSigla: e.curso.sigla,
     cursoNome: e.curso.nome,
+    cursoModalidade: e.curso.modalidade,
     nome: e.nome,
     semestreEntrada: e.semestreEntrada,
     quantidadeAlunos: e.quantidadeAlunos,

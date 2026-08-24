@@ -1,10 +1,4 @@
-import { RegimeOferta } from './enums';
-
-// ─────────────────────────────── Oferta ───────────────────────────────
-// Oferta liga turma × disciplina × período (único por essa tripla). Carrega a
-// codocência embutida: N professores, cada um com uma proporção de carga que
-// soma 100. O curso/disciplina/período vêm resolvidos no registro plano para a
-// listagem exibir sem novos requests.
+import { Modalidade, RegimeOferta } from './enums';
 
 export interface ProfessorDaOferta {
   professorId: string;
@@ -45,11 +39,12 @@ export interface CriarOfertaInput {
 
 export type AtualizarOfertaInput = Partial<CriarOfertaInput>;
 
-/**
- * Regra de codocência (pura — a aplicação traduz o retorno em HTTP): as
- * proporções de uma oferta somam exatamente 100, sem professor repetido e sem
- * proporção não-positiva. Devolve a mensagem do primeiro erro, ou `null` se ok.
- */
+export function regimeDaModalidade(modalidade: Modalidade): RegimeOferta {
+  return modalidade === Modalidade.INTEGRADO
+    ? RegimeOferta.ANUAL
+    : RegimeOferta.SEMESTRAL;
+}
+
 export function erroProporcoes(
   professores: ProfessorOfertaInput[],
 ): string | null {
@@ -67,7 +62,6 @@ export function erroProporcoes(
     }
   }
   const soma = professores.reduce((s, p) => s + p.proporcaoCarga, 0);
-  // Arredonda para 2 casas antes de comparar (proporção é numeric(5,2)).
   if (Math.round(soma * 100) / 100 !== 100) {
     return `As proporções de carga devem somar 100% (soma atual: ${soma}%).`;
   }
@@ -76,12 +70,9 @@ export function erroProporcoes(
 
 export const OFERTAS_REPOSITORY = Symbol('OFERTAS_REPOSITORY');
 export interface OfertasRepository {
-  /** Lista as ofertas; quando `periodoLetivoId` é dado, só as daquele período. */
   listar(periodoLetivoId?: string): Promise<Oferta[]>;
   buscarPorId(id: string): Promise<Oferta | null>;
   criar(input: CriarOfertaInput): Promise<Oferta>;
-  /** `null` quando não existe oferta com esse id. */
   atualizar(id: string, input: AtualizarOfertaInput): Promise<Oferta | null>;
-  /** `false` quando não existe oferta com esse id. */
   remover(id: string): Promise<boolean>;
 }

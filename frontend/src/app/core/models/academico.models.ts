@@ -4,8 +4,6 @@ export type GrupoRegime = 'G1' | 'G2' | 'G3_20H' | 'G3_40H' | 'G2_1' | 'G2_2' | 
 export type TipoSala = 'COMUM' | 'LABORATORIO' | 'AUDITORIO' | 'QUADRA';
 export type RegimeOferta = 'ANUAL' | 'SEMESTRAL';
 
-// ─────────────────────────────── Curso ────────────────────────────────
-
 export interface Curso {
   id: string;
   nome: string;
@@ -26,8 +24,6 @@ export interface CriarCurso {
 }
 
 export type AtualizarCurso = Partial<CriarCurso>;
-
-// ───────────────────────────── Professor ──────────────────────────────
 
 export interface Professor {
   id: string;
@@ -54,8 +50,6 @@ export interface CriarProfessor {
 
 export type AtualizarProfessor = Partial<CriarProfessor>;
 
-// ───────────────────────────── Disciplina ─────────────────────────────
-
 export interface Disciplina {
   id: string;
   cursoId: string;
@@ -79,13 +73,12 @@ export interface CriarDisciplina {
 
 export type AtualizarDisciplina = Partial<CriarDisciplina>;
 
-// ─────────────────────────────── Turma ────────────────────────────────
-
 export interface Turma {
   id: string;
   cursoId: string;
   cursoSigla: string;
   cursoNome: string;
+  cursoModalidade: Modalidade;
   nome: string;
   semestreEntrada: string;
   quantidadeAlunos: number | null;
@@ -101,8 +94,6 @@ export interface CriarTurma {
 }
 
 export type AtualizarTurma = Partial<CriarTurma>;
-
-// ──────────────────────────────── Sala ────────────────────────────────
 
 export interface Sala {
   id: string;
@@ -120,8 +111,6 @@ export interface CriarSala {
 }
 
 export type AtualizarSala = Partial<CriarSala>;
-
-// ─────────────────────────────── Oferta ───────────────────────────────
 
 export interface ProfessorDaOferta {
   professorId: string;
@@ -154,7 +143,6 @@ export interface CriarOferta {
   turmaId: string;
   disciplinaId: string;
   periodoLetivoId: string;
-  regime: RegimeOferta;
   aulasSemana: number;
   observacoes?: string | null;
   professores: ProfessorOfertaInput[];

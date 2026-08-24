@@ -10,14 +10,23 @@ import {
   CriarOfertaInput,
   Oferta,
   erroProporcoes,
+  regimeDaModalidade,
 } from '@domain/academico/oferta';
 import type { OfertasRepository } from '@domain/academico/oferta';
+import { TURMAS_REPOSITORY } from '@domain/academico/turma';
+import type { TurmasRepository } from '@domain/academico/turma';
+import { RegimeOferta } from '@domain/academico/enums';
+
+export type CriarOfertaEntrada = Omit<CriarOfertaInput, 'regime'>;
+export type AtualizarOfertaEntrada = Omit<AtualizarOfertaInput, 'regime'>;
 
 @Injectable()
 export class OfertasService {
   constructor(
     @Inject(OFERTAS_REPOSITORY)
     private readonly ofertas: OfertasRepository,
+    @Inject(TURMAS_REPOSITORY)
+    private readonly turmas: TurmasRepository,
   ) {}
 
   listar(periodoLetivoId?: string): Promise<Oferta[]> {
@@ -32,18 +41,23 @@ export class OfertasService {
     return oferta;
   }
 
-  criar(input: CriarOfertaInput): Promise<Oferta> {
+  async criar(input: CriarOfertaEntrada): Promise<Oferta> {
     this.validarProporcoes(input.professores);
-    return this.ofertas.criar(input);
+    const regime = await this.regimeDaTurma(input.turmaId);
+    return this.ofertas.criar({ ...input, regime });
   }
 
-  async atualizar(id: string, input: AtualizarOfertaInput): Promise<Oferta> {
-    // `professores` é opcional no PATCH; só valida quando o cliente o envia
-    // (aí substitui o conjunto inteiro).
+  async atualizar(id: string, input: AtualizarOfertaEntrada): Promise<Oferta> {
     if (input.professores !== undefined) {
       this.validarProporcoes(input.professores);
     }
-    const oferta = await this.ofertas.atualizar(id, input);
+    const regime = input.turmaId
+      ? await this.regimeDaTurma(input.turmaId)
+      : undefined;
+    const oferta = await this.ofertas.atualizar(id, {
+      ...input,
+      ...(regime ? { regime } : {}),
+    });
     if (!oferta) {
       throw new NotFoundException(`Oferta ${id} não encontrada.`);
     }
@@ -57,7 +71,14 @@ export class OfertasService {
     }
   }
 
-  /** Traduz a regra de domínio da codocência em 400. */
+  private async regimeDaTurma(turmaId: string): Promise<RegimeOferta> {
+    const turma = await this.turmas.buscarPorId(turmaId);
+    if (!turma) {
+      throw new BadRequestException(`Turma ${turmaId} informada não existe.`);
+    }
+    return regimeDaModalidade(turma.cursoModalidade);
+  }
+
   private validarProporcoes(
     professores: CriarOfertaInput['professores'],
   ): void {

@@ -21,7 +21,7 @@ import { ConfirmDialogComponent } from '../../shared/confirm-dialog/confirm-dial
 import { FormDialogComponent } from '../../shared/form-dialog/form-dialog';
 import { ColunaListagem, FiltroListagem, ListagemComponent } from '../../shared/listagem/listagem';
 import { ListagemLinhaDirective } from '../../shared/listagem/listagem-linha';
-import { SugestaoAulasSemana, sugerirAulasSemana } from './carga';
+import { SugestaoAulasSemana, regimeDaModalidade, sugerirAulasSemana } from './carga';
 
 const REGIMES = [
   { valor: 'SEMESTRAL', rotulo: 'Semestral' },
@@ -36,7 +36,6 @@ interface RascunhoVinculo {
 interface RascunhoOferta {
   turmaId: string;
   disciplinaId: string;
-  regime: RegimeOferta | '';
   aulasSemana: number | null;
   observacoes: string;
   professores: RascunhoVinculo[];
@@ -50,7 +49,6 @@ const vinculoVazio = (): RascunhoVinculo => ({
 const rascunhoVazio = (): RascunhoOferta => ({
   turmaId: '',
   disciplinaId: '',
-  regime: '',
   aulasSemana: null,
   observacoes: '',
   professores: [vinculoVazio()],
@@ -76,8 +74,6 @@ export class OfertasComponent {
   private readonly api = inject(AcademicoApi);
   private readonly toast = inject(ToastService);
   readonly periodoState = inject(PeriodoState);
-
-  readonly regimes = REGIMES;
 
   readonly ofertas = signal<Oferta[]>([]);
   readonly turmas = signal<Turma[]>([]);
@@ -192,13 +188,18 @@ export class OfertasComponent {
     return this.disciplinas().filter((d) => d.cursoId === turma.cursoId);
   });
 
+  readonly regimeEscolhido = computed<RegimeOferta | null>(() => {
+    const turma = this.turmaEscolhida();
+    return turma ? regimeDaModalidade(turma.cursoModalidade) : null;
+  });
+
   readonly cargaHorariaEscolhida = computed<number | null>(
     () =>
       this.disciplinas().find((d) => d.id === this.rascunho().disciplinaId)?.cargaHoraria ?? null,
   );
 
   readonly sugestao = computed<SugestaoAulasSemana | null>(() =>
-    sugerirAulasSemana(this.cargaHorariaEscolhida(), this.rascunho().regime),
+    sugerirAulasSemana(this.cargaHorariaEscolhida(), this.regimeEscolhido() ?? ''),
   );
 
   readonly divergeDaSugestao = computed(() => {
@@ -232,10 +233,12 @@ export class OfertasComponent {
         }
       }
 
-      if (campo === 'disciplinaId' || campo === 'regime') {
+      if (campo === 'turmaId' || campo === 'disciplinaId') {
+        const turma = this.turmas().find((t) => t.id === proximo.turmaId);
+        const regime = turma ? regimeDaModalidade(turma.cursoModalidade) : '';
         const sugestao = sugerirAulasSemana(
           this.disciplinas().find((d) => d.id === proximo.disciplinaId)?.cargaHoraria ?? null,
-          proximo.regime,
+          regime,
         );
         if (sugestao && !this.aulasSemanaEditado()) {
           proximo.aulasSemana = sugestao.aulasSemana;
@@ -283,7 +286,6 @@ export class OfertasComponent {
     this.rascunho.set({
       turmaId: oferta.turmaId,
       disciplinaId: oferta.disciplinaId,
-      regime: oferta.regime,
       aulasSemana: oferta.aulasSemana,
       observacoes: oferta.observacoes ?? '',
       professores: oferta.professores.map((p) => ({
@@ -307,8 +309,8 @@ export class OfertasComponent {
       return;
     }
     const r = this.rascunho();
-    if (!r.turmaId || !r.disciplinaId || !r.regime) {
-      this.erroForm.set('Turma, disciplina e regime são obrigatórios.');
+    if (!r.turmaId || !r.disciplinaId) {
+      this.erroForm.set('Turma e disciplina são obrigatórias.');
       return;
     }
     if (r.aulasSemana == null || r.aulasSemana < 1) {
@@ -341,7 +343,6 @@ export class OfertasComponent {
       turmaId: r.turmaId,
       disciplinaId: r.disciplinaId,
       periodoLetivoId: periodo.id,
-      regime: r.regime,
       aulasSemana: r.aulasSemana,
       observacoes: r.observacoes.trim() || null,
       professores,

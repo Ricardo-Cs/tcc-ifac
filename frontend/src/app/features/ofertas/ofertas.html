@@ -155,21 +155,11 @@
         <label class="text-[0.7rem] font-semibold uppercase tracking-wide text-muted-foreground"
           >Regime</label
         >
-        <hlm-select
-          [ngModel]="rascunho().regime"
-          name="regime"
-          [itemToString]="rotuloRegime"
-          (ngModelChange)="atualizar('regime', $event)"
+        <div
+          class="flex h-7 items-center rounded-md border border-input bg-muted/30 px-2 text-xs text-muted-foreground"
         >
-          <hlm-select-trigger class="w-full">
-            <hlm-select-value placeholder="Regime" />
-          </hlm-select-trigger>
-          <hlm-select-content *hlmSelectPortal>
-            @for (r of regimes; track r.valor) {
-              <hlm-select-item [value]="r.valor">{{ r.rotulo }}</hlm-select-item>
-            }
-          </hlm-select-content>
-        </hlm-select>
+          {{ regimeEscolhido() ? rotuloRegime(regimeEscolhido()!) : 'Escolha a turma' }}
+        </div>
       </div>
 
       <div class="grid gap-1.5">

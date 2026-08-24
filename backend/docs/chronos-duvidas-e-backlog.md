@@ -133,8 +133,15 @@ sugerir + permitir override.)
   `professor_oferta` ganha `proporcaoCarga`; a carga do professor vira cálculo
   exato, não faixa.
 - **Regime anual/semestral**: propriedade da modalidade (integrado = anual;
-  superior e subsequente = semestral), com possibilidade de override na
-  oferta.
+  superior e subsequente = semestral), travada — **sem** override na oferta
+  (decisão revista, 24/08/2026; substitui a versão anterior "com
+  possibilidade de override"). O campo `regime` continua existindo em
+  `oferta_disciplina` (é a unidade que vira UMA linha anual x2 semestrais),
+  mas deixa de ser input do cliente: `OfertasService` calcula
+  `regimeDaModalidade(turma.cursoModalidade)` a cada criação/troca de turma
+  e ignora qualquer valor vindo do formulário. `Turma` ganhou
+  `cursoModalidade` (resolvido junto com sigla/nome) para viabilizar isso
+  sem round-trip extra.
 - **Montagem da grade**: dois eventos por ano — início do ano (as três
   modalidades) e férias do meio (segundo período). Ofertas anuais atravessam
   os dois semestres.

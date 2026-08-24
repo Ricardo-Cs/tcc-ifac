@@ -3,7 +3,6 @@ import { Type } from 'class-transformer';
 import {
   ArrayMinSize,
   IsArray,
-  IsEnum,
   IsInt,
   IsNumber,
   IsOptional,
@@ -17,7 +16,6 @@ import {
 import { RegimeOferta } from '@domain/academico/enums';
 import { Oferta, ProfessorDaOferta } from '@domain/academico/oferta';
 
-/** Um professor da oferta (codocência) no corpo de escrita. */
 export class ProfessorOfertaDto {
   @ApiProperty({ format: 'uuid' })
   @IsUUID()
@@ -34,7 +32,6 @@ export class ProfessorOfertaDto {
   proporcaoCarga: number;
 }
 
-/** Corpo de criação de oferta (com a codocência embutida). */
 export class CriarOfertaDto {
   @ApiProperty({ format: 'uuid' })
   @IsUUID()
@@ -47,10 +44,6 @@ export class CriarOfertaDto {
   @ApiProperty({ format: 'uuid' })
   @IsUUID()
   periodoLetivoId: string;
-
-  @ApiProperty({ enum: RegimeOferta, example: RegimeOferta.SEMESTRAL })
-  @IsEnum(RegimeOferta)
-  regime: RegimeOferta;
 
   @ApiProperty({
     example: 2,
@@ -73,10 +66,8 @@ export class CriarOfertaDto {
   professores: ProfessorOfertaDto[];
 }
 
-/** Corpo de atualização parcial: todos os campos opcionais. */
 export class AtualizarOfertaDto extends PartialType(CriarOfertaDto) {}
 
-/** Um professor da oferta como devolvido pela API. */
 export class ProfessorDaOfertaDto {
   @ApiProperty({ format: 'uuid' })
   professorId: string;
@@ -88,7 +79,6 @@ export class ProfessorDaOfertaDto {
   proporcaoCarga: number;
 }
 
-/** Oferta como devolvida pela API (turma/disciplina/período/professores resolvidos). */
 export class OfertaResponseDto {
   @ApiProperty({ format: 'uuid' })
   id: string;
@@ -129,7 +119,6 @@ export class OfertaResponseDto {
   @ApiProperty({ type: [ProfessorDaOfertaDto] })
   professores: ProfessorDaOfertaDto[];
 
-  /** Único ponto que traduz a Oferta do domínio no contrato de resposta. */
   static fromDomain(oferta: Oferta): OfertaResponseDto {
     const dto = new OfertaResponseDto();
     dto.id = oferta.id;
