@@ -24,7 +24,6 @@ import {
   EscopoConflitos,
   LinhaVm,
   TODAS_AS_TURMAS,
-  TODOS_OS_CURSOS,
   chaveCelula,
   mapaSeveridadePorAula,
   montarLinhas,
@@ -47,7 +46,6 @@ export class GradeComponent {
 
   readonly periodo = inject(PeriodoState);
 
-  readonly TODOS = TODOS_OS_CURSOS;
   readonly TODAS = TODAS_AS_TURMAS;
 
   readonly grade = signal<Grade | null>(null);
@@ -97,12 +95,10 @@ export class GradeComponent {
     return this.cursos().find((c) => c.id === id) ?? null;
   });
 
-  readonly vendoTodos = computed(() => this.cursoSelecionado() === this.TODOS);
-
   readonly turmasDoCurso = computed<Turma[]>(() => {
     const turmas = this.grade()?.turmas ?? [];
     const curso = this.cursoSelecionado();
-    if (!curso || curso === this.TODOS) return turmas;
+    if (!curso) return turmas;
     return turmas.filter((t) => t.cursoId === curso);
   });
 
@@ -111,16 +107,14 @@ export class GradeComponent {
     return this.turmasDoCurso().find((t) => t.id === id) ?? null;
   });
 
-  readonly vendoVariasTurmas = computed(
-    () => this.turmaSelecionada() === this.TODAS || this.vendoTodos(),
-  );
+  readonly vendoVariasTurmas = computed(() => this.turmaSelecionada() === this.TODAS);
 
   private readonly aulasVisiveis = computed<Aula[]>(() => {
     const todas = this.grade()?.aulas ?? [];
     const curso = this.cursoSelecionado();
     const turma = this.turmaSelecionada();
     if (turma && turma !== this.TODAS) return todas.filter((a) => a.turmaId === turma);
-    if (!curso || curso === this.TODOS) return todas;
+    if (!curso) return todas;
     return todas.filter((a) => a.cursoId === curso);
   });
 
@@ -129,7 +123,7 @@ export class GradeComponent {
     const curso = this.cursoSelecionado();
     const turma = this.turmaSelecionada();
     if (turma && turma !== this.TODAS) return todas.filter((o) => o.turmaId === turma);
-    if (!curso || curso === this.TODOS) return todas;
+    if (!curso) return todas;
     return todas.filter((o) => o.cursoId === curso);
   });
 
@@ -169,7 +163,6 @@ export class GradeComponent {
 
   private primeiraTurmaDoCurso(cursoId: string): string {
     const turmas = this.grade()?.turmas ?? [];
-    if (cursoId === this.TODOS) return TODAS_AS_TURMAS;
     return turmas.find((t) => t.cursoId === cursoId)?.id ?? TODAS_AS_TURMAS;
   }
 
@@ -177,6 +170,7 @@ export class GradeComponent {
     const curso = this.cursoAtual();
     if (!curso) return null;
     const turnos = new Set<string>([curso.turnoPadrao]);
+    if (curso.modalidade === 'INTEGRADO') turnos.add('TARDE');
     for (const a of this.aulasVisiveis()) {
       if (a.slot) turnos.add(a.slot.turno);
     }
@@ -371,15 +365,15 @@ export class GradeComponent {
     this.grade.set(g);
 
     const curso = this.cursoSelecionado();
-    const cursoExiste = curso === this.TODOS || g.cursos.some((c) => c.id === curso);
-    const cursoResolvido = cursoExiste ? curso : (g.cursos[0]?.id ?? this.TODOS);
+    const cursoExiste = g.cursos.some((c) => c.id === curso);
+    const cursoResolvido = cursoExiste ? curso : (g.cursos[0]?.id ?? null);
     if (!cursoExiste) this.cursoSelecionado.set(cursoResolvido);
 
     const turma = this.turmaSelecionada();
     const turmaValida =
       turma === this.TODAS || g.turmas.some((t) => t.id === turma && t.cursoId === cursoResolvido);
     if (!turmaValida) {
-      this.turmaSelecionada.set(this.primeiraTurmaDoCurso(cursoResolvido ?? this.TODOS));
+      this.turmaSelecionada.set(cursoResolvido ? this.primeiraTurmaDoCurso(cursoResolvido) : this.TODAS);
     }
 
     this.carregarCatalogo(g.periodoLetivoId);

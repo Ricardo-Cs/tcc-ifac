@@ -1,16 +1,9 @@
-/**
- * A barra da tela: o recorte (curso › turma) à esquerda, o placar de conflitos à
- * direita. O período saiu daqui — virou estado do sistema no cabeçalho do shell.
- * Só controles — não sabe carregar grade nem mover aula; anuncia a escolha e o
- * container reage. Os rótulos dos selects moram aqui porque é aqui que estão as
- * listas de onde eles saem.
- */
 import { Component, computed, input, output } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { HlmSelectImports } from '@spartan-ng/helm/select';
 import { Curso, Severidade, Turma } from '../../../../core/models/grade.models';
 import { pillSeveridade } from '../../severidade';
-import { TODAS_AS_TURMAS, TODOS_OS_CURSOS } from '../../grade.view';
+import { TODAS_AS_TURMAS } from '../../grade.view';
 
 @Component({
   selector: 'app-grade-toolbar',
@@ -27,16 +20,13 @@ export class GradeToolbarComponent {
   readonly cursoChange = output<string>();
   readonly turmaChange = output<string>();
 
-  readonly TODOS = TODOS_OS_CURSOS;
   readonly TODAS = TODAS_AS_TURMAS;
 
   readonly pillFraco = computed(() => pillSeveridade('FRACO'));
   readonly pillPotencial = computed(() => pillSeveridade('POTENCIAL'));
   readonly pillForte = computed(() => pillSeveridade('FORTE'));
 
-  /** "SI — Sistemas para Internet": a sigla sozinha só diz algo a quem a conhece. */
   rotuloCurso = (id: string): string => {
-    if (id === TODOS_OS_CURSOS) return 'Todos os cursos';
     const curso = this.cursos().find((c) => c.id === id);
     return curso ? `${curso.sigla} — ${curso.nome}` : '';
   };

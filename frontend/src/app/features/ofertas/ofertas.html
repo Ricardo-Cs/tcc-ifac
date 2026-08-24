@@ -127,6 +127,7 @@
         [ngModel]="rascunho().disciplinaId"
         name="disciplina"
         [itemToString]="rotuloDisciplina"
+        [disabled]="!turmaEscolhida()"
         (ngModelChange)="atualizar('disciplinaId', $event)"
       >
         <hlm-select-trigger class="w-full">
