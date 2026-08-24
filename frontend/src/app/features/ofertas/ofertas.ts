@@ -1,14 +1,3 @@
-/**
- * Cadastro de Ofertas — a oferta liga turma × disciplina × período e carrega a
- * codocência (N professores, cada um com um % de carga que soma 100). Segue o
- * molde de listagem + diálogo, mas com duas diferenças:
- *
- * 1. É recortada por PERÍODO: a lista mostra as ofertas do período em foco
- *    (`PeriodoState`), e só permite criar/editar quando ele é o corrente
- *    (`editavel`). Período passado é somente leitura.
- * 2. O formulário tem linhas dinâmicas de professor+proporção; a soma = 100 é
- *    checada aqui e reforçada pelo servidor (400).
- */
 import { Component, computed, effect, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { NgIcon, provideIcons } from '@ng-icons/core';
@@ -32,20 +21,18 @@ import { ConfirmDialogComponent } from '../../shared/confirm-dialog/confirm-dial
 import { FormDialogComponent } from '../../shared/form-dialog/form-dialog';
 import { ColunaListagem, FiltroListagem, ListagemComponent } from '../../shared/listagem/listagem';
 import { ListagemLinhaDirective } from '../../shared/listagem/listagem-linha';
+import { SugestaoAulasSemana, sugerirAulasSemana } from './carga';
 
-/** Regimes de oferta — código do domínio + rótulo humano. */
 const REGIMES = [
   { valor: 'SEMESTRAL', rotulo: 'Semestral' },
   { valor: 'ANUAL', rotulo: 'Anual' },
 ] as const;
 
-/** Uma linha de codocência no rascunho do formulário. */
 interface RascunhoVinculo {
   professorId: string;
   proporcaoCarga: number | null;
 }
 
-/** O rascunho do formulário — os campos editáveis de uma oferta. */
 interface RascunhoOferta {
   turmaId: string;
   disciplinaId: string;
@@ -96,10 +83,8 @@ export class OfertasComponent {
   readonly turmas = signal<Turma[]>([]);
   readonly disciplinas = signal<Disciplina[]>([]);
   readonly professores = signal<Professor[]>([]);
-  /** true enquanto o salvar/remover está em voo — trava os botões do diálogo. */
   readonly salvando = signal(false);
 
-  /** O período em foco só aceita edição quando é o corrente. */
   readonly editavel = this.periodoState.editavel;
 
   readonly colunas: ColunaListagem[] = [
@@ -125,7 +110,6 @@ export class OfertasComponent {
 
   constructor() {
     this.carregarAuxiliares();
-    // Recorte por período: recarrega as ofertas sempre que o foco muda.
     effect(() => {
       const periodo = this.periodoState.selecionado();
       if (periodo) {
@@ -159,8 +143,6 @@ export class OfertasComponent {
     });
   }
 
-  // Arrow fields para os `itemToString` dos selects: derivam o rótulo a partir
-  // do id/valor guardado no rascunho.
   readonly rotuloRegime = (valor: string): string =>
     REGIMES.find((r) => r.valor === valor)?.rotulo ?? valor;
 
@@ -177,36 +159,90 @@ export class OfertasComponent {
   readonly rotuloProfessor = (professorId: string): string =>
     this.professores().find((x) => x.id === professorId)?.nome ?? professorId;
 
-  /** Resumo da codocência para a coluna da listagem. */
   resumoProfessores(o: Oferta): string {
     if (o.professores.length === 0) return '—';
     if (o.professores.length === 1) return o.professores[0].professorNome;
     return o.professores.map((p) => `${p.professorNome} (${p.proporcaoCarga}%)`).join(', ');
   }
 
-  // ---- Diálogo de formulário --------------------------------------------
-
-  /** Oferta em edição, ou `null` quando o diálogo está criando uma nova. */
   readonly editando = signal<Oferta | null>(null);
   readonly dialogAberto = signal(false);
   readonly rascunho = signal<RascunhoOferta>(rascunhoVazio());
-  /** Erro do formulário — acende dentro do diálogo (além do toast). */
   readonly erroForm = signal<string | null>(null);
 
-  /** Oferta à espera de confirmação de remoção — abre o diálogo de confirmar. */
+  readonly aulasSemanaEditado = signal(false);
+
   readonly removendo = signal<Oferta | null>(null);
 
   readonly tituloDialog = computed(() => (this.editando() ? 'Editar oferta' : 'Nova oferta'));
 
   readonly codocencia = computed(() => this.rascunho().professores.length > 1);
 
-  /** Soma das proporções digitadas — a UI mostra e trava o salvar em ≠ 100. */
   readonly somaProporcoes = computed(() =>
     this.rascunho().professores.reduce((s, p) => s + (p.proporcaoCarga ?? 0), 0),
   );
 
+  readonly turmaEscolhida = computed<Turma | null>(
+    () => this.turmas().find((t) => t.id === this.rascunho().turmaId) ?? null,
+  );
+
+  readonly disciplinasDoCurso = computed<Disciplina[]>(() => {
+    const turma = this.turmaEscolhida();
+    if (!turma) return [];
+    return this.disciplinas().filter((d) => d.cursoId === turma.cursoId);
+  });
+
+  readonly cargaHorariaEscolhida = computed<number | null>(
+    () =>
+      this.disciplinas().find((d) => d.id === this.rascunho().disciplinaId)?.cargaHoraria ?? null,
+  );
+
+  readonly sugestao = computed<SugestaoAulasSemana | null>(() =>
+    sugerirAulasSemana(this.cargaHorariaEscolhida(), this.rascunho().regime),
+  );
+
+  readonly divergeDaSugestao = computed(() => {
+    const sugestao = this.sugestao();
+    const atual = this.rascunho().aulasSemana;
+    return sugestao !== null && atual !== null && atual !== sugestao.aulasSemana;
+  });
+
+  numero(valor: number): string {
+    return valor.toLocaleString('pt-BR', { maximumFractionDigits: 2 });
+  }
+
+  usarSugestao(): void {
+    const sugestao = this.sugestao();
+    if (!sugestao) return;
+    this.aulasSemanaEditado.set(false);
+    this.rascunho.update((r) => ({ ...r, aulasSemana: sugestao.aulasSemana }));
+  }
+
   atualizar<K extends keyof RascunhoOferta>(campo: K, valor: RascunhoOferta[K]): void {
-    this.rascunho.update((r) => ({ ...r, [campo]: valor }));
+    if (campo === 'aulasSemana') this.aulasSemanaEditado.set(valor != null);
+
+    this.rascunho.update((r) => {
+      const proximo = { ...r, [campo]: valor };
+
+      if (campo === 'turmaId') {
+        const curso = this.turmas().find((t) => t.id === proximo.turmaId)?.cursoId;
+        const disciplina = this.disciplinas().find((d) => d.id === proximo.disciplinaId);
+        if (disciplina && disciplina.cursoId !== curso) {
+          proximo.disciplinaId = '';
+        }
+      }
+
+      if (campo === 'disciplinaId' || campo === 'regime') {
+        const sugestao = sugerirAulasSemana(
+          this.disciplinas().find((d) => d.id === proximo.disciplinaId)?.cargaHoraria ?? null,
+          proximo.regime,
+        );
+        if (sugestao && !this.aulasSemanaEditado()) {
+          proximo.aulasSemana = sugestao.aulasSemana;
+        }
+      }
+      return proximo;
+    });
   }
 
   adicionarProfessor(): void {
@@ -237,6 +273,7 @@ export class OfertasComponent {
   abrirNovo(): void {
     this.editando.set(null);
     this.rascunho.set(rascunhoVazio());
+    this.aulasSemanaEditado.set(false);
     this.erroForm.set(null);
     this.dialogAberto.set(true);
   }
@@ -254,6 +291,7 @@ export class OfertasComponent {
         proporcaoCarga: p.proporcaoCarga,
       })),
     });
+    this.aulasSemanaEditado.set(true);
     this.erroForm.set(null);
     this.dialogAberto.set(true);
   }
@@ -288,8 +326,6 @@ export class OfertasComponent {
       this.erroForm.set('A oferta precisa de pelo menos um docente.');
       return;
     }
-    // Docente único ⇒ 100% implícito (o campo nem aparece na UI). A soma só é
-    // exigida na codocência, onde o usuário reparte a carga entre os professores.
     if (professores.length === 1) {
       professores[0].proporcaoCarga = 100;
     } else {
@@ -335,8 +371,6 @@ export class OfertasComponent {
       },
     });
   }
-
-  // ---- Remoção -----------------------------------------------------------
 
   pedirRemocao(oferta: Oferta): void {
     this.removendo.set(oferta);

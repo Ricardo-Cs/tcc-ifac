@@ -11,11 +11,21 @@
     <ng-template appLinhaListagem let-d>
       <td class="px-4 py-3">
         <span
+          class="inline-flex items-center rounded-md bg-muted px-2 py-0.5 text-xs font-semibold tracking-wide text-muted-foreground"
+          [title]="d.cursoNome"
+          >{{ d.cursoSigla }}</span
+        >
+      </td>
+      <td class="px-4 py-3">
+        <span
           class="inline-flex items-center rounded-md bg-primary/10 px-2 py-0.5 text-xs font-semibold tracking-wide text-primary"
           >{{ d.codigo }}</span
         >
       </td>
       <td class="px-4 py-3 font-medium text-foreground">{{ d.nome }}</td>
+      <td class="px-4 py-3 text-right tabular-nums text-muted-foreground">
+        {{ rotuloFase(d.periodoCurso) }}
+      </td>
       <td class="px-4 py-3 text-right tabular-nums text-muted-foreground">
         {{ cargaFormatada(d.cargaHoraria) }}
       </td>
@@ -53,7 +63,7 @@
 <app-form-dialog
   [aberto]="dialogAberto()"
   [titulo]="tituloDialog()"
-  descricao="Disciplina ofertada às turmas; a carga é em horas de 60 min."
+  descricao="Disciplina da matriz de um curso; a carga é em horas de 60 min."
   [salvando]="salvando()"
   [erro]="erroForm()"
   (fechar)="fecharDialog()"
@@ -62,6 +72,27 @@
   <ng-icon formDialogIcone name="lucideBookOpen" size="1.15rem" />
 
   <form class="grid gap-4" (ngSubmit)="salvar()">
+    <div class="grid gap-1.5">
+      <label class="text-[0.7rem] font-semibold tracking-wide text-muted-foreground uppercase"
+        >Curso</label
+      >
+      <hlm-select
+        [ngModel]="rascunho().cursoId"
+        name="curso"
+        [itemToString]="rotuloCurso"
+        (ngModelChange)="atualizar('cursoId', $event)"
+      >
+        <hlm-select-trigger class="w-full">
+          <hlm-select-value placeholder="Selecione o curso" />
+        </hlm-select-trigger>
+        <hlm-select-content *hlmSelectPortal>
+          @for (c of cursos(); track c.id) {
+            <hlm-select-item [value]="c.id">{{ c.sigla }} — {{ c.nome }}</hlm-select-item>
+          }
+        </hlm-select-content>
+      </hlm-select>
+    </div>
+
     <div class="grid gap-4 sm:grid-cols-[1fr_140px]">
       <div class="grid gap-1.5">
         <label
@@ -98,6 +129,25 @@
           placeholder="Ex.: 80"
         />
       </div>
+    </div>
+
+    <div class="grid gap-1.5">
+      <label
+        class="text-[0.7rem] font-semibold uppercase tracking-wide text-muted-foreground"
+        for="disc-fase"
+        >Fase da matriz <span class="normal-case text-muted-foreground/70">(opcional)</span></label
+      >
+      <input
+        hlmInput
+        id="disc-fase"
+        type="number"
+        min="1"
+        step="1"
+        [ngModel]="rascunho().periodoCurso"
+        name="periodoCurso"
+        (ngModelChange)="atualizar('periodoCurso', $event)"
+        placeholder="Ex.: 2 (segundo período do curso)"
+      />
     </div>
 
     <div class="grid gap-1.5">

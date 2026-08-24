@@ -1,6 +1,10 @@
-import { ConflictException, Injectable } from '@nestjs/common';
+import {
+  BadRequestException,
+  ConflictException,
+  Injectable,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { DeepPartial, Repository } from 'typeorm';
 import {
   AtualizarDisciplinaInput,
   CriarDisciplinaInput,
@@ -13,7 +17,6 @@ import {
   isViolacaoUnicidade,
 } from '../postgres-error';
 
-/** Adaptador TypeORM da porta `DisciplinasRepository`. */
 @Injectable()
 export class TypeormDisciplinasRepository implements DisciplinasRepository {
   constructor(
@@ -22,26 +25,27 @@ export class TypeormDisciplinasRepository implements DisciplinasRepository {
   ) {}
 
   async listar(): Promise<Disciplina[]> {
-    const linhas = await this.repo.find({ order: { codigo: 'ASC' } });
+    const linhas = await this.repo.find({
+      relations: { curso: true },
+      order: { codigo: 'ASC' },
+    });
     return linhas.map(toModel);
   }
 
   async buscarPorId(id: string): Promise<Disciplina | null> {
-    const linha = await this.repo.findOneBy({ id });
+    const linha = await this.repo.findOne({
+      where: { id },
+      relations: { curso: true },
+    });
     return linha ? toModel(linha) : null;
   }
 
   async criar(input: CriarDisciplinaInput): Promise<Disciplina> {
     try {
-      const salvo = await this.repo.save(this.repo.create(input));
-      return toModel(salvo);
+      const salvo = await this.repo.save(this.repo.create(toEntity(input)));
+      return this.recarregar(salvo.id);
     } catch (erro) {
-      if (isViolacaoUnicidade(erro)) {
-        throw new ConflictException(
-          `Já existe uma disciplina com o código "${input.codigo}".`,
-        );
-      }
-      throw erro;
+      throw traduzErro(erro, input);
     }
   }
 
@@ -49,19 +53,15 @@ export class TypeormDisciplinasRepository implements DisciplinasRepository {
     id: string,
     input: AtualizarDisciplinaInput,
   ): Promise<Disciplina | null> {
-    const entidade = await this.repo.preload({ id, ...input });
+    const entidade = await this.repo.preload({ id, ...toEntity(input) });
     if (!entidade) {
       return null;
     }
     try {
-      return toModel(await this.repo.save(entidade));
+      const salvo = await this.repo.save(entidade);
+      return this.recarregar(salvo.id);
     } catch (erro) {
-      if (isViolacaoUnicidade(erro)) {
-        throw new ConflictException(
-          `Já existe uma disciplina com o código "${input.codigo}".`,
-        );
-      }
-      throw erro;
+      throw traduzErro(erro, input);
     }
   }
 
@@ -78,13 +78,52 @@ export class TypeormDisciplinasRepository implements DisciplinasRepository {
       throw erro;
     }
   }
+
+  private async recarregar(id: string): Promise<Disciplina> {
+    const linha = await this.repo.findOne({
+      where: { id },
+      relations: { curso: true },
+    });
+    return toModel(linha!);
+  }
+}
+
+function toEntity(
+  input: CriarDisciplinaInput | AtualizarDisciplinaInput,
+): DeepPartial<DisciplinaEntity> {
+  const { cursoId, ...resto } = input;
+  return {
+    ...resto,
+    ...(cursoId ? { curso: { id: cursoId } } : {}),
+  };
+}
+
+function traduzErro(
+  erro: unknown,
+  input: CriarDisciplinaInput | AtualizarDisciplinaInput,
+): unknown {
+  if (isViolacaoChaveEstrangeira(erro)) {
+    return new BadRequestException(
+      `Curso ${input.cursoId ?? ''} informado não existe.`.replace('  ', ' '),
+    );
+  }
+  if (isViolacaoUnicidade(erro)) {
+    return new ConflictException(
+      `Este curso já tem uma disciplina com o código "${input.codigo}".`,
+    );
+  }
+  return erro;
 }
 
 function toModel(e: DisciplinaEntity): Disciplina {
   return {
     id: e.id,
+    cursoId: e.curso.id,
+    cursoSigla: e.curso.sigla,
+    cursoNome: e.curso.nome,
     codigo: e.codigo,
     nome: e.nome,
+    periodoCurso: e.periodoCurso,
     cargaHoraria: e.cargaHoraria,
     tipoSalaRequerido: e.tipoSalaRequerido,
   };

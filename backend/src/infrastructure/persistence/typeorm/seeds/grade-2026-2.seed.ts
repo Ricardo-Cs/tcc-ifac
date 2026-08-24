@@ -12,7 +12,6 @@ import { UsuarioEntity } from '../entities/comum/usuario.entity';
 import { PapelUsuario } from '../entities/comum/enums';
 import { CursoEntity } from '../entities/academico/curso.entity';
 import { DisciplinaEntity } from '../entities/academico/disciplina.entity';
-import { CursoDisciplinaEntity } from '../entities/academico/curso-disciplina.entity';
 import { ProfessorEntity } from '../entities/academico/professor.entity';
 import { SalaEntity } from '../entities/academico/sala.entity';
 import { SlotHorarioEntity } from '../entities/academico/slot-horario.entity';
@@ -787,31 +786,23 @@ export async function seedGrade2026(dataSource: DataSource): Promise<void> {
         );
         totalTurmas++;
 
-        // 6b. Disciplinas (+ vínculo curso_disciplina na fase do curso).
+        // 6b. Disciplinas da matriz do curso, na fase que esta turma cursa.
         const disciplinasPorCodigo = new Map<string, DisciplinaEntity>();
         for (const d of t.disciplinas) {
           const disc = await getOrCreate(
             manager,
             DisciplinaEntity,
-            { codigo: d.codigo },
+            { codigo: d.codigo, curso: { id: curso.id } } as never,
             {
+              curso,
               codigo: d.codigo,
               nome: d.nome,
+              periodoCurso: t.periodoCurso,
               cargaHoraria: d.cargaHoraria,
               tipoSalaRequerido: d.tipoSala,
             },
           );
           disciplinasPorCodigo.set(d.codigo, disc);
-          await getOrCreate(
-            manager,
-            CursoDisciplinaEntity,
-            {
-              curso: { id: curso.id },
-              disciplina: { id: disc.id },
-              periodo: t.periodoCurso,
-            } as never,
-            { curso, disciplina: disc, periodo: t.periodoCurso },
-          );
         }
         totalDisciplinas += t.disciplinas.length;
 

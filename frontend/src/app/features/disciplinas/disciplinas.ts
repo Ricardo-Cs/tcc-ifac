@@ -1,9 +1,3 @@
-/**
- * Cadastro de Disciplinas — segue o molde de Cursos (listagem + diálogo de
- * formulário), integrado ao backend (`DisciplinasController`): a lista vem de
- * `GET /disciplinas` e o salvar/remover chamam POST/PATCH/DELETE. A unicidade do
- * código é decidida pelo servidor (409) — a tela traduz a resposta em toast.
- */
 import { Component, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { NgIcon, provideIcons } from '@ng-icons/core';
@@ -13,17 +7,13 @@ import { HlmInput } from '@spartan-ng/helm/input';
 import { HlmSelectImports } from '@spartan-ng/helm/select';
 import { AcademicoApi } from '../../core/api/academico-api';
 import { mensagemErro } from '../../core/api/erro-http';
-import { Disciplina, TipoSala } from '../../core/models/academico.models';
+import { Curso, Disciplina, TipoSala } from '../../core/models/academico.models';
 import { ToastService } from '../../core/toast';
 import { ConfirmDialogComponent } from '../../shared/confirm-dialog/confirm-dialog';
 import { FormDialogComponent } from '../../shared/form-dialog/form-dialog';
 import { ColunaListagem, FiltroListagem, ListagemComponent } from '../../shared/listagem/listagem';
 import { ListagemLinhaDirective } from '../../shared/listagem/listagem-linha';
 
-/**
- * Tipos de sala que uma disciplina pode exigir — código do domínio + rótulo
- * humano. O `null` (sem exigência) é tratado à parte como "Comum".
- */
 const TIPOS_SALA = [
   { valor: 'COMUM', rotulo: 'Comum' },
   { valor: 'LABORATORIO', rotulo: 'Laboratório' },
@@ -31,20 +21,22 @@ const TIPOS_SALA = [
   { valor: 'QUADRA', rotulo: 'Quadra' },
 ] as const;
 
-/** Valor do select que representa "sem exigência" — mapeado para null ao salvar. */
 const SEM_EXIGENCIA = '';
 
-/** O rascunho do formulário — os campos editáveis de uma disciplina. */
 interface RascunhoDisciplina {
+  cursoId: string;
   codigo: string;
   nome: string;
+  periodoCurso: number | null;
   cargaHoraria: number | null;
   tipoSalaRequerido: TipoSala | '';
 }
 
 const RASCUNHO_VAZIO: RascunhoDisciplina = {
+  cursoId: '',
   codigo: '',
   nome: '',
+  periodoCurso: null,
   cargaHoraria: null,
   tipoSalaRequerido: '',
 };
@@ -73,18 +65,21 @@ export class DisciplinasComponent {
   readonly semExigencia = SEM_EXIGENCIA;
 
   readonly disciplinas = signal<Disciplina[]>([]);
-  /** true enquanto o salvar/remover está em voo — trava os botões do diálogo. */
+  readonly cursos = signal<Curso[]>([]);
   readonly salvando = signal(false);
 
   readonly colunas: ColunaListagem[] = [
-    { rotulo: 'Código', largura: 'w-32' },
+    { rotulo: 'Curso', largura: 'w-28' },
+    { rotulo: 'Código', largura: 'w-28' },
     { rotulo: 'Nome' },
+    { rotulo: 'Fase', alinhamento: 'fim', largura: 'w-20' },
     { rotulo: 'Carga horária', alinhamento: 'fim', largura: 'w-36' },
     { rotulo: 'Tipo de sala', largura: 'w-40' },
     { rotulo: 'Ações', alinhamento: 'fim', largura: 'w-24' },
   ];
 
   readonly filtros: FiltroListagem<Disciplina>[] = [
+    { chave: 'curso', rotulo: 'Curso', valor: (d) => d.cursoSigla },
     {
       chave: 'tipoSala',
       rotulo: 'Tipo de sala',
@@ -92,10 +87,14 @@ export class DisciplinasComponent {
     },
   ];
 
-  readonly textoBusca = (d: Disciplina): string => `${d.codigo} ${d.nome}`;
+  readonly textoBusca = (d: Disciplina): string => `${d.cursoSigla} ${d.codigo} ${d.nome}`;
 
   constructor() {
     this.carregar();
+    this.api.listarCursos().subscribe({
+      next: (cursos) => this.cursos.set(cursos),
+      error: () => this.cursos.set([]),
+    });
   }
 
   private carregar(): void {
@@ -106,26 +105,27 @@ export class DisciplinasComponent {
     });
   }
 
-  // Arrow field: além de rotular a coluna, serve de `itemToString` do
-  // hlm-select — o trigger deriva o texto do VALOR selecionado, não do conteúdo
-  // do item. null/'' (sem exigência) aparece como "Comum".
   readonly rotuloTipoSala = (valor: string | null): string => {
     if (!valor) return 'Comum';
     return TIPOS_SALA.find((t) => t.valor === valor)?.rotulo ?? valor;
   };
 
-  /** Carga em horas de 60 min — formata sem casas decimais quando é inteira. */
+  readonly rotuloCurso = (cursoId: string): string => {
+    const curso = this.cursos().find((c) => c.id === cursoId);
+    return curso ? `${curso.sigla} — ${curso.nome}` : cursoId;
+  };
+
+  rotuloFase(periodoCurso: number | null): string {
+    return periodoCurso ? `${periodoCurso}ª` : '—';
+  }
+
   cargaFormatada(horas: number): string {
     return `${Number.isInteger(horas) ? horas : horas.toFixed(2)} h`;
   }
 
-  // ---- Diálogo de formulário --------------------------------------------
-
-  /** Disciplina em edição, ou `null` quando o diálogo está criando uma nova. */
   readonly editando = signal<Disciplina | null>(null);
   readonly dialogAberto = signal(false);
   readonly rascunho = signal<RascunhoDisciplina>(RASCUNHO_VAZIO);
-  /** Erro do formulário — acende dentro do diálogo (além do toast). */
   readonly erroForm = signal<string | null>(null);
 
   readonly removendo = signal<Disciplina | null>(null);
@@ -148,8 +148,10 @@ export class DisciplinasComponent {
   editar(disciplina: Disciplina): void {
     this.editando.set(disciplina);
     this.rascunho.set({
+      cursoId: disciplina.cursoId,
       codigo: disciplina.codigo,
       nome: disciplina.nome,
+      periodoCurso: disciplina.periodoCurso,
       cargaHoraria: disciplina.cargaHoraria,
       tipoSalaRequerido: disciplina.tipoSalaRequerido ?? '',
     });
@@ -165,6 +167,10 @@ export class DisciplinasComponent {
     const r = this.rascunho();
     const codigo = r.codigo.trim().toUpperCase();
     const nome = r.nome.trim();
+    if (!r.cursoId) {
+      this.erroForm.set('Selecione o curso a que a disciplina pertence.');
+      return;
+    }
     if (!codigo || !nome) {
       this.erroForm.set('Código e nome são obrigatórios.');
       return;
@@ -175,11 +181,11 @@ export class DisciplinasComponent {
     }
     this.erroForm.set(null);
 
-    // "Sem exigência" vira null — a coluna nullable distingue "sala comum"
-    // (null) de um tipo específico exigido.
     const dados = {
+      cursoId: r.cursoId,
       codigo,
       nome,
+      periodoCurso: r.periodoCurso,
       cargaHoraria: r.cargaHoraria,
       tipoSalaRequerido: r.tipoSalaRequerido || null,
     };
@@ -197,7 +203,10 @@ export class DisciplinasComponent {
             ? lista.map((d) => (d.id === disciplina.id ? disciplina : d))
             : [...lista, disciplina],
         );
-        this.toast.sucesso(`${disciplina.codigo} ${alvo ? 'atualizada' : 'cadastrada'}`);
+        this.toast.sucesso(
+          `${disciplina.codigo} ${alvo ? 'atualizada' : 'cadastrada'}`,
+          disciplina.cursoSigla,
+        );
         this.salvando.set(false);
         this.fecharDialog();
       },
@@ -207,8 +216,6 @@ export class DisciplinasComponent {
       },
     });
   }
-
-  // ---- Remoção -----------------------------------------------------------
 
   pedirRemocao(disciplina: Disciplina): void {
     this.removendo.set(disciplina);

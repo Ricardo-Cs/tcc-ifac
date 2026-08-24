@@ -1,13 +1,6 @@
 export type Modalidade = 'SUPERIOR' | 'INTEGRADO' | 'SUBSEQUENTE';
 export type Turno = 'MANHA' | 'TARDE' | 'NOITE';
-export type GrupoRegime =
-  | 'G1'
-  | 'G2'
-  | 'G3_20H'
-  | 'G3_40H'
-  | 'G2_1'
-  | 'G2_2'
-  | 'G2_3';
+export type GrupoRegime = 'G1' | 'G2' | 'G3_20H' | 'G3_40H' | 'G2_1' | 'G2_2' | 'G2_3';
 export type TipoSala = 'COMUM' | 'LABORATORIO' | 'AUDITORIO' | 'QUADRA';
 export type RegimeOferta = 'ANUAL' | 'SEMESTRAL';
 
@@ -65,15 +58,21 @@ export type AtualizarProfessor = Partial<CriarProfessor>;
 
 export interface Disciplina {
   id: string;
+  cursoId: string;
+  cursoSigla: string;
+  cursoNome: string;
   codigo: string;
   nome: string;
+  periodoCurso: number | null;
   cargaHoraria: number;
   tipoSalaRequerido: TipoSala | null;
 }
 
 export interface CriarDisciplina {
+  cursoId: string;
   codigo: string;
   nome: string;
+  periodoCurso?: number | null;
   cargaHoraria: number;
   tipoSalaRequerido?: TipoSala | null;
 }

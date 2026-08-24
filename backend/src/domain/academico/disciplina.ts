@@ -1,18 +1,22 @@
 import { TipoSala } from './enums';
 
-// ───────────────────────────── Disciplina ─────────────────────────────
-
 export interface Disciplina {
   id: string;
+  cursoId: string;
+  cursoSigla: string;
+  cursoNome: string;
   codigo: string;
   nome: string;
+  periodoCurso: number | null;
   cargaHoraria: number;
   tipoSalaRequerido: TipoSala | null;
 }
 
 export interface CriarDisciplinaInput {
+  cursoId: string;
   codigo: string;
   nome: string;
+  periodoCurso?: number | null;
   cargaHoraria: number;
   tipoSalaRequerido?: TipoSala | null;
 }
