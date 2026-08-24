@@ -6,12 +6,12 @@ import { Usuario } from '@domain/comum/usuario';
 /** Corpo do login. */
 export class LoginDto {
   @ApiProperty({ example: 'admin@ifac.edu.br', format: 'email' })
-  @IsEmail()
+  @IsEmail({}, { message: 'Informe um e-mail válido.' })
   @MaxLength(255)
   email: string;
 
   @ApiProperty({ example: 'admin123' })
-  @IsNotEmpty()
+  @IsNotEmpty({ message: 'Informe a senha.' })
   @MaxLength(255)
   senha: string;
 }

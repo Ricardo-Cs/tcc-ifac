@@ -896,9 +896,9 @@ export async function seedGrade2026(dataSource: DataSource): Promise<void> {
 
     console.log(
       `Seed concluída: ${CURSOS.length} cursos, ${totalTurmas} turmas, ` +
-      `${totalDisciplinas} disciplinas, ${PROFESSORES.length} professores, ` +
-      `${SALAS.length} salas, ${slotsPorChave.size} slots e ${totalAlocacoes} ` +
-      `alocações no período ${periodo.codigo}.`,
+        `${totalDisciplinas} disciplinas, ${PROFESSORES.length} professores, ` +
+        `${SALAS.length} salas, ${slotsPorChave.size} slots e ${totalAlocacoes} ` +
+        `alocações no período ${periodo.codigo}.`,
     );
   });
 }
