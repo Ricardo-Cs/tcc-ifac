@@ -1,27 +1,28 @@
 <div class="flex min-h-screen bg-muted/40 text-foreground">
-  <!-- Barra lateral -->
-  <aside
-    class="sticky top-0 flex h-screen shrink-0 flex-col bg-sidebar text-sidebar-foreground transition-[width] duration-200 ease-out"
-    [class]="recolhida() ? 'w-19' : 'w-64'">
-    <!-- Marca + botão de recolher -->
-    <div class="relative flex h-16 shrink-0 items-center gap-2.5 px-5">
-      <img src="Logo.svg" alt="Chronos" class="size-10" />
-      @if (!recolhida()) {
+  @if (menuMobileAberto()) {
+  <div class="fixed inset-0 z-40 bg-foreground/40 lg:hidden" (click)="fecharMenuMobile()"></div>
+  }
+
+  <aside id="menu-lateral" [attr.inert]="oculta() ? '' : null"
+    class="fixed inset-y-0 left-0 z-50 flex h-screen w-64 shrink-0 flex-col bg-sidebar text-sidebar-foreground shadow-xl lg:sticky lg:top-0 lg:translate-x-0 lg:shadow-none"
+    [class]="montada() ? 'transition-[width,translate] duration-200 ease-out' : ''"
+    [class.-translate-x-full]="!menuMobileAberto()" [class.lg:w-19]="recolhida()">
+    <div class="flex h-16 shrink-0 items-center gap-2.5 px-5" [class.lg:justify-center]="compacta()"
+      [class.lg:px-0]="compacta()">
+      <img src="Logo.svg" alt="Chronos" class="size-10 shrink-0" />
+      @if (!compacta()) {
       <span class="truncate font-brand text-2xl font-semibold tracking-tight">Chronos</span>
       }
-      <button type="button"
-        class="absolute top-1/2 -right-4 z-20 grid h-8 w-10 -translate-y-1/2 place-items-center rounded-full bg-card text-primary shadow-md ring-1 ring-border transition-colors hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
-        [title]="recolhida() ? 'Expandir menu' : 'Recolher menu'"
-        [attr.aria-label]="recolhida() ? 'Expandir menu' : 'Recolher menu'" (click)="alternarRecolhida()">
-        <ng-icon [name]="recolhida() ? 'lucideChevronsRight' : 'lucideChevronsLeft'" size="1rem" />
+      <button type="button" (click)="fecharMenuMobile()" aria-label="Fechar menu"
+        class="ms-auto grid size-9 shrink-0 place-items-center rounded-lg text-sidebar-foreground/70 transition-colors hover:bg-sidebar-accent hover:text-sidebar-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none lg:hidden">
+        <ng-icon name="lucideX" size="1.15rem" />
       </button>
     </div>
 
-    <!-- Menu -->
     <nav class="flex-1 overflow-x-hidden overflow-y-auto px-3 py-2">
       @for (grupo of grupos; track $index) {
       @if (grupo.titulo) {
-      @if (recolhida()) {
+      @if (compacta()) {
       <div class="mx-2 my-2.5 border-t border-sidebar-border"></div>
       } @else {
       <p class="mt-4 mb-1 px-3 text-xs font-semibold text-sidebar-foreground/50">
@@ -29,8 +30,7 @@
       </p>
       }
       } @else if (!$first) {
-      <!-- Grupo sem rótulo depois do primeiro (Configurações): só respiro. -->
-      @if (recolhida()) {
+      @if (compacta()) {
       <div class="mx-2 my-2.5 border-t border-sidebar-border"></div>
       } @else {
       <div class="mt-4"></div>
@@ -39,10 +39,11 @@
 
       @for (item of grupo.itens; track item.rota) {
       <a class="mb-0.5 flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-semibold transition-colors hover:bg-sidebar-accent hover:text-sidebar-foreground"
-        [routerLink]="item.rota" routerLinkActive="bg-sidebar-accent font-medium text-sidebar-foreground"
-        [class.justify-center]="recolhida()" [title]="recolhida() ? item.rotulo : ''">
+        [routerLink]="item.rota" routerLinkActive="bg-sidebar-accent text-sidebar-foreground"
+        [class.justify-center]="compacta()" [hlmTooltip]="item.rotulo" position="right" [showDelay]="120"
+        [tooltipDisabled]="!compacta()">
         <ng-icon [name]="item.icone" size="1.15rem" class="shrink-0" />
-        @if (!recolhida()) {
+        @if (!compacta()) {
         <span class="truncate">{{ item.rotulo }}</span>
         }
       </a>
@@ -50,33 +51,40 @@
       }
     </nav>
 
-    <!-- Saída -->
     <div class="shrink-0 border-t border-sidebar-border p-3">
-      @if (!recolhida() && usuario(); as u) {
+      @if (!compacta() && usuario(); as u) {
       <p class="truncate px-3 pb-1 text-xs font-medium text-sidebar-foreground/70">{{ u.nome }}</p>
       }
       <button type="button" (click)="confirmandoSaida.set(true)"
         class="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm text-sidebar-foreground/85 transition-colors hover:bg-sidebar-accent hover:text-sidebar-foreground"
-        [class.justify-center]="recolhida()" [title]="recolhida() ? 'Sair do sistema' : ''">
+        [class.justify-center]="compacta()" hlmTooltip="Sair do sistema" position="right" [showDelay]="120"
+        [tooltipDisabled]="!compacta()">
         <ng-icon name="lucideLogOut" size="1.15rem" class="shrink-0" />
-        @if (!recolhida()) {
+        @if (!compacta()) {
         <span class="truncate">Sair do sistema</span>
         }
       </button>
     </div>
   </aside>
 
-  <!-- Coluna de conteúdo -->
   <div class="flex min-w-0 flex-1 flex-col">
     <header
-      class="sticky top-0 z-10 flex h-16 shrink-0 items-center justify-between gap-4 border-b border-border bg-card px-6">
-      <div class="min-w-0">
-        <p class="truncate text-xs text-muted-foreground">Chronos / {{ titulo() }}</p>
-        <h1 class="truncate text-base font-semibold tracking-tight">{{ titulo() }}</h1>
+      class="sticky top-0 z-30 flex h-16 shrink-0 items-center justify-between gap-4 border-b border-border bg-card px-4 sm:px-6">
+      <div class="flex min-w-0 items-center gap-2">
+        <button type="button" (click)="alternarMenu()" [attr.aria-label]="dicaMenu()"
+          [attr.aria-expanded]="menuExpandido()" aria-controls="menu-lateral" [hlmTooltip]="dicaMenu()"
+          position="bottom" [showDelay]="300"
+          class="-ms-1.5 grid size-9 shrink-0 place-items-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none">
+          <ng-icon name="lucidePanelLeft" size="1.15rem" />
+        </button>
+
+        <div class="min-w-0">
+          <p class="truncate text-xs text-muted-foreground">Chronos / {{ titulo() }}</p>
+          <h1 class="truncate text-base font-semibold tracking-tight">{{ titulo() }}</h1>
+        </div>
       </div>
 
       <div class="flex shrink-0 items-center gap-2.5">
-        <!-- Seletor de período: estado do sistema inteiro, ancorado no ?periodo= da URL. -->
         @if (periodo.periodos().length) {
         <hlm-select class="w-40" [itemToString]="rotuloPeriodo" [ngModel]="periodo.selecionado()?.codigo ?? ''"
           (ngModelChange)="periodo.selecionar($event)">
@@ -118,11 +126,9 @@
   </div>
 </div>
 
-<!-- Confirmar saída: um clique não desloga; exige o "Sair" no modal. -->
 <app-confirm-dialog [aberto]="confirmandoSaida()" titulo="Sair do sistema" rotuloConfirmar="Sair"
   (fechar)="confirmandoSaida.set(false)" (confirmar)="sair()">
   Deseja encerrar a sessão? Você precisará entrar de novo para voltar.
 </app-confirm-dialog>
 
-<!-- Toaster global: um só para o app inteiro. O ToastService empilha avisos aqui. -->
 <hlm-toaster position="bottom-right" richColors />

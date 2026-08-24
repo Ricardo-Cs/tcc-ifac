@@ -1,5 +1,5 @@
-import { Component, computed, inject, signal } from '@angular/core';
-import { toSignal } from '@angular/core/rxjs-interop';
+import { afterNextRender, Component, computed, DestroyRef, effect, inject, signal } from '@angular/core';
+import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, NavigationEnd, Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { NgIcon, provideIcons } from '@ng-icons/core';
@@ -7,8 +7,6 @@ import {
   lucideBookOpen,
   lucideCalendarDays,
   lucideCalendarRange,
-  lucideChevronsLeft,
-  lucideChevronsRight,
   lucideClipboardList,
   lucideDoorOpen,
   lucideGraduationCap,
@@ -17,33 +15,44 @@ import {
   lucideLayers,
   lucideLayoutDashboard,
   lucideLogOut,
+  lucidePanelLeft,
   lucideSchool,
   lucideSettings,
   lucideTable,
   lucideUserRound,
   lucideUsers,
+  lucideX,
 } from '@ng-icons/lucide';
 import { HlmSelectImports } from '@spartan-ng/helm/select';
 import { HlmToaster } from '@spartan-ng/helm/sonner';
+import { HlmTooltipImports } from '@spartan-ng/helm/tooltip';
 import { filter, map, startWith } from 'rxjs';
 import { PeriodoState } from '../../core/state/periodo-state';
 import { Sessao } from '../../core/auth/sessao';
 import { ConfirmDialogComponent } from '../../shared/confirm-dialog/confirm-dialog';
 import { NAV } from '../nav';
 
-/** Onde o estado recolhido da barra sobrevive a um F5. */
 const CHAVE_RECOLHIDA = 'chronos:sidebar-recolhida';
+const CONSULTA_DESKTOP = '(min-width: 1024px)';
 
 @Component({
   selector: 'app-shell',
-  imports: [NgIcon, RouterLink, RouterLinkActive, RouterOutlet, HlmToaster, FormsModule, ConfirmDialogComponent, ...HlmSelectImports],
+  imports: [
+    NgIcon,
+    RouterLink,
+    RouterLinkActive,
+    RouterOutlet,
+    HlmToaster,
+    FormsModule,
+    ConfirmDialogComponent,
+    ...HlmSelectImports,
+    ...HlmTooltipImports,
+  ],
   providers: [
     provideIcons({
       lucideBookOpen,
       lucideCalendarDays,
       lucideCalendarRange,
-      lucideChevronsLeft,
-      lucideChevronsRight,
       lucideClipboardList,
       lucideDoorOpen,
       lucideGraduationCap,
@@ -52,24 +61,28 @@ const CHAVE_RECOLHIDA = 'chronos:sidebar-recolhida';
       lucideLayers,
       lucideLayoutDashboard,
       lucideLogOut,
+      lucidePanelLeft,
       lucideSchool,
       lucideSettings,
       lucideTable,
       lucideUserRound,
       lucideUsers,
+      lucideX,
     }),
   ],
   templateUrl: './shell.html',
+  host: {
+    '(document:keydown)': 'aoTeclar($event)',
+  },
 })
 export class ShellComponent {
   private readonly router = inject(Router);
   private readonly rota = inject(ActivatedRoute);
   private readonly sessao = inject(Sessao);
+  private readonly destroyRef = inject(DestroyRef);
 
-  /** Usuário autenticado — o rodapé da barra e o header o exibem. */
   readonly usuario = this.sessao.usuario;
 
-  /** Iniciais do usuário para o avatar do header (1ª e última palavra do nome). */
   readonly iniciais = computed(() => {
     const nome = this.usuario()?.nome.trim();
     if (!nome) return '?';
@@ -79,24 +92,41 @@ export class ShellComponent {
     return (primeira + ultima).toUpperCase();
   });
 
-  /** Período em foco no sistema inteiro — o header o exibe e permite trocar. */
   readonly periodo = inject(PeriodoState);
 
   readonly grupos = NAV;
 
-  /** Rótulo de cada período no seletor: o corrente ganha um "· atual". */
   readonly rotuloPeriodo = (codigo: string): string => {
     const p = this.periodo.periodos().find((x) => x.codigo === codigo);
     if (!p) return codigo;
     return p.ativo ? `${p.codigo} · atual` : p.codigo;
   };
 
+  private readonly consultaDesktop = window.matchMedia(CONSULTA_DESKTOP);
+
+  readonly desktop = signal(this.consultaDesktop.matches);
+
   readonly recolhida = signal(localStorage.getItem(CHAVE_RECOLHIDA) === '1');
 
-  /** Confirmação de saída — sair só depois do "Sair" no modal, nunca num clique. */
+  readonly menuMobileAberto = signal(false);
+
+  readonly compacta = computed(() => this.desktop() && this.recolhida());
+
+  readonly oculta = computed(() => !this.desktop() && !this.menuMobileAberto());
+
+  readonly menuExpandido = computed(() => (this.desktop() ? !this.recolhida() : this.menuMobileAberto()));
+
+  private readonly atalho = /Mac|iPhone|iPad/.test(navigator.userAgent) ? '⌘B' : 'Ctrl+B';
+
+  readonly dicaMenu = computed(() => {
+    if (!this.desktop()) return this.menuMobileAberto() ? 'Fechar menu' : 'Abrir menu';
+    return this.recolhida() ? `Expandir menu (${this.atalho})` : `Recolher menu (${this.atalho})`;
+  });
+
+  readonly montada = signal(false);
+
   readonly confirmandoSaida = signal(false);
 
-  /** Título da rota mais profunda em exibição — alimenta a trilha e o <h1>. */
   readonly titulo = toSignal(
     this.router.events.pipe(
       filter((e) => e instanceof NavigationEnd),
@@ -106,10 +136,49 @@ export class ShellComponent {
     { initialValue: this.tituloDaRotaAtiva() },
   );
 
-  alternarRecolhida(): void {
+  constructor() {
+    afterNextRender(() => requestAnimationFrame(() => this.montada.set(true)));
+
+    const aoMudarLargura = (e: MediaQueryListEvent) => this.desktop.set(e.matches);
+    this.consultaDesktop.addEventListener('change', aoMudarLargura);
+    this.destroyRef.onDestroy(() => this.consultaDesktop.removeEventListener('change', aoMudarLargura));
+
+    this.router.events
+      .pipe(
+        filter((e) => e instanceof NavigationEnd),
+        takeUntilDestroyed(),
+      )
+      .subscribe(() => this.menuMobileAberto.set(false));
+
+    effect(() => {
+      document.body.style.overflow = this.menuMobileAberto() ? 'hidden' : '';
+    });
+    this.destroyRef.onDestroy(() => (document.body.style.overflow = ''));
+  }
+
+  alternarMenu(): void {
+    if (!this.desktop()) {
+      this.menuMobileAberto.update((aberto) => !aberto);
+      return;
+    }
     const proxima = !this.recolhida();
     this.recolhida.set(proxima);
     localStorage.setItem(CHAVE_RECOLHIDA, proxima ? '1' : '0');
+  }
+
+  fecharMenuMobile(): void {
+    this.menuMobileAberto.set(false);
+  }
+
+  aoTeclar(evento: KeyboardEvent): void {
+    if (evento.key === 'Escape' && this.menuMobileAberto()) {
+      this.fecharMenuMobile();
+      return;
+    }
+    if (evento.key.toLowerCase() === 'b' && (evento.ctrlKey || evento.metaKey) && !evento.altKey) {
+      evento.preventDefault();
+      this.alternarMenu();
+    }
   }
 
   sair(): void {
@@ -118,12 +187,6 @@ export class ShellComponent {
     void this.router.navigate(['/login']);
   }
 
-  /**
-   * O shell nasce ANTES de a rota filha ser ativada — nesse instante ela já
-   * existe na árvore mas ainda não tem `snapshot`. Daí a leitura toda opcional:
-   * a primeira chamada cai no rótulo neutro e o `NavigationEnd` seguinte, que
-   * chega logo depois da ativação, traz o título de verdade.
-   */
   private tituloDaRotaAtiva(): string {
     let atual = this.rota.firstChild ?? this.rota;
     while (atual.firstChild) atual = atual.firstChild;
