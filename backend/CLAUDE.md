@@ -98,5 +98,5 @@ estado do período ──▶ GradeSnapshot ──▶ [Regra, Regra, ...] ──�
 ## Convenções gerais
 
 - TypeScript com `strictNullChecks` (mas `noImplicitAny: false`). Prettier + ESLint governam estilo — rodar `npm run lint` antes de fechar.
-- **Comentar só quando estritamente necessário.** Comentário existe para o que **não dá para saber lendo o código**: regra de negócio, decisão de design, o _porquê_. Nunca para descrever o que o código já diz (ex.: `// incrementa o contador` acima de `contador++`) — isso é ruído, mesmo quando bem escrito. Ao editar ou revisar, **remover comentários redundantes** que só reafirmam o código. Comentários em português.
+- **Não inserir comentários no código, de jeito nenhum.** Nem para explicar regra de negócio, nem decisão de design, nem o _porquê_ — nada. Ao editar ou revisar qualquer arquivo, **remover todo comentário encontrado**, mesmo que pareça útil ou já existisse antes da mudança.
 - Testes (`*.spec.ts`) moram ao lado do código que testam, dentro de `src/`.
