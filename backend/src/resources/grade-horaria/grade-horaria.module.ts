@@ -19,14 +19,12 @@ import { SqlAlocacoesRepository } from '@infrastructure/persistence/sql/alocacoe
 import { RegraProfessorDuplicado } from '@domain/grade-horaria/regras/professor-duplicado';
 import { RegraTurmaDuplicada } from '@domain/grade-horaria/regras/turma-duplicada';
 import { RegraSalaOcupada } from '@domain/grade-horaria/regras/sala-ocupada';
+import { RegraInterjornada } from '@domain/grade-horaria/regras/interjornada';
+import { RegraIntrajornada } from '@domain/grade-horaria/regras/intrajornada';
+import { RegraTresTurnosNoDia } from '@domain/grade-horaria/regras/tres-turnos-no-dia';
+import { RegraCargaDiariaExcedida } from '@domain/grade-horaria/regras/carga-diaria-excedida';
 import { GradeController } from './grade.controller';
 
-/**
- * Onde a aplicação encontra suas implementações: cada porta (Symbol) é ligada à
- * classe de `infrastructure/persistence/sql` que a satisfaz. A lista de regras
- * é injetada como valor — acrescentar uma regra nova ao motor é editar só este
- * array. O `DataSource` vem do `TypeOrmModule` global (registrado no boot).
- */
 @Module({
   controllers: [GradeController],
   providers: [
@@ -45,6 +43,10 @@ import { GradeController } from './grade.controller';
         new RegraProfessorDuplicado(),
         new RegraTurmaDuplicada(),
         new RegraSalaOcupada(),
+        new RegraInterjornada(),
+        new RegraIntrajornada(),
+        new RegraTresTurnosNoDia(),
+        new RegraCargaDiariaExcedida(),
       ] satisfies Regras,
     },
   ],
