@@ -4,6 +4,7 @@ import { AlterarAlocacaoUseCase } from '@application/grade-horaria/alterar-aloca
 import { AceitarConflitoUseCase } from '@application/grade-horaria/aceitar-conflito.use-case';
 import { ListarOfertasAlocaveisUseCase } from '@application/grade-horaria/listar-ofertas-alocaveis.use-case';
 import { PeriodoEditavelGuard } from '@application/grade-horaria/periodo-editavel.guard';
+import { AvaliarGradeConflitoForteChecker } from '@application/grade-horaria/conflito-forte-checker';
 import {
   ACEITES_REPOSITORY,
   ALOCACOES_REPOSITORY,
@@ -12,6 +13,7 @@ import {
   Regras,
   SNAPSHOT_LOADER,
 } from '@domain/grade-horaria/ports';
+import { CONFLITOS_PERIODO_CHECKER } from '@domain/comum/trava-publicacao';
 import { SqlSnapshotLoader } from '@infrastructure/persistence/sql/snapshot.loader';
 import { SqlAceitesRepository } from '@infrastructure/persistence/sql/aceites.repository';
 import { SqlPeriodosRepository } from '@infrastructure/persistence/sql/periodos.repository';
@@ -38,6 +40,10 @@ import { GradeController } from './grade.controller';
     { provide: PERIODOS_REPOSITORY, useClass: SqlPeriodosRepository },
     { provide: ALOCACOES_REPOSITORY, useClass: SqlAlocacoesRepository },
     {
+      provide: CONFLITOS_PERIODO_CHECKER,
+      useClass: AvaliarGradeConflitoForteChecker,
+    },
+    {
       provide: REGRAS,
       useValue: [
         new RegraProfessorDuplicado(),
@@ -50,5 +56,6 @@ import { GradeController } from './grade.controller';
       ] satisfies Regras,
     },
   ],
+  exports: [CONFLITOS_PERIODO_CHECKER],
 })
 export class GradeHorariaModule {}

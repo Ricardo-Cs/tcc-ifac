@@ -11,12 +11,15 @@ import {
   PeriodoLetivo,
 } from '@domain/comum/periodo-letivo';
 import type { PeriodoLetivoRepository } from '@domain/comum/periodo-letivo';
+import { StatusPeriodo } from '@domain/comum/enums';
+import { TravaPublicacaoGuard } from './trava-publicacao.guard';
 
 @Injectable()
 export class PeriodosLetivosService {
   constructor(
     @Inject(PERIODO_LETIVO_REPOSITORY)
     private readonly periodos: PeriodoLetivoRepository,
+    private readonly travaPublicacao: TravaPublicacaoGuard,
   ) {}
 
   listar(): Promise<PeriodoLetivo[]> {
@@ -39,6 +42,9 @@ export class PeriodosLetivosService {
     id: string,
     input: AtualizarPeriodoLetivoInput,
   ): Promise<PeriodoLetivo> {
+    if (input.status === StatusPeriodo.PUBLICADO) {
+      await this.travaPublicacao.garantir(id);
+    }
     const periodo = await this.periodos.atualizar(id, input);
     if (!periodo) {
       throw new NotFoundException(`Período ${id} não encontrado.`);
