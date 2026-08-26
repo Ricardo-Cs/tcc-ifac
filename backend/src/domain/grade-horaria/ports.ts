@@ -8,7 +8,6 @@
  * basta uma implementação em memória das portas.
  */
 import { DadosSnapshot } from './snapshot';
-import { StatusPeriodo } from '../comum/enums';
 import { Regra } from './regras/regra';
 
 /** Carrega o estado bruto de um período letivo para alimentar o motor. */
@@ -84,19 +83,9 @@ export interface AlocacoesRepository {
   periodoDaAlocacao(id: string): Promise<string | null>;
 }
 
-/** Resumo de um período letivo para navegação/seleção na interface. */
-export interface PeriodoResumo {
-  id: string;
-  codigo: string;
-  descricao: string | null;
-  status: StatusPeriodo;
-  ativo: boolean;
-}
-
-/** Consulta de períodos (listagem e resolução do período ativo). */
+/** Resolução do período ativo para o motor de conflitos. */
 export const PERIODOS_REPOSITORY = Symbol('PERIODOS_REPOSITORY');
 export interface PeriodosRepository {
-  listar(): Promise<PeriodoResumo[]>;
   /** Id do período marcado como ativo, ou `null` se não houver. */
   ativoId(): Promise<string | null>;
 }

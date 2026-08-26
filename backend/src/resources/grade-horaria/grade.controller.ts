@@ -15,10 +15,7 @@ import { AvaliarGradeUseCase } from '@application/grade-horaria/avaliar-grade.us
 import { AlterarAlocacaoUseCase } from '@application/grade-horaria/alterar-alocacao.use-case';
 import { AceitarConflitoUseCase } from '@application/grade-horaria/aceitar-conflito.use-case';
 import { ListarOfertasAlocaveisUseCase } from '@application/grade-horaria/listar-ofertas-alocaveis.use-case';
-import {
-  PERIODOS_REPOSITORY,
-  PeriodoResumo,
-} from '@domain/grade-horaria/ports';
+import { PERIODOS_REPOSITORY } from '@domain/grade-horaria/ports';
 import type { PeriodosRepository } from '@domain/grade-horaria/ports';
 import { GradeView, montarGradeView } from './grade.view';
 import {
@@ -65,11 +62,6 @@ export class GradeController {
     @Inject(PERIODOS_REPOSITORY)
     private readonly periodos: PeriodosRepository,
   ) {}
-
-  @Get('periodos')
-  async listarPeriodos(): Promise<PeriodoResumo[]> {
-    return this.periodos.listar();
-  }
 
   /**
    * Atalho de demonstração: a grade do período ativo, sem precisar do UUID.

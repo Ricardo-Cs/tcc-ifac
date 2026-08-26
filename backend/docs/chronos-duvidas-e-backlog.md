@@ -268,8 +268,10 @@ reunião de 05/08/2026 (grupos mantidos + descontos anotados, tudo manual).
     codocência Flavio/Marlon, sala dupla LAB 3/LAB 4, geminadas como norma,
     slots com intervalo entre 3º e 4º). Incluir os casos das três modalidades
     e as situações conflitantes de propósito.
-22. Regras restantes do plano original: sala ocupada, restrição violada,
-    carga de oferta incompleta, capacidade/tipo de sala.
+22. Regras restantes do plano original: restrição violada, capacidade/tipo
+    de sala. (Sala ocupada — FEITA. Carga de oferta incompleta — CANCELADA:
+    o catálogo de ofertas alocáveis já mostra "faltam N" por oferta, torna
+    a regra redundante.)
 23. Loader do snapshot (SQL cru em persistence/sql/).
 24. Endpoints: GET /grade/:periodoId, POST /simular, POST /alocacoes.
 25. Estados do período + trava de publicação (usa B1.8). ATENÇÃO: ver a NOTA

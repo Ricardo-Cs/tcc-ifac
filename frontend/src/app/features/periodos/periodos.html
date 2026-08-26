@@ -11,6 +11,9 @@
     <ng-template appLinhaListagem let-p>
       <td class="px-4 py-3 font-medium text-foreground tabular-nums">{{ p.codigo }}</td>
       <td class="px-4 py-3 text-muted-foreground">{{ p.descricao ?? '—' }}</td>
+      <td class="px-4 py-3 text-muted-foreground tabular-nums">
+        {{ formatarData(p.dataInicio) }} – {{ formatarData(p.dataFim) }}
+      </td>
       <td class="px-4 py-3 text-muted-foreground">{{ rotuloStatus(p.status) }}</td>
       <td class="px-4 py-3">
         @if (p.ativo) {
@@ -51,11 +54,11 @@
   </app-listagem>
 </div>
 
-<!-- Criar/editar: o cromo vem do app-form-dialog; aqui só o ícone e o formulário. -->
 <app-form-dialog
   [aberto]="dialogAberto()"
   [titulo]="tituloDialog()"
   descricao="O período em foco recorta ofertas, disponibilidades e a grade."
+  [salvando]="salvando()"
   [erro]="erroForm()"
   (fechar)="fecharDialog()"
   (salvar)="salvar()"
@@ -67,38 +70,77 @@
       <div class="grid gap-1.5">
         <label
           class="text-[0.7rem] font-semibold uppercase tracking-wide text-muted-foreground"
-          for="periodo-codigo"
-          >Código</label
+          for="periodo-ano"
+          >Ano</label
         >
         <input
           hlmInput
-          id="periodo-codigo"
-          [ngModel]="rascunho().codigo"
-          name="codigo"
-          (ngModelChange)="atualizar('codigo', $event)"
-          placeholder="Ex.: 2026.2"
+          id="periodo-ano"
+          type="number"
+          [ngModel]="rascunho().ano"
+          name="ano"
+          (ngModelChange)="atualizar('ano', $event)"
+          placeholder="Ex.: 2026"
         />
       </div>
 
       <div class="grid gap-1.5">
-        <label class="text-[0.7rem] font-semibold uppercase tracking-wide text-muted-foreground"
-          >Status</label
+        <label
+          class="text-[0.7rem] font-semibold uppercase tracking-wide text-muted-foreground"
+          for="periodo-semestre"
+          >Semestre</label
         >
-        <hlm-select
-          [ngModel]="rascunho().status"
-          name="status"
-          [itemToString]="rotuloStatus"
-          (ngModelChange)="atualizar('status', $event)"
+        <input
+          hlmInput
+          id="periodo-semestre"
+          type="number"
+          min="1"
+          max="2"
+          [ngModel]="rascunho().semestre"
+          name="semestre"
+          (ngModelChange)="atualizar('semestre', $event)"
+          placeholder="1 ou 2"
+        />
+      </div>
+    </div>
+
+    <div class="grid gap-4 sm:grid-cols-2">
+      <div class="grid gap-1.5">
+        <label
+          class="text-[0.7rem] font-semibold uppercase tracking-wide text-muted-foreground"
+          for="periodo-data-inicio"
+          >Data de início</label
         >
-          <hlm-select-trigger class="w-full">
-            <hlm-select-value placeholder="Selecione o status" />
-          </hlm-select-trigger>
-          <hlm-select-content *hlmSelectPortal>
-            @for (s of statusOpcoes; track s.valor) {
-              <hlm-select-item [value]="s.valor">{{ s.rotulo }}</hlm-select-item>
-            }
-          </hlm-select-content>
-        </hlm-select>
+        <input
+          hlmInput
+          id="periodo-data-inicio"
+          type="text"
+          inputmode="numeric"
+          maxlength="10"
+          placeholder="dd/mm/aaaa"
+          [ngModel]="dataInicioTexto()"
+          name="dataInicio"
+          (ngModelChange)="digitarData('dataInicio', $event)"
+        />
+      </div>
+
+      <div class="grid gap-1.5">
+        <label
+          class="text-[0.7rem] font-semibold uppercase tracking-wide text-muted-foreground"
+          for="periodo-data-fim"
+          >Data de fim</label
+        >
+        <input
+          hlmInput
+          id="periodo-data-fim"
+          type="text"
+          inputmode="numeric"
+          maxlength="10"
+          placeholder="dd/mm/aaaa"
+          [ngModel]="dataFimTexto()"
+          name="dataFim"
+          (ngModelChange)="digitarData('dataFim', $event)"
+        />
       </div>
     </div>
 
@@ -111,11 +153,32 @@
       <input
         hlmInput
         id="periodo-descricao"
-        [ngModel]="rascunho().descricao ?? ''"
+        [ngModel]="rascunho().descricao"
         name="descricao"
         (ngModelChange)="atualizar('descricao', $event)"
         placeholder="Ex.: Segundo semestre de 2026"
       />
+    </div>
+
+    <div class="grid gap-1.5">
+      <label class="text-[0.7rem] font-semibold uppercase tracking-wide text-muted-foreground"
+        >Status</label
+      >
+      <hlm-select
+        [ngModel]="rascunho().status"
+        name="status"
+        [itemToString]="rotuloStatus"
+        (ngModelChange)="atualizar('status', $event)"
+      >
+        <hlm-select-trigger class="w-full">
+          <hlm-select-value placeholder="Selecione o status" />
+        </hlm-select-trigger>
+        <hlm-select-content *hlmSelectPortal>
+          @for (s of statusOpcoes; track s.valor) {
+            <hlm-select-item [value]="s.valor">{{ s.rotulo }}</hlm-select-item>
+          }
+        </hlm-select-content>
+      </hlm-select>
     </div>
 
     <label class="flex items-center gap-2.5 rounded-lg border border-border p-3 text-sm">
@@ -136,10 +199,10 @@
   </form>
 </app-form-dialog>
 
-<!-- Confirmar remoção -->
 <app-confirm-dialog
   [aberto]="removendo() !== null"
   titulo="Remover período"
+  [processando]="salvando()"
   (fechar)="cancelarRemocao()"
   (confirmar)="confirmarRemocao()"
 >

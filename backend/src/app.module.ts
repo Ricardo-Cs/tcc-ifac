@@ -4,6 +4,7 @@ import { PersistenceModule } from '@infrastructure/persistence/typeorm/typeorm.m
 import { AuthModule } from '@resources/auth/auth.module';
 import { GradeHorariaModule } from '@resources/grade-horaria/grade-horaria.module';
 import { AcademicoModule } from '@resources/academico/academico.module';
+import { PeriodosModule } from '@resources/periodos/periodos.module';
 
 @Module({
   imports: [
@@ -13,6 +14,7 @@ import { AcademicoModule } from '@resources/academico/academico.module';
     PersistenceModule,
     AuthModule,
     AcademicoModule,
+    PeriodosModule,
     GradeHorariaModule,
   ],
   controllers: [],

@@ -63,13 +63,31 @@ export interface Grade {
   conflitos: Conflito[];
 }
 
+export type StatusPeriodo = 'RASCUNHO' | 'VALIDADO' | 'PUBLICADO';
+
 export interface Periodo {
   id: string;
   codigo: string;
+  ano: number;
+  semestre: number;
   descricao: string | null;
-  status: string;
+  dataInicio: string;
+  dataFim: string;
+  status: StatusPeriodo;
   ativo: boolean;
 }
+
+export interface CriarPeriodo {
+  ano: number;
+  semestre: number;
+  descricao?: string | null;
+  dataInicio: string;
+  dataFim: string;
+  status?: StatusPeriodo;
+  ativo?: boolean;
+}
+
+export type AtualizarPeriodo = Partial<CriarPeriodo>;
 
 export interface OfertaAlocavel {
   ofertaId: string;
