@@ -1,29 +1,36 @@
 <div>
-  <!-- Barra da tela: o seletor da dimensão à esquerda, o placar de conflitos da
-       seleção à direita. O período mora no cabeçalho do shell, como no planejamento. -->
   <div
     class="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 border-b border-border bg-card px-6 py-2.5"
   >
-    @if (opcoes().length) {
-      <hlm-combobox
-        class="w-full sm:w-80"
-        [value]="selecionado()"
-        (valueChange)="selecionar($event)"
-      >
-        <hlm-combobox-input
+    <div class="flex flex-wrap items-center gap-3">
+      @if (opcoes().length) {
+        <hlm-combobox
           class="w-full sm:w-80"
-          [placeholder]="'Buscar ' + rotuloDimensao.toLowerCase()"
-        />
-        <hlm-combobox-content *hlmComboboxPortal>
-          <hlm-combobox-empty>Nenhum {{ rotuloDimensao.toLowerCase() }} encontrado.</hlm-combobox-empty>
-          <div hlmComboboxList>
-            @for (nome of opcoes(); track nome) {
-              <hlm-combobox-item [value]="nome">{{ nome }}</hlm-combobox-item>
-            }
-          </div>
-        </hlm-combobox-content>
-      </hlm-combobox>
-    }
+          [value]="selecionado()"
+          (valueChange)="selecionar($event)"
+        >
+          <hlm-combobox-input
+            class="w-full sm:w-80"
+            [placeholder]="'Buscar ' + rotuloDimensao.toLowerCase()"
+          />
+          <hlm-combobox-content *hlmComboboxPortal>
+            <hlm-combobox-empty>Nenhum {{ rotuloDimensao.toLowerCase() }} encontrado.</hlm-combobox-empty>
+            <div hlmComboboxList>
+              @for (nome of opcoes(); track nome) {
+                <hlm-combobox-item [value]="nome">{{ nome }}</hlm-combobox-item>
+              }
+            </div>
+          </hlm-combobox-content>
+        </hlm-combobox>
+      }
+
+      @if (cargaDoSelecionado() !== null) {
+        <span class="text-xs text-muted-foreground">
+          Carga atual:
+          <span class="font-semibold text-foreground">{{ cargaFormatada(cargaDoSelecionado()!) }}</span>
+        </span>
+      }
+    </div>
 
     @if (selecionado()) {
       <span class="text-sm text-muted-foreground">
@@ -56,8 +63,6 @@
         [vendoVariasTurmas]="true"
       />
 
-      <!-- Painel de conflitos só-leitura: mostra o que acendeu, sem aceitar
-           (aceitar é edição, vive no Planejamento). -->
       <section class="rounded-xl border border-border bg-card">
         <header class="border-b border-border px-4 py-3">
           <h2 class="text-sm font-semibold tracking-tight">Conflitos</h2>

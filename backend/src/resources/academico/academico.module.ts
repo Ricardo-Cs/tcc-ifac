@@ -25,6 +25,7 @@ import { TypeormDisciplinasRepository } from '@infrastructure/persistence/typeor
 import { TypeormTurmasRepository } from '@infrastructure/persistence/typeorm/repositories/academico/turmas.repository';
 import { TypeormSalasRepository } from '@infrastructure/persistence/typeorm/repositories/academico/salas.repository';
 import { TypeormOfertasRepository } from '@infrastructure/persistence/typeorm/repositories/academico/ofertas.repository';
+import { GradeHorariaModule } from '@resources/grade-horaria/grade-horaria.module';
 import { CursosController } from './cursos/cursos.controller';
 import { ProfessoresController } from './professores/professores.controller';
 import { DisciplinasController } from './disciplinas/disciplinas.controller';
@@ -43,6 +44,7 @@ import { OfertasController } from './ofertas/ofertas.controller';
       OfertaDisciplinaEntity,
       ProfessorOfertaEntity,
     ]),
+    GradeHorariaModule,
   ],
   controllers: [
     CursosController,

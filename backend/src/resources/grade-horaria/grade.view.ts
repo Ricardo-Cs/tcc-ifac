@@ -7,8 +7,10 @@ import {
 import {
   CursoSnapshot,
   GradeSnapshot,
+  ProfessorSnapshot,
   TurmaSnapshot,
 } from '@domain/grade-horaria/snapshot';
+import { cargaLetivaPorProfessor } from '@domain/grade-horaria/carga-letiva';
 
 export interface AulaView {
   id: string;
@@ -64,6 +66,11 @@ export interface TurmaView {
   cursoId: string;
 }
 
+export interface ProfessorCargaView {
+  nome: string;
+  cargaHorariaAtual: number;
+}
+
 export interface GradeView {
   periodoLetivoId: string;
   coletaImportada: boolean;
@@ -71,6 +78,7 @@ export interface GradeView {
   slots: SlotView[];
   cursos: CursoView[];
   turmas: TurmaView[];
+  professores: ProfessorCargaView[];
   conflitos: ConflitoView[];
 }
 
@@ -161,6 +169,21 @@ function turmasDaGrade(snapshot: GradeSnapshot): TurmaView[] {
     .sort((a, b) => a.nome.localeCompare(b.nome));
 }
 
+function professoresDaGrade(snapshot: GradeSnapshot): ProfessorCargaView[] {
+  const carga = cargaLetivaPorProfessor(snapshot);
+  const ids = new Set<string>();
+  for (const alocacao of snapshot.alocacoes) {
+    const oferta = snapshot.ofertas.get(alocacao.ofertaId);
+    if (!oferta) continue;
+    for (const { professorId } of oferta.professores) ids.add(professorId);
+  }
+  return [...ids]
+    .map((id) => snapshot.professores.get(id))
+    .filter((p): p is ProfessorSnapshot => !!p)
+    .map((p) => ({ nome: p.nome, cargaHorariaAtual: carga.get(p.id) ?? 0 }))
+    .sort((a, b) => a.nome.localeCompare(b.nome));
+}
+
 export function montarGradeView(resultado: ResultadoAvaliacao): GradeView {
   const { snapshot } = resultado;
   return {
@@ -169,6 +192,7 @@ export function montarGradeView(resultado: ResultadoAvaliacao): GradeView {
     aulas: snapshot.alocacoes.map((a) => montarAula(snapshot, a)),
     cursos: cursosDaGrade(snapshot),
     turmas: turmasDaGrade(snapshot),
+    professores: professoresDaGrade(snapshot),
     slots: [...snapshot.slots.values()]
       .map((s) => ({
         id: s.id,

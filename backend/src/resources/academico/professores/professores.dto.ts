@@ -12,7 +12,6 @@ import {
 import { GrupoRegime } from '@domain/academico/enums';
 import { Professor } from '@domain/academico/professor';
 
-/** Corpo de criação de professor. */
 export class CriarProfessorDto {
   @ApiProperty({ example: 'Maria Silva', maxLength: 255 })
   @IsNotEmpty()
@@ -72,10 +71,8 @@ export class CriarProfessorDto {
   ativo?: boolean;
 }
 
-/** Corpo de atualização parcial: todos os campos opcionais. */
 export class AtualizarProfessorDto extends PartialType(CriarProfessorDto) {}
 
-/** Professor como devolvido pela API. */
 export class ProfessorResponseDto {
   @ApiProperty({ format: 'uuid' })
   id: string;
@@ -104,8 +101,15 @@ export class ProfessorResponseDto {
   @ApiProperty()
   ativo: boolean;
 
-  /** Único ponto que traduz o Professor do domínio no contrato de resposta. */
-  static fromDomain(professor: Professor): ProfessorResponseDto {
+  @ApiPropertyOptional({
+    description:
+      'Carga letiva atual no período corrente (horas), calculada a partir das ofertas alocadas.',
+  })
+  cargaHorariaAtual?: number;
+
+  static fromDomain(
+    professor: Professor & { cargaHorariaAtual?: number },
+  ): ProfessorResponseDto {
     const dto = new ProfessorResponseDto();
     dto.id = professor.id;
     dto.nome = professor.nome;
@@ -116,6 +120,7 @@ export class ProfessorResponseDto {
     dto.ajusteCargaHoras = professor.ajusteCargaHoras;
     dto.ajusteCargaMotivo = professor.ajusteCargaMotivo;
     dto.ativo = professor.ativo;
+    dto.cargaHorariaAtual = professor.cargaHorariaAtual;
     return dto;
   }
 }

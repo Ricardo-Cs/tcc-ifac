@@ -5,6 +5,7 @@ import { AceitarConflitoUseCase } from '@application/grade-horaria/aceitar-confl
 import { ListarOfertasAlocaveisUseCase } from '@application/grade-horaria/listar-ofertas-alocaveis.use-case';
 import { PeriodoEditavelGuard } from '@application/grade-horaria/periodo-editavel.guard';
 import { AvaliarGradeConflitoForteChecker } from '@application/grade-horaria/conflito-forte-checker';
+import { SnapshotCargaLetivaProvider } from '@application/grade-horaria/carga-letiva-provider';
 import {
   ACEITES_REPOSITORY,
   ALOCACOES_REPOSITORY,
@@ -14,6 +15,7 @@ import {
   SNAPSHOT_LOADER,
 } from '@domain/grade-horaria/ports';
 import { CONFLITOS_PERIODO_CHECKER } from '@domain/comum/trava-publicacao';
+import { CARGA_LETIVA_PROVIDER } from '@domain/academico/carga-letiva';
 import { SqlSnapshotLoader } from '@infrastructure/persistence/sql/snapshot.loader';
 import { SqlAceitesRepository } from '@infrastructure/persistence/sql/aceites.repository';
 import { SqlPeriodosRepository } from '@infrastructure/persistence/sql/periodos.repository';
@@ -44,6 +46,10 @@ import { GradeController } from './grade.controller';
       useClass: AvaliarGradeConflitoForteChecker,
     },
     {
+      provide: CARGA_LETIVA_PROVIDER,
+      useClass: SnapshotCargaLetivaProvider,
+    },
+    {
       provide: REGRAS,
       useValue: [
         new RegraProfessorDuplicado(),
@@ -56,6 +62,6 @@ import { GradeController } from './grade.controller';
       ] satisfies Regras,
     },
   ],
-  exports: [CONFLITOS_PERIODO_CHECKER],
+  exports: [CONFLITOS_PERIODO_CHECKER, CARGA_LETIVA_PROVIDER],
 })
 export class GradeHorariaModule {}

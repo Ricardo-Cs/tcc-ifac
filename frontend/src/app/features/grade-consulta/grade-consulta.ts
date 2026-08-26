@@ -1,20 +1,8 @@
-/**
- * Consulta de grade — a MESMA tabela do planejamento, mas pivotada por uma
- * dimensão que a tela de planejamento não mostra: por professor ou por sala.
- * Enquanto o planejamento recorta a grade por curso › turma, aqui a comissão
- * pergunta "onde esse professor está a semana toda?" ou "o que roda nesta sala?".
- * É só leitura — não move nem cria aula; para isso existe o Planejamento.
- *
- * Uma única classe atende às duas telas: a rota diz a `dimensao` (`professor` |
- * `sala`) em `data`, e daí saem a lista de opções, o filtro e os rótulos. Os
- * conflitos continuam acendendo na tabela (um professor em duas aulas fica
- * vermelho aqui também) e são listados ao lado, sem o botão de aceitar — decidir
- * conviver com um conflito é ação de edição, feita no Planejamento.
- */
 import { Component, computed, effect, inject, signal } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 import { HlmComboboxImports } from '@spartan-ng/helm/combobox';
 import { GradeApi } from '../../core/api/grade-api';
+import { formatarHoras } from '../../core/format/horas';
 import { PeriodoState } from '../../core/state/periodo-state';
 import { Aula, Conflito, Grade } from '../../core/models/grade.models';
 import { GradeTabelaComponent } from '../grade/components/grade-tabela/grade-tabela';
@@ -32,7 +20,6 @@ export class GradeConsultaComponent {
   private readonly api = inject(GradeApi);
   readonly periodo = inject(PeriodoState);
 
-  /** Qual dimensão esta instância pivota — vem do `data` da rota. */
   readonly dimensao = (inject(ActivatedRoute).snapshot.data['dimensao'] ?? 'professor') as Dimensao;
   readonly rotuloDimensao = this.dimensao === 'professor' ? 'Professor' : 'Sala';
 
@@ -40,14 +27,11 @@ export class GradeConsultaComponent {
   readonly carregando = signal(false);
   readonly erro = signal<string | null>(null);
 
-  /** A opção (nome de professor ou de sala) em exibição. */
   readonly selecionado = signal<string | null>(null);
 
-  /** Id do período já carregado — evita recarregar quando o foco não mudou. */
   private periodoCarregado: string | null | undefined;
 
   constructor() {
-    // A consulta acompanha o período em foco no cabeçalho, igual ao planejamento.
     effect(() => {
       const foco = this.periodo.selecionado();
       const id = foco?.id ?? null;
@@ -57,11 +41,6 @@ export class GradeConsultaComponent {
     });
   }
 
-  /**
-   * Todos os nomes (professores ou salas) que têm aula no período, ordenados. A
-   * lista sai da própria grade carregada — só interessa consultar quem de fato
-   * aparece nela, então não é preciso um endpoint à parte.
-   */
   readonly opcoes = computed<string[]>(() => {
     const nomes = new Set<string>();
     for (const a of this.grade()?.aulas ?? []) {
@@ -74,7 +53,14 @@ export class GradeConsultaComponent {
     return [...nomes].sort((x, y) => x.localeCompare(y, 'pt-BR'));
   });
 
-  /** As aulas da seleção — as que o professor dá, ou as que rodam na sala. */
+  readonly cargaDoSelecionado = computed<number | null>(() => {
+    if (this.dimensao !== 'professor') return null;
+    const nome = this.selecionado();
+    if (!nome) return null;
+    const professor = (this.grade()?.professores ?? []).find((p) => p.nome === nome);
+    return professor?.cargaHorariaAtual ?? null;
+  });
+
   private readonly aulasDaSelecao = computed<Aula[]>(() => {
     const sel = this.selecionado();
     if (!sel) return [];
@@ -91,11 +77,6 @@ export class GradeConsultaComponent {
     () => new Map((this.grade()?.cursos ?? []).map((c) => [c.id, c.sigla])),
   );
 
-  /**
-   * Os turnos que a seleção ocupa — a tabela desenha só essas faixas. Um
-   * professor pode dar aula em turnos diferentes ao longo da semana, então não há
-   * um "turno padrão" como no curso: mostra-se a união do que ele de fato ocupa.
-   */
   private readonly turnos = computed<Set<string> | null>(() => {
     const set = new Set<string>();
     for (const a of this.aulasDaSelecao()) {
@@ -114,11 +95,6 @@ export class GradeConsultaComponent {
     ),
   );
 
-  /**
-   * Os conflitos que tocam a seleção, do mais grave ao menos — a mesma cor que
-   * acende na tabela, agora com o texto do que aconteceu. Só leitura: aceitar é
-   * ação do Planejamento.
-   */
   readonly conflitos = computed<Conflito[]>(() => {
     const ids = new Set(this.aulasDaSelecao().map((a) => a.id));
     return [...(this.grade()?.conflitos ?? [])]
@@ -134,6 +110,10 @@ export class GradeConsultaComponent {
   rotuloSev = (sev: Conflito['severidade']): string => rotuloSeveridade(sev);
   rotuloTipoConflito = (tipo: string): string => rotuloTipo(tipo);
 
+  cargaFormatada(horas: number): string {
+    return formatarHoras(horas);
+  }
+
   private carregar(fonte: () => import('rxjs').Observable<Grade>): void {
     this.carregando.set(true);
     this.erro.set(null);
@@ -146,11 +126,6 @@ export class GradeConsultaComponent {
     });
   }
 
-  /**
-   * Guarda a grade e garante que a seleção continue válida: ao trocar de período
-   * (ou na primeira carga) cai na primeira opção, para a tela nunca abrir vazia
-   * com dados disponíveis.
-   */
   private aplicarGrade(g: Grade): void {
     this.grade.set(g);
     const ops = this.opcoes();

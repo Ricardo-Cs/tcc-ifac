@@ -6,16 +6,27 @@ import {
   Professor,
 } from '@domain/academico/professor';
 import type { ProfessoresRepository } from '@domain/academico/professor';
+import { CARGA_LETIVA_PROVIDER } from '@domain/academico/carga-letiva';
+import type { CargaLetivaProvider } from '@domain/academico/carga-letiva';
 
 @Injectable()
 export class ProfessoresService {
   constructor(
     @Inject(PROFESSORES_REPOSITORY)
     private readonly professores: ProfessoresRepository,
+    @Inject(CARGA_LETIVA_PROVIDER)
+    private readonly cargaLetiva: CargaLetivaProvider,
   ) {}
 
-  listar(): Promise<Professor[]> {
-    return this.professores.listar();
+  async listar(): Promise<Array<Professor & { cargaHorariaAtual: number }>> {
+    const [professores, carga] = await Promise.all([
+      this.professores.listar(),
+      this.cargaLetiva.cargaAtualPorProfessor(),
+    ]);
+    return professores.map((professor) => ({
+      ...professor,
+      cargaHorariaAtual: carga.get(professor.id) ?? 0,
+    }));
   }
 
   async buscarPorId(id: string): Promise<Professor> {

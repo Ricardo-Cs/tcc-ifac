@@ -21,6 +21,7 @@
       </td>
       <td class="px-4 py-3 tabular-nums text-muted-foreground">{{ p.siape }}</td>
       <td class="px-4 py-3 text-muted-foreground">{{ rotuloRegime(p.grupoRegime) }}</td>
+      <td class="px-4 py-3 tabular-nums text-muted-foreground">{{ cargaFormatada(p.cargaHorariaAtual) }}</td>
       <td class="px-4 py-3">
         @if (p.ativo) {
           <span
@@ -63,7 +64,6 @@
   </app-listagem>
 </div>
 
-<!-- Criar/editar: o cromo vem do app-form-dialog; aqui só o ícone e o formulário. -->
 <app-form-dialog
   [aberto]="dialogAberto()"
   [titulo]="tituloDialog()"
@@ -169,7 +169,6 @@
   </form>
 </app-form-dialog>
 
-<!-- Confirmar remoção: destrutivo, então nunca num clique só. -->
 <app-confirm-dialog
   [aberto]="removendo() !== null"
   titulo="Remover professor"

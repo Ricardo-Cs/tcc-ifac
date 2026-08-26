@@ -210,29 +210,53 @@ reunião de 05/08/2026 (grupos mantidos + descontos anotados, tudo manual).
     dia entre turnos. Fundamento: RAD Art. 8º.
 11. TRES_TURNOS_NO_DIA (FORTE) — professor com aula em três turnos no mesmo
     dia. Fundamento: RAD Art. 5º §1º.
-12. CARGA_SEMANAL_INSUFICIENTE (severidade a definir) — professor abaixo do
-    piso da sua faixa. Novidade do RAD: existe mínimo, não só teto.
+12. CARGA_SEMANAL_INSUFICIENTE — implementada e RETIRADA no mesmo dia
+    (26/ago/2026). Motivo (usuário): a carga horária do professor NÃO é só
+    horas em sala de aula — há outras atribuições (gestão, projetos,
+    orientação etc.) que o sistema não registra. Comparar só as aulas
+    alocadas contra o piso da faixa faria TODO professor aparecer em
+    "débito", porque a parte não-letiva da carga é invisível ao sistema.
+    Item CANCELADO como conflito automático — não reabrir sem uma fonte para
+    a carga não-letiva. Ver item 12c (carga horária de referência) para a
+    ideia que sobrou dessa conversa.
 12b. CARGA_DIARIA_EXCEDIDA (FORTE) — professor com mais de 8h de aula no dia,
     i.e. mais de 9 aulas de 50 min (9 aulas = 7,5h; 10 = 8,33h). Confirmada
     pela comissão (ago/2026). Distinta de TRES_TURNOS_NO_DIA e do "máx. dois
     turnos": num dia de 2 turnos/10 slots, obriga deixar ≥1 slot livre. Usa a
     conversão aula→hora (item 19).
+12c. FEITA (26/ago/2026): "carga horária ATUAL" do professor, mas só a fatia
+    LETIVA (soma das aulas alocadas no período corrente, pesada por
+    `proporcaoCarga`, convertida p/ hora de 60min) — informativa, calculada
+    ao vivo a cada leitura (nunca persistida, mesmo princípio dos conflitos),
+    SEM virar regra. `domain/grade-horaria/carga-letiva.ts`
+    (`cargaLetivaPorProfessor`); porta `CARGA_LETIVA_PROVIDER` em
+    `domain/academico/carga-letiva.ts` (cross-context, mesmo padrão da trava
+    de publicação) + adaptador `SnapshotCargaLetivaProvider` em
+    `application/grade-horaria/` (reaproveita `SNAPSHOT_LOADER` +
+    `PERIODOS_REPOSITORY`, sem rodar as regras de conflito). Exposta em dois
+    lugares: `GradeView.professores[]` (tela Grade por professor, ao lado do
+    combobox) e `GET /professores` (`ProfessorResponseDto.cargaHorariaAtual`,
+    coluna nova na listagem). Não confundir com `grupoRegime` (a faixa
+    normativa, não usada aqui) nem com o item 13 (que comparava contra ela e
+    foi retirado). **Não cobre a parte não-letiva** — a mesma limitação que
+    derrubou os itens 12/13 continua valendo; isto aqui é só um número
+    informativo, não uma promessa de carga total real.
 
 ## B3. Motor de conflitos — regras a revisar
 
-13. CARGA_SEMANAL_EXCEDIDA — reclassificar de FRACO para FORTE (é norma, não
-    preferência). Passa a usar: faixa do grupoRegime + ajustes individuais +
-    proporcaoCarga (cálculo exato, abandonar a ideia de faixa min-max).
-    DESTRAVADO (dúvidas 1 e 3 fechadas): unidade = hora de 60 min; comparar a
-    carga alocada convertida para horas contra a faixa em horas do grupo.
-14. PROFESSOR_DUPLICADO — refinar o critério forte/potencial usando
-    proporcaoCarga: 100% em ambas as ofertas = FORTE; menos de 100% em
-    qualquer uma = POTENCIAL. Cobre arranjos 70/30 e 3 professores sem caso
-    especial.
-15. TURMA_DUPLICADA — tratar duas alocações da MESMA oferta no mesmo slot
-    (deduplicar por oferta, como já feito no professor-duplicado; hoje
-    geraria diagnóstico errado de "turma em duas aulas"). Relacionado à
-    dúvida 8 (sala dupla pode tornar esse caso legítimo).
+13. CARGA_SEMANAL_EXCEDIDA — implementada e RETIRADA no mesmo dia
+    (26/ago/2026), junto com o item 12 (mesma causa: carga letiva sozinha
+    não representa a carga real do professor — mediria só uma fatia contra o
+    teto cheio). Reclassificar de FRACO para FORTE fica CANCELADO por ora.
+    Reabrir só se houver uma fonte para a carga não-letiva (ver item 12c) que
+    permita comparar o TOTAL real contra a faixa, não só as aulas alocadas.
+14. PROFESSOR_DUPLICADO — **já estava FEITA** (constatado 26/ago/2026, não
+    registrado antes): refina o critério forte/potencial usando
+    proporcaoCarga; 100% em ambas as ofertas = FORTE, menos de 100% em
+    qualquer uma = POTENCIAL. Ver `professor-duplicado.ts`.
+15. TURMA_DUPLICADA — **já estava FEITA** (constatado 26/ago/2026, não
+    registrado antes): deduplica por oferta no mesmo slot. Ver
+    `turma-duplicada.ts`.
 
 ## B4. Motor de conflitos — infraestrutura de identidade
 

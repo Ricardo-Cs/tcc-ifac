@@ -35,6 +35,7 @@ export interface Professor {
   ajusteCargaHoras: number | null;
   ajusteCargaMotivo: string | null;
   ativo: boolean;
+  cargaHorariaAtual?: number;
 }
 
 export interface CriarProfessor {

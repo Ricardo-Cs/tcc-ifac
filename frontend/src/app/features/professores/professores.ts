@@ -1,9 +1,3 @@
-/**
- * Cadastro de Professores — segue o molde de Cursos (listagem + diálogo de
- * formulário), agora integrado ao backend (`ProfessoresController`): a lista vem
- * de `GET /professores` e o salvar/remover chamam POST/PATCH/DELETE. A unicidade
- * do SIAPE é decidida pelo servidor (409) — a tela traduz a resposta em toast.
- */
 import { Component, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { NgIcon, provideIcons } from '@ng-icons/core';
@@ -13,6 +7,7 @@ import { HlmInput } from '@spartan-ng/helm/input';
 import { HlmSelectImports } from '@spartan-ng/helm/select';
 import { AcademicoApi } from '../../core/api/academico-api';
 import { mensagemErro } from '../../core/api/erro-http';
+import { formatarHoras } from '../../core/format/horas';
 import { GrupoRegime, Professor } from '../../core/models/academico.models';
 import { ToastService } from '../../core/toast';
 import { ConfirmDialogComponent } from '../../shared/confirm-dialog/confirm-dialog';
@@ -20,7 +15,6 @@ import { FormDialogComponent } from '../../shared/form-dialog/form-dialog';
 import { ColunaListagem, FiltroListagem, ListagemComponent } from '../../shared/listagem/listagem';
 import { ListagemLinhaDirective } from '../../shared/listagem/listagem-linha';
 
-/** Grupos de regime (RAD) — código do domínio + rótulo humano para exibir/filtrar. */
 const REGIMES = [
   { valor: 'G1', rotulo: 'G1' },
   { valor: 'G2', rotulo: 'G2' },
@@ -31,7 +25,6 @@ const REGIMES = [
   { valor: 'G2_3', rotulo: 'G2.3' },
 ] as const;
 
-/** O rascunho do formulário — os campos editáveis de um professor. */
 interface RascunhoProfessor {
   nome: string;
   siape: string;
@@ -77,16 +70,15 @@ export class ProfessoresComponent {
     { rotulo: 'Nome' },
     { rotulo: 'SIAPE', largura: 'w-40' },
     { rotulo: 'Regime', largura: 'w-40' },
+    { rotulo: 'Carga atual', largura: 'w-32' },
     { rotulo: 'Status', largura: 'w-32' },
     { rotulo: 'Ações', alinhamento: 'fim', largura: 'w-28' },
   ];
 
-  /** Regime é faceta: rótulo humano, deduzido dos próprios dados. */
   readonly filtros: FiltroListagem<Professor>[] = [
     { chave: 'regime', rotulo: 'Regime', valor: (p) => this.rotuloRegime(p.grupoRegime) },
   ];
 
-  /** Só nome e SIAPE fazem sentido na busca — regime/status são filtros de faceta. */
   readonly textoBusca = (p: Professor): string => `${p.nome} ${p.siape}`;
 
   constructor() {
@@ -101,9 +93,6 @@ export class ProfessoresComponent {
     });
   }
 
-  // Arrow field para servir de `itemToString` do hlm-select: o trigger deriva
-  // seu texto do VALOR selecionado, não do conteúdo do item — sem isto mostraria
-  // o código cru (ex.: "G3_40H").
   readonly rotuloRegime = (valor: string): string =>
     REGIMES.find((r) => r.valor === valor)?.rotulo ?? valor;
 
@@ -112,12 +101,13 @@ export class ProfessoresComponent {
     return (partes[0][0] + (partes[1]?.[0] ?? '')).toUpperCase();
   }
 
-  // ---- Diálogo de formulário --------------------------------------------
+  cargaFormatada(horas: number | undefined): string {
+    return formatarHoras(horas ?? 0);
+  }
 
   readonly editando = signal<Professor | null>(null);
   readonly dialogAberto = signal(false);
   readonly rascunho = signal<RascunhoProfessor>(RASCUNHO_VAZIO);
-  /** Erro do formulário — acende dentro do diálogo (além do toast). */
   readonly erroForm = signal<string | null>(null);
 
   readonly removendo = signal<Professor | null>(null);
@@ -170,8 +160,6 @@ export class ProfessoresComponent {
     }
     this.erroForm.set(null);
 
-    // Campos opcionais viram null quando vazios — o backend distingue ausente de
-    // string vazia, e null é o "sem valor" que a coluna nullable espera.
     const dados = {
       nome,
       siape,
@@ -201,8 +189,6 @@ export class ProfessoresComponent {
       },
     });
   }
-
-  // ---- Remoção -----------------------------------------------------------
 
   pedirRemocao(professor: Professor): void {
     this.removendo.set(professor);

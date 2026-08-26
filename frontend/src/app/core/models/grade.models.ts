@@ -53,6 +53,11 @@ export interface Turma {
   cursoId: string;
 }
 
+export interface ProfessorCarga {
+  nome: string;
+  cargaHorariaAtual: number;
+}
+
 export interface Grade {
   periodoLetivoId: string;
   coletaImportada: boolean;
@@ -60,6 +65,7 @@ export interface Grade {
   slots: Slot[];
   cursos: Curso[];
   turmas: Turma[];
+  professores: ProfessorCarga[];
   conflitos: Conflito[];
 }
 
