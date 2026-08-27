@@ -1,46 +1,62 @@
-<div class="grid min-h-screen place-items-center bg-primary-900 p-4" style="
-    background-image:
-      radial-gradient(circle at 50% 38%, var(--color-primary-700) 0%, transparent 55%),
-      linear-gradient(160deg, var(--color-primary-800), var(--color-primary-900));
-  ">
-  <div class="w-full max-w-sm rounded-2xl bg-card p-8 shadow-2xl">
-    <div class="mb-6 flex items-center gap-2">
-      <img src="logo-alter.svg" alt="Chronos" class="size-9" />
-      <span class="font-brand text-2xl font-semibold tracking-tight text-foreground">Chronos</span>
-    </div>
+<div class="flex min-h-screen">
+  <div class="flex w-16 shrink-0 items-center justify-center bg-primary-900 sm:w-[88px]">
+    <img src="logo-alter.svg" alt="Chronos" class="size-9" />
+  </div>
 
-    <h1 class="text-xl font-bold text-foreground">Bem-vindo(a)!</h1>
-    <p class="mt-1 text-sm text-muted-foreground">Informe seus dados para acessar</p>
+  <div
+    class="flex flex-1 items-center justify-center bg-muted p-4"
+    style="background-image: radial-gradient(circle, color-mix(in srgb, var(--muted-foreground) 35%, transparent) 1px, transparent 1px); background-size: 26px 26px;"
+  >
+    <div class="w-full max-w-sm rounded-lg border border-border bg-card p-6 sm:p-11">
+      <span class="text-[0.7rem] font-extrabold uppercase tracking-widest text-primary">Chronos · IFAC</span>
+      <div class="mt-2.5 h-px w-full bg-border"></div>
 
-    <form class="mt-6 grid gap-4" (ngSubmit)="entrar()">
-      @if (erro()) {
-        <div
-          class="flex items-start gap-2 rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-xs text-destructive"
-        >
-          <ng-icon name="lucideCircleAlert" size="0.9rem" class="mt-0.5 shrink-0" />
-          <span>{{ erro() }}</span>
+      <h1 class="mt-5 text-xl font-bold text-foreground">Bem-vindo(a)!</h1>
+      <p class="mt-1 text-sm text-muted-foreground">Informe seus dados para acessar</p>
+
+      <form class="mt-6 grid gap-4" (ngSubmit)="entrar()">
+        @if (erro()) {
+          <div
+            class="flex items-start gap-2 rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-xs text-destructive"
+          >
+            <ng-icon name="lucideCircleAlert" size="0.9rem" class="mt-0.5 shrink-0" />
+            <span>{{ erro() }}</span>
+          </div>
+        }
+
+        <div class="grid gap-1.5">
+          <label class="text-[0.7rem] font-bold uppercase tracking-wide " for="login-email">E-mail</label>
+          <input hlmInput class="h-9 bg-white" id="login-email" type="email" [ngModel]="email()" name="email"
+            (ngModelChange)="email.set($event)" placeholder="Insira seu e-mail" />
         </div>
-      }
 
-      <div class="grid gap-1.5">
-        <label class="text-[0.7rem] font-bold uppercase tracking-wide " for="login-email">E-mail</label>
-        <input hlmInput class="h-9 bg-white" id="login-email" type="email" [ngModel]="email()" name="email"
-          (ngModelChange)="email.set($event)" placeholder="Insira seu e-mail" />
-      </div>
+        <div class="grid gap-1.5">
+          <label class="text-[0.7rem] font-bold uppercase tracking-wide " for="login-senha">Senha</label>
+          <div class="relative">
+            <input hlmInput class="h-9 bg-white pr-9" id="login-senha" [type]="senhaVisivel() ? 'text' : 'password'"
+              [ngModel]="senha()" name="senha" (ngModelChange)="senha.set($event)" placeholder="Insira sua senha" />
+            <button type="button" class="absolute inset-y-0 right-0 flex items-center px-2.5 text-muted-foreground hover:text-foreground"
+              (click)="alternarVisibilidadeSenha()" [attr.aria-label]="senhaVisivel() ? 'Ocultar senha' : 'Mostrar senha'">
+              <span class="relative block size-4">
+                <ng-icon name="lucideEye" size="1rem"
+                  class="absolute inset-0 transition-all duration-150"
+                  [class.opacity-0]="senhaVisivel()" [class.scale-75]="senhaVisivel()" />
+                <ng-icon name="lucideEyeClosed" size="1rem"
+                  class="absolute inset-0 transition-all duration-150"
+                  [class.opacity-0]="!senhaVisivel()" [class.scale-75]="!senhaVisivel()" />
+              </span>
+            </button>
+          </div>
+        </div>
 
-      <div class="grid gap-1.5">
-        <label class="text-[0.7rem] font-bold uppercase tracking-wide " for="login-senha">Senha</label>
-        <input hlmInput class="h-9 bg-white" id="login-senha" type="password" [ngModel]="senha()" name="senha"
-          (ngModelChange)="senha.set($event)" placeholder="Insira sua senha" />
-      </div>
+        <div class="flex justify-end">
+          <span class="cursor-default text-xs text-primary/60" title="Disponível em breve">Esqueci minha senha</span>
+        </div>
 
-      <div class="flex justify-end">
-        <span class="cursor-default text-xs text-primary/60" title="Disponível em breve">Esqueci minha senha</span>
-      </div>
-
-      <button hlmBtn size="lg" type="submit" class="h-10 w-full" [disabled]="carregando()">
-        {{ carregando() ? 'Entrando…' : 'Entrar' }}
-      </button>
-    </form>
+        <button hlmBtn size="lg" type="submit" class="h-10 w-full" [disabled]="carregando()">
+          {{ carregando() ? 'Entrando…' : 'Entrar' }}
+        </button>
+      </form>
+    </div>
   </div>
 </div>

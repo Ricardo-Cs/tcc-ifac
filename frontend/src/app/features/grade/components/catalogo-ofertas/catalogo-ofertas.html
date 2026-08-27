@@ -1,4 +1,4 @@
-<aside class="sticky top-4 rounded-lg border border-border bg-card p-4">
+<aside class="rounded-lg border border-border bg-card p-4 lg:sticky lg:top-4">
   <h2 class="mb-1 text-base font-semibold">A alocar</h2>
   <p class="mb-3 text-xs text-muted-foreground">
     @if (vazio()) {
@@ -21,7 +21,6 @@
       <span class="text-[0.82rem] font-medium leading-snug">
         {{ oferta.disciplina?.nome ?? 'Disciplina sem nome' }}
       </span>
-      <!-- Quantas aulas ainda faltam desta oferta — o que o arraste vai baixando. -->
       <span
         class="shrink-0 rounded bg-primary/10 px-1.5 py-0.5 text-[0.62rem] font-bold tracking-wide text-primary uppercase"
         [title]="oferta.aulasAlocadas + ' de ' + oferta.aulasSemana + ' aulas já na grade'">
@@ -33,7 +32,6 @@
     <p class="text-[0.7rem] text-muted-foreground">{{ oferta.disciplina?.codigo }}</p>
     }
 
-    <!-- Turma em linha própria: ajuda quando a visão empilha várias turmas. -->
     @if (oferta.turma) {
     <p class="text-[0.7rem] text-muted-foreground">{{ oferta.turma }}</p>
     }

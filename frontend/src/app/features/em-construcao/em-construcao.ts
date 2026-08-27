@@ -10,8 +10,9 @@ import { ActivatedRoute } from '@angular/router';
   selector: 'app-em-construcao',
   template: `
     <div class="p-6">
-      <div class="rounded-xl border border-border bg-card p-10 text-center">
-        <h2 class="text-base font-semibold tracking-tight">{{ titulo }}</h2>
+      <div class="rounded-lg border border-border bg-card p-10 text-center">
+        <span class="text-[0.7rem] font-extrabold uppercase tracking-widest text-primary">Chronos</span>
+        <h2 class="mt-2 text-base font-semibold tracking-tight">{{ titulo }}</h2>
         <p class="mx-auto mt-1.5 max-w-md text-sm text-muted-foreground">
           Página em construção.
         </p>

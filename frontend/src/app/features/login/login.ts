@@ -2,7 +2,7 @@ import { Component, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { NgIcon, provideIcons } from '@ng-icons/core';
-import { lucideCircleAlert } from '@ng-icons/lucide';
+import { lucideCircleAlert, lucideEye, lucideEyeClosed } from '@ng-icons/lucide';
 import { HlmButton } from '@spartan-ng/helm/button';
 import { HlmInput } from '@spartan-ng/helm/input';
 import { AuthApi } from '../../core/api/auth-api';
@@ -12,7 +12,7 @@ import { Sessao } from '../../core/auth/sessao';
 @Component({
   selector: 'app-login',
   imports: [FormsModule, HlmButton, HlmInput, NgIcon],
-  providers: [provideIcons({ lucideCircleAlert })],
+  providers: [provideIcons({ lucideCircleAlert, lucideEye, lucideEyeClosed })],
   templateUrl: './login.html',
 })
 export class LoginComponent {
@@ -22,10 +22,15 @@ export class LoginComponent {
 
   readonly email = signal('');
   readonly senha = signal('');
+  readonly senhaVisivel = signal(false);
   readonly carregando = signal(false);
   /** Erro de validação local ou recusa do servidor — a tela de login fica fora
    * do shell, então não tem o hlm-toaster global; o retorno precisa ser inline. */
   readonly erro = signal<string | null>(null);
+
+  alternarVisibilidadeSenha(): void {
+    this.senhaVisivel.update((visivel) => !visivel);
+  }
 
   entrar(): void {
     const email = this.email().trim();

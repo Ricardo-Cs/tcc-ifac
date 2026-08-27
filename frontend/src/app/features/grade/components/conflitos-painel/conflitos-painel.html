@@ -1,4 +1,4 @@
-<aside hlmCard class="sticky top-4 p-4">
+<aside hlmCard class="p-4 lg:sticky lg:top-4">
   <h2 class="mb-3 text-base font-semibold">
     Conflitos
     @if (escopo().rotulo) {
@@ -34,16 +34,11 @@
           class="rounded px-1.5 py-0.5 text-[0.62rem] font-bold tracking-wide uppercase"
           [class]="pillSeveridade(item.conflito.severidade)"
         >{{ rotuloSeveridade(item.conflito.severidade) }}</span>
-        <!-- O identificador cru fica no title: serve para depurar, não para ler. -->
         <span class="text-[0.7rem] text-muted-foreground" [title]="item.conflito.tipo">
           {{ rotuloTipo(item.conflito.tipo) }}
         </span>
       </div>
       <p class="mb-2 text-[0.82rem] leading-snug">{{ item.conflito.mensagem }}</p>
-      <!--
-        A turma de fora sai em linha própria: como etiqueta, espremida ao lado do
-        tipo do conflito, o nome quebrava letra a letra na coluna.
-      -->
       @if (item.outrasTurmas.length) {
         <p
           class="mb-2 text-[0.7rem] leading-snug text-muted-foreground"
