@@ -83,11 +83,31 @@ export interface AlocacoesRepository {
   periodoDaAlocacao(id: string): Promise<string | null>;
 }
 
+/** Resumo público de um período com grade publicada — sem o `id` interno. */
+export interface PeriodoPublicadoResumo {
+  codigo: string;
+  descricao: string | null;
+  ano: number;
+  semestre: number;
+  dataInicio: string;
+  dataFim: string;
+}
+
 /** Resolução do período ativo para o motor de conflitos. */
 export const PERIODOS_REPOSITORY = Symbol('PERIODOS_REPOSITORY');
 export interface PeriodosRepository {
   /** Id do período marcado como ativo, ou `null` se não houver. */
   ativoId(): Promise<string | null>;
+  /**
+   * O snapshot da grade gravado na última publicação desse código, só se o
+   * status atual for PUBLICADO; `null` se o código não existe, não está
+   * publicado, ou nunca foi publicado (snapshot ainda não gravado).
+   */
+  snapshotPublicadoPorCodigo(
+    codigo: string,
+  ): Promise<Record<string, unknown> | null>;
+  /** Todos os períodos com status PUBLICADO, do mais recente para o mais antigo. */
+  listarPublicados(): Promise<PeriodoPublicadoResumo[]>;
 }
 
 /** As regras do motor, injetadas para que a lista seja configurável no módulo. */

@@ -34,4 +34,13 @@ export interface PeriodoLetivoRepository {
     input: AtualizarPeriodoLetivoInput,
   ): Promise<PeriodoLetivo | null>;
   remover(id: string): Promise<boolean>;
+  /**
+   * Grava o snapshot da grade pública no momento da publicação. Não faz parte
+   * do `PeriodoLetivo` nem do `atualizar()` de propósito: é um blob pesado que
+   * ninguém deveria carregar sem pedir explicitamente.
+   */
+  gravarGradePublicada(
+    id: string,
+    snapshot: Record<string, unknown>,
+  ): Promise<void>;
 }

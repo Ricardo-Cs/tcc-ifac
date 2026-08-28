@@ -1,7 +1,7 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
-import { Grade, OfertaAlocavel, Periodo } from '../models/grade.models';
+import { Grade, OfertaAlocavel, Periodo, PeriodoPublicado } from '../models/grade.models';
 import { API_BASE as BASE } from './api-base';
 
 @Injectable({ providedIn: 'root' })
@@ -18,6 +18,14 @@ export class GradeApi {
 
   grade(periodoId: string): Observable<Grade> {
     return this.http.get<Grade>(`${BASE}/grade/${periodoId}`);
+  }
+
+  periodosPublicados(): Observable<PeriodoPublicado[]> {
+    return this.http.get<PeriodoPublicado[]>(`${BASE}/grade-publica/periodos`);
+  }
+
+  gradePublica(codigo: string): Observable<Grade> {
+    return this.http.get<Grade>(`${BASE}/grade-publica/${codigo}`);
   }
 
   ofertasAlocaveis(periodoId: string): Observable<OfertaAlocavel[]> {

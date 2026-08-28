@@ -63,5 +63,18 @@
         [class.opacity-40]="!totais().FRACO"
       >{{ totais().FRACO }} fracos</span>
     </div>
+
+    @if (periodo(); as p) {
+      @if (p.status === 'PUBLICADO') {
+        <a hlmBtn variant="outline" size="sm" class="gap-1.5" [routerLink]="['/publica', p.codigo]" target="_blank">
+          <ng-icon name="lucideGlobe" size="1rem" />
+          Grade pública
+        </a>
+      }
+      <button hlmBtn size="sm" class="gap-1.5" type="button" (click)="publicar.emit()">
+        <ng-icon name="lucideSend" size="1rem" />
+        {{ p.status === 'PUBLICADO' ? 'Atualizar publicação' : 'Publicar' }}
+      </button>
+    }
   </div>
 </div>

@@ -1,7 +1,14 @@
 import { Component, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { RouterLink } from '@angular/router';
 import { NgIcon, provideIcons } from '@ng-icons/core';
-import { lucideCalendarRange, lucidePencil, lucideTrash2 } from '@ng-icons/lucide';
+import {
+  lucideCalendarRange,
+  lucideGlobe,
+  lucidePencil,
+  lucideSend,
+  lucideTrash2,
+} from '@ng-icons/lucide';
 import { HlmButton } from '@spartan-ng/helm/button';
 import { HlmInput } from '@spartan-ng/helm/input';
 import { HlmSelectImports } from '@spartan-ng/helm/select';
@@ -9,6 +16,7 @@ import { GradeApi } from '../../core/api/grade-api';
 import { mensagemErro } from '../../core/api/erro-http';
 import { PeriodosApi } from '../../core/api/periodos-api';
 import { Periodo, StatusPeriodo } from '../../core/models/grade.models';
+import { PeriodoState } from '../../core/state/periodo-state';
 import { ToastService } from '../../core/toast';
 import { ConfirmDialogComponent } from '../../shared/confirm-dialog/confirm-dialog';
 import { FormDialogComponent } from '../../shared/form-dialog/form-dialog';
@@ -69,6 +77,7 @@ function paraIso(exibicao: string): string {
   selector: 'app-periodos',
   imports: [
     FormsModule,
+    RouterLink,
     NgIcon,
     HlmButton,
     HlmInput,
@@ -78,12 +87,15 @@ function paraIso(exibicao: string): string {
     ListagemLinhaDirective,
     ...HlmSelectImports,
   ],
-  providers: [provideIcons({ lucideCalendarRange, lucidePencil, lucideTrash2 })],
+  providers: [
+    provideIcons({ lucideCalendarRange, lucideGlobe, lucidePencil, lucideSend, lucideTrash2 }),
+  ],
   templateUrl: './periodos.html',
 })
 export class PeriodosComponent {
   private readonly gradeApi = inject(GradeApi);
   private readonly api = inject(PeriodosApi);
+  private readonly periodoState = inject(PeriodoState);
   private readonly toast = inject(ToastService);
 
   readonly statusOpcoes = STATUS;
@@ -241,6 +253,43 @@ export class PeriodosComponent {
         );
         this.salvando.set(false);
         this.removendo.set(null);
+      },
+    });
+  }
+
+  readonly publicando = signal<Periodo | null>(null);
+
+  pedirPublicacao(periodo: Periodo): void {
+    this.publicando.set(periodo);
+  }
+
+  cancelarPublicacao(): void {
+    this.publicando.set(null);
+  }
+
+  confirmarPublicacao(): void {
+    const alvo = this.publicando();
+    if (!alvo) return;
+    const eraPublicado = alvo.status === 'PUBLICADO';
+    this.salvando.set(true);
+    this.api.atualizar(alvo.id, { status: 'PUBLICADO' }).subscribe({
+      next: (periodo) => {
+        this.periodos.update((lista) => lista.map((p) => (p.id === periodo.id ? periodo : p)));
+        this.periodoState.atualizarPeriodo(periodo);
+        this.toast.sucesso(
+          eraPublicado ? `${periodo.codigo} atualizado` : `${periodo.codigo} publicado`,
+          `A grade está em /publica/${periodo.codigo}, sem necessidade de login.`,
+        );
+        this.salvando.set(false);
+        this.publicando.set(null);
+      },
+      error: (err) => {
+        this.toast.erro(
+          'Não foi possível publicar',
+          mensagemErro(err, 'Verifique se há conflitos fortes na grade.'),
+        );
+        this.salvando.set(false);
+        this.publicando.set(null);
       },
     });
   }

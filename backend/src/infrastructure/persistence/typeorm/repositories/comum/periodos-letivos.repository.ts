@@ -1,6 +1,6 @@
 import { ConflictException, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { EntityManager, Repository } from 'typeorm';
+import { EntityManager, QueryDeepPartialEntity, Repository } from 'typeorm';
 import {
   AtualizarPeriodoLetivoInput,
   CriarPeriodoLetivoInput,
@@ -95,6 +95,15 @@ export class TypeormPeriodosLetivosRepository implements PeriodoLetivoRepository
       }
       throw erro;
     }
+  }
+
+  async gravarGradePublicada(
+    id: string,
+    snapshot: Record<string, unknown>,
+  ): Promise<void> {
+    await this.repo.update({ id }, {
+      gradePublicada: snapshot,
+    } as QueryDeepPartialEntity<PeriodoLetivoEntity>);
   }
 }
 

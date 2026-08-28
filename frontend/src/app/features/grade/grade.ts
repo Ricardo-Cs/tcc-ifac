@@ -1,7 +1,10 @@
 import { Component, computed, effect, inject, signal } from '@angular/core';
 import { AcademicoApi } from '../../core/api/academico-api';
 import { GradeApi } from '../../core/api/grade-api';
+import { PeriodosApi } from '../../core/api/periodos-api';
+import { mensagemErro } from '../../core/api/erro-http';
 import { PeriodoState } from '../../core/state/periodo-state';
+import { ToastService } from '../../core/toast';
 import { Sala } from '../../core/models/academico.models';
 import {
   Aula,
@@ -18,6 +21,7 @@ import { GradeTabelaComponent, EventoCelula } from './components/grade-tabela/gr
 import { ConflitosPainelComponent } from './components/conflitos-painel/conflitos-painel';
 import { CatalogoOfertasComponent } from './components/catalogo-ofertas/catalogo-ofertas';
 import { SalaDialogComponent } from './components/sala-dialog/sala-dialog';
+import { ConfirmDialogComponent } from '../../shared/confirm-dialog/confirm-dialog';
 import { SEVERIDADE_RANK } from './severidade';
 import {
   ConflitoVm,
@@ -37,12 +41,15 @@ import {
     ConflitosPainelComponent,
     CatalogoOfertasComponent,
     SalaDialogComponent,
+    ConfirmDialogComponent,
   ],
   templateUrl: './grade.html',
 })
 export class GradeComponent {
   private readonly api = inject(GradeApi);
   private readonly academico = inject(AcademicoApi);
+  private readonly periodosApi = inject(PeriodosApi);
+  private readonly toast = inject(ToastService);
 
   readonly periodo = inject(PeriodoState);
 
@@ -87,6 +94,9 @@ export class GradeComponent {
 
   readonly definindoSala = signal<Aula | null>(null);
   readonly salvandoSala = signal(false);
+
+  readonly confirmandoPublicacao = signal(false);
+  readonly publicando = signal(false);
 
   readonly cursos = computed<Curso[]>(() => this.grade()?.cursos ?? []);
 
@@ -323,6 +333,40 @@ export class GradeComponent {
   confirmarAceite({ chave, justificativa }: { chave: string; justificativa: string }): void {
     this.executar(() => this.api.aceitarConflito(chave, justificativa));
     this.aceitando.set(null);
+  }
+
+  pedirPublicacao(): void {
+    this.confirmandoPublicacao.set(true);
+  }
+
+  cancelarPublicacao(): void {
+    this.confirmandoPublicacao.set(false);
+  }
+
+  confirmarPublicacao(): void {
+    const alvo = this.periodo.selecionado();
+    if (!alvo) return;
+    const eraPublicado = alvo.status === 'PUBLICADO';
+    this.publicando.set(true);
+    this.periodosApi.atualizar(alvo.id, { status: 'PUBLICADO' }).subscribe({
+      next: (periodo) => {
+        this.periodo.atualizarPeriodo(periodo);
+        this.toast.sucesso(
+          eraPublicado ? `${periodo.codigo} atualizado` : `${periodo.codigo} publicado`,
+          `A grade está em /publica/${periodo.codigo}, sem necessidade de login.`,
+        );
+        this.publicando.set(false);
+        this.confirmandoPublicacao.set(false);
+      },
+      error: (err) => {
+        this.toast.erro(
+          'Não foi possível publicar',
+          mensagemErro(err, 'Verifique se há conflitos fortes na grade.'),
+        );
+        this.publicando.set(false);
+        this.confirmandoPublicacao.set(false);
+      },
+    });
   }
 
   private carregar(fonte: () => import('rxjs').Observable<Grade>): void {

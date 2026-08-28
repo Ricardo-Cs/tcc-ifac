@@ -1,13 +1,18 @@
 import { Component, computed, input, output } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { RouterLink } from '@angular/router';
+import { NgIcon, provideIcons } from '@ng-icons/core';
+import { lucideGlobe, lucideSend } from '@ng-icons/lucide';
+import { HlmButton } from '@spartan-ng/helm/button';
 import { HlmSelectImports } from '@spartan-ng/helm/select';
-import { Curso, Severidade, Turma } from '../../../../core/models/grade.models';
+import { Curso, Periodo, Severidade, Turma } from '../../../../core/models/grade.models';
 import { pillSeveridade } from '../../severidade';
 import { TODAS_AS_TURMAS } from '../../grade.view';
 
 @Component({
   selector: 'app-grade-toolbar',
-  imports: [FormsModule, ...HlmSelectImports],
+  imports: [FormsModule, RouterLink, NgIcon, HlmButton, ...HlmSelectImports],
+  providers: [provideIcons({ lucideGlobe, lucideSend })],
   templateUrl: './grade-toolbar.html',
 })
 export class GradeToolbarComponent {
@@ -16,9 +21,11 @@ export class GradeToolbarComponent {
   readonly turmas = input.required<Turma[]>();
   readonly turmaSelecionada = input<string | null>(null);
   readonly totais = input.required<Record<Severidade, number>>();
+  readonly periodo = input<Periodo | null>(null);
 
   readonly cursoChange = output<string>();
   readonly turmaChange = output<string>();
+  readonly publicar = output<void>();
 
   readonly TODAS = TODAS_AS_TURMAS;
 

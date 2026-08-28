@@ -27,6 +27,29 @@
       </td>
       <td class="px-4 py-3">
         <div class="flex items-center justify-end gap-0.5">
+          @if (p.status === 'PUBLICADO') {
+            <a
+              hlmBtn
+              variant="ghost"
+              size="icon-sm"
+              title="Ver grade pública"
+              [routerLink]="['/publica', p.codigo]"
+              target="_blank"
+            >
+              <ng-icon name="lucideGlobe" size="1rem" />
+            </a>
+          }
+          <button
+            hlmBtn
+            variant="ghost"
+            size="icon-sm"
+            type="button"
+            [title]="p.status === 'PUBLICADO' ? 'Atualizar grade pública' : 'Publicar'"
+            class="text-muted-foreground hover:text-primary"
+            (click)="pedirPublicacao(p)"
+          >
+            <ng-icon name="lucideSend" size="1rem" />
+          </button>
           <button
             hlmBtn
             variant="ghost"
@@ -208,4 +231,24 @@
 >
   Remover <strong>{{ removendo()?.codigo }}</strong
   >? Esta ação não pode ser desfeita.
+</app-confirm-dialog>
+
+<app-confirm-dialog
+  [aberto]="publicando() !== null"
+  [titulo]="publicando()?.status === 'PUBLICADO' ? 'Atualizar grade pública' : 'Publicar período'"
+  rotuloConfirmar="Publicar"
+  rotuloProcessando="Publicando…"
+  [processando]="salvando()"
+  (fechar)="cancelarPublicacao()"
+  (confirmar)="confirmarPublicacao()"
+>
+  @if (publicando()?.status === 'PUBLICADO') {
+    O link público de <strong>{{ publicando()?.codigo }}</strong> já existe, mas mostra a grade de
+    quando foi publicada pela última vez — mudanças depois disso só aparecem lá quando você
+    publicar de novo. Confirma?
+  } @else {
+    Publicar <strong>{{ publicando()?.codigo }}</strong>? A grade fica acessível para qualquer
+    pessoa, sem login, em um link público. Só é possível publicar se não houver conflitos fortes
+    na grade.
+  }
 </app-confirm-dialog>

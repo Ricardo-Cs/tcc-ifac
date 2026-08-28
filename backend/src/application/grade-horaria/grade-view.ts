@@ -1,4 +1,4 @@
-import { ResultadoAvaliacao } from '@application/grade-horaria/avaliar-grade.use-case';
+import { ResultadoAvaliacao } from './avaliar-grade.use-case';
 import {
   Conflito,
   SeveridadeConflito,

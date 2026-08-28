@@ -15,14 +15,21 @@ import { AvaliarGradeUseCase } from '@application/grade-horaria/avaliar-grade.us
 import { AlterarAlocacaoUseCase } from '@application/grade-horaria/alterar-alocacao.use-case';
 import { AceitarConflitoUseCase } from '@application/grade-horaria/aceitar-conflito.use-case';
 import { ListarOfertasAlocaveisUseCase } from '@application/grade-horaria/listar-ofertas-alocaveis.use-case';
+import {
+  GradeView,
+  montarGradeView,
+} from '@application/grade-horaria/grade-view';
 import { PERIODOS_REPOSITORY } from '@domain/grade-horaria/ports';
-import type { PeriodosRepository } from '@domain/grade-horaria/ports';
-import { GradeView, montarGradeView } from './grade.view';
+import type {
+  PeriodoPublicadoResumo,
+  PeriodosRepository,
+} from '@domain/grade-horaria/ports';
 import {
   OfertaAlocavelView,
   montarOfertasAlocaveisView,
 } from './ofertas-alocaveis.view';
 import { UsuarioAtual } from '@resources/auth/usuario-atual.decorator';
+import { Publico } from '@resources/auth/publico.decorator';
 import type { PayloadToken } from '@application/auth/auth.service';
 
 interface CriarAlocacaoBody {
@@ -76,6 +83,35 @@ export class GradeController {
   @Get('grade/:periodoId')
   async grade(@Param('periodoId') periodoId: string): Promise<GradeView> {
     return this.gradeDoPeriodo(periodoId);
+  }
+
+  /**
+   * Consulta pública, sem autenticação: períodos com grade publicada, do mais
+   * recente para o mais antigo. Declarada ANTES de `grade-publica/:codigo` para
+   * o roteador casar a rota estática primeiro.
+   */
+  @Publico()
+  @Get('grade-publica/periodos')
+  async periodosPublicados(): Promise<PeriodoPublicadoResumo[]> {
+    return this.periodos.listarPublicados();
+  }
+
+  /**
+   * A grade de um período PUBLICADO, sem autenticação — é o link compartilhável.
+   * Devolve o SNAPSHOT gravado no momento em que alguém apertou "Publicar", não a
+   * grade recalculada agora: mudanças na grade depois de publicar só aparecem
+   * aqui quando o período for publicado de novo (ver `PeriodosLetivosService`).
+   * 404 tanto para código inexistente quanto para período ainda não publicado,
+   * para não vazar pela mensagem de erro se a grade existe mas está em rascunho.
+   */
+  @Publico()
+  @Get('grade-publica/:codigo')
+  async gradePublica(@Param('codigo') codigo: string): Promise<GradeView> {
+    const snapshot = await this.periodos.snapshotPublicadoPorCodigo(codigo);
+    if (!snapshot) {
+      throw new NotFoundException(`Nenhuma grade publicada para ${codigo}.`);
+    }
+    return snapshot as unknown as GradeView;
   }
 
   /**

@@ -1,4 +1,4 @@
-import { computed, inject, Injectable } from '@angular/core';
+import { computed, inject, Injectable, signal } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { Router } from '@angular/router';
 import { map } from 'rxjs';
@@ -25,7 +25,17 @@ export class PeriodoState {
   private readonly router = inject(Router);
 
   /** Carregada uma vez; alimenta o seletor e a resolução código → período. */
-  readonly periodos = toSignal(this.api.periodos(), { initialValue: [] as Periodo[] });
+  private readonly _periodos = signal<Periodo[]>([]);
+  readonly periodos = this._periodos.asReadonly();
+
+  /** Reajusta o próprio período em foco quando escrito fora deste serviço (ex.: publicar). */
+  atualizarPeriodo(periodo: Periodo): void {
+    this._periodos.update((lista) => lista.map((p) => (p.id === periodo.id ? periodo : p)));
+  }
+
+  constructor() {
+    this.api.periodos().subscribe((periodos) => this._periodos.set(periodos));
+  }
 
   /** O período corrente do sistema — o padrão quando a URL não pede outro. */
   readonly corrente = computed(() => this.periodos().find((p) => p.ativo) ?? null);

@@ -62,6 +62,10 @@ import { GradeController } from './grade.controller';
       ] satisfies Regras,
     },
   ],
-  exports: [CONFLITOS_PERIODO_CHECKER, CARGA_LETIVA_PROVIDER],
+  exports: [
+    CONFLITOS_PERIODO_CHECKER,
+    CARGA_LETIVA_PROVIDER,
+    AvaliarGradeUseCase,
+  ],
 })
 export class GradeHorariaModule {}

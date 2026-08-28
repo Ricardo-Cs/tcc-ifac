@@ -27,7 +27,7 @@
       >
         @if (processando()) {
           <ng-icon name="lucideLoaderCircle" size="1rem" class="animate-spin" />
-          Removendo…
+          {{ rotuloProcessando() }}
         } @else {
           {{ rotuloConfirmar() }}
         }

@@ -12,6 +12,8 @@ import {
 } from '@domain/comum/periodo-letivo';
 import type { PeriodoLetivoRepository } from '@domain/comum/periodo-letivo';
 import { StatusPeriodo } from '@domain/comum/enums';
+import { AvaliarGradeUseCase } from '@application/grade-horaria/avaliar-grade.use-case';
+import { montarGradeView } from '@application/grade-horaria/grade-view';
 import { TravaPublicacaoGuard } from './trava-publicacao.guard';
 
 @Injectable()
@@ -20,6 +22,7 @@ export class PeriodosLetivosService {
     @Inject(PERIODO_LETIVO_REPOSITORY)
     private readonly periodos: PeriodoLetivoRepository,
     private readonly travaPublicacao: TravaPublicacaoGuard,
+    private readonly avaliarGrade: AvaliarGradeUseCase,
   ) {}
 
   listar(): Promise<PeriodoLetivo[]> {
@@ -42,12 +45,22 @@ export class PeriodosLetivosService {
     id: string,
     input: AtualizarPeriodoLetivoInput,
   ): Promise<PeriodoLetivo> {
-    if (input.status === StatusPeriodo.PUBLICADO) {
+    const estaPublicando = input.status === StatusPeriodo.PUBLICADO;
+    let snapshotGrade: Record<string, unknown> | null = null;
+    if (estaPublicando) {
       await this.travaPublicacao.garantir(id);
+      const resultado = await this.avaliarGrade.avaliar(id);
+      snapshotGrade = montarGradeView(resultado) as unknown as Record<
+        string,
+        unknown
+      >;
     }
     const periodo = await this.periodos.atualizar(id, input);
     if (!periodo) {
       throw new NotFoundException(`Período ${id} não encontrado.`);
+    }
+    if (snapshotGrade) {
+      await this.periodos.gravarGradePublicada(id, snapshotGrade);
     }
     return periodo;
   }

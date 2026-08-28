@@ -20,7 +20,8 @@ export class ConfirmDialogComponent {
   readonly aberto = input(false);
   readonly titulo = input.required<string>();
   readonly rotuloConfirmar = input('Remover');
-  /** Trava o botão e troca o rótulo por "Removendo…" com spinner. */
+  readonly rotuloProcessando = input('Removendo…');
+  /** Trava o botão e troca o rótulo por `rotuloProcessando` com spinner. */
   readonly processando = input(false);
 
   readonly fechar = output<void>();

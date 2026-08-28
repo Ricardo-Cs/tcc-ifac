@@ -95,6 +95,15 @@ export interface CriarPeriodo {
 
 export type AtualizarPeriodo = Partial<CriarPeriodo>;
 
+export interface PeriodoPublicado {
+  codigo: string;
+  descricao: string | null;
+  ano: number;
+  semestre: number;
+  dataInicio: string;
+  dataFim: string;
+}
+
 export interface OfertaAlocavel {
   ofertaId: string;
   turmaId: string | null;

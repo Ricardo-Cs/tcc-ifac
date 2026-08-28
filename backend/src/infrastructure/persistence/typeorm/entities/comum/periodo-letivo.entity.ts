@@ -36,4 +36,9 @@ export class PeriodoLetivoEntity extends AbstractEntity {
     default: StatusPeriodo.RASCUNHO,
   })
   status: StatusPeriodo;
+
+  // Snapshot da grade (GradeView) gravado na última publicação — o link público
+  // lê daqui, não recalcula. Nulo até a primeira publicação.
+  @Column({ type: 'jsonb', nullable: true })
+  gradePublicada: Record<string, unknown> | null;
 }

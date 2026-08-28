@@ -1,0 +1,103 @@
+<div class="flex min-h-screen flex-col bg-muted">
+  <header class="flex flex-wrap items-center justify-between gap-3 border-b border-border bg-card px-6 py-3">
+    <div class="flex items-center gap-3">
+      <img src="logo-alter.svg" alt="Chronos" class="size-8" />
+      <div>
+        <span class="text-[0.7rem] font-extrabold uppercase tracking-widest text-primary">Chronos · IFAC</span>
+        <h1 class="text-sm font-semibold text-foreground">Grade horária pública</h1>
+      </div>
+    </div>
+
+    @if (periodoSelecionado(); as p) {
+      <div class="flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
+        @if (periodos().length > 1) {
+          <hlm-select [value]="p.codigo" (valueChange)="trocarPeriodo($event)">
+            <hlm-select-trigger class="h-8 w-44 text-xs">
+              <hlm-select-value />
+            </hlm-select-trigger>
+            <hlm-select-content *hlmSelectPortal>
+              @for (opcao of periodos(); track opcao.codigo) {
+                <hlm-select-item [value]="opcao.codigo">{{ opcao.codigo }}</hlm-select-item>
+              }
+            </hlm-select-content>
+          </hlm-select>
+        } @else {
+          <span class="font-semibold text-foreground">{{ p.codigo }}</span>
+        }
+        <span>{{ p.descricao }}</span>
+        <span class="tabular-nums">{{ formatarData(p.dataInicio) }} – {{ formatarData(p.dataFim) }}</span>
+      </div>
+    }
+  </header>
+
+  <div class="flex flex-wrap items-center gap-3 border-b border-border bg-card px-6 py-2.5">
+    <div class="flex items-center gap-1 rounded-md border border-border p-0.5">
+      <button
+        hlmBtn
+        size="sm"
+        type="button"
+        [variant]="dimensao() === 'turma' ? 'default' : 'ghost'"
+        (click)="trocarDimensao('turma')"
+      >
+        Por turma
+      </button>
+      <button
+        hlmBtn
+        size="sm"
+        type="button"
+        [variant]="dimensao() === 'professor' ? 'default' : 'ghost'"
+        (click)="trocarDimensao('professor')"
+      >
+        Por professor
+      </button>
+    </div>
+
+    @if (opcoesValores().length) {
+      <hlm-combobox
+        class="w-full sm:w-80"
+        [value]="selecionado()"
+        [itemToString]="itemToStringOpcao"
+        (valueChange)="selecionar($event)"
+      >
+        <hlm-combobox-input
+          class="w-full sm:w-80"
+          [placeholder]="'Buscar ' + rotuloDimensao(dimensao()).toLowerCase()"
+        />
+        <hlm-combobox-content *hlmComboboxPortal>
+          <hlm-combobox-empty>Nenhum {{ rotuloDimensao(dimensao()).toLowerCase() }} encontrado.</hlm-combobox-empty>
+          <div hlmComboboxList>
+            @for (valor of opcoesValores(); track valor) {
+              <hlm-combobox-item [value]="valor">{{ itemToStringOpcao(valor) }}</hlm-combobox-item>
+            }
+          </div>
+        </hlm-combobox-content>
+      </hlm-combobox>
+    }
+
+    @if (cargaDoSelecionado() !== null) {
+      <span class="text-xs text-muted-foreground">
+        Carga atual:
+        <span class="font-semibold text-foreground">{{ cargaFormatada(cargaDoSelecionado()!) }}</span>
+      </span>
+    }
+  </div>
+
+  @if (erro()) {
+    <div class="mx-6 mt-4 rounded-md border border-destructive/40 bg-destructive/10 px-4 py-3 text-sm text-destructive">
+      {{ erro() }}
+    </div>
+  }
+
+  @if (carregando() && !grade()) {
+    <div class="mx-6 mt-4 text-sm text-muted-foreground">Carregando a grade…</div>
+  } @else if (grade() && !opcoesValores().length) {
+    <div class="mx-6 mt-4 text-sm text-muted-foreground">
+      Nenhum(a) {{ rotuloDimensao(dimensao()).toLowerCase() }} com aula neste período.
+    </div>
+  } @else if (grade() && selecionado()) {
+    <div class="p-6">
+      <p class="mb-3 text-sm font-medium text-foreground">{{ rotuloSelecionado() }}</p>
+      <app-grade-tabela [linhas]="linhas()" [editavel]="false" [vendoTodos]="true" [vendoVariasTurmas]="true" />
+    </div>
+  }
+</div>

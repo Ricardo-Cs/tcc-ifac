@@ -10,11 +10,14 @@ import { TurmasComponent } from './features/turmas/turmas';
 import { SalasComponent } from './features/salas/salas';
 import { OfertasComponent } from './features/ofertas/ofertas';
 import { LoginComponent } from './features/login/login';
+import { GradePublicaComponent } from './features/grade-publica/grade-publica';
 import { ShellComponent } from './layout/shell/shell';
 import { authGuard } from './core/auth/auth-guard';
 
 export const routes: Routes = [
   { path: 'login', component: LoginComponent },
+  { path: 'publica', component: GradePublicaComponent },
+  { path: 'publica/:codigo', component: GradePublicaComponent },
   {
     path: '',
     component: ShellComponent,
