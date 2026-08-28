@@ -12,6 +12,7 @@ import { OfertasComponent } from './features/ofertas/ofertas';
 import { LoginComponent } from './features/login/login';
 import { TrocarSenhaComponent } from './features/trocar-senha/trocar-senha';
 import { UsuariosComponent } from './features/usuarios/usuarios';
+import { ConfiguracoesComponent } from './features/configuracoes/configuracoes';
 import { GradePublicaComponent } from './features/grade-publica/grade-publica';
 import { ShellComponent } from './layout/shell/shell';
 import { authGuard } from './core/auth/auth-guard';
@@ -63,7 +64,7 @@ export const routes: Routes = [
       { path: 'usuarios', component: UsuariosComponent, data: { titulo: 'Usuários' } },
       {
         path: 'configuracoes',
-        component: EmConstrucaoComponent,
+        component: ConfiguracoesComponent,
         data: { titulo: 'Configurações' },
       },
       { path: '**', redirectTo: 'planejamento' },

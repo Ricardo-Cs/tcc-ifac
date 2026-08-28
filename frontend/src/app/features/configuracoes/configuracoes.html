@@ -1,0 +1,154 @@
+@if (usuario(); as u) {
+  <div class="grid gap-6 p-6 sm:max-w-xl">
+    <section class="rounded-lg border border-border bg-card p-6">
+      <div class="flex items-center gap-2">
+        <ng-icon name="lucideUserRound" size="1.15rem" class="text-primary" />
+        <h2 class="text-sm font-semibold tracking-tight">Perfil</h2>
+      </div>
+      <div class="mt-1 h-px w-full bg-border"></div>
+
+      <div class="mt-5 flex items-center gap-3">
+        <span
+          class="grid size-11 shrink-0 place-items-center rounded-full bg-primary/10 text-sm font-semibold text-primary"
+          >{{ iniciais() }}</span
+        >
+        <div class="min-w-0">
+          <p class="truncate font-medium text-foreground">{{ u.nome }}</p>
+          <p class="flex items-center gap-1 truncate text-sm text-muted-foreground">
+            <ng-icon name="lucideMail" size="0.8rem" class="shrink-0" />
+            {{ u.email }}
+          </p>
+        </div>
+      </div>
+
+      <div class="mt-5 flex flex-wrap items-center gap-1.5">
+        <span
+          class="inline-flex items-center gap-1 rounded-full bg-muted px-2.5 py-1 text-xs font-medium text-muted-foreground"
+        >
+          <ng-icon name="lucideShieldUser" size="0.8rem" />
+          {{ rotuloPapel() }}
+        </span>
+        @if (u.ativo) {
+          <span
+            class="inline-flex items-center rounded-full bg-emerald-100 px-2.5 py-1 text-xs font-medium text-emerald-700"
+            >Ativo</span
+          >
+        } @else {
+          <span
+            class="inline-flex items-center rounded-full bg-muted px-2.5 py-1 text-xs font-medium text-muted-foreground"
+            >Inativo</span
+          >
+        }
+      </div>
+
+      <p class="mt-4 text-xs text-muted-foreground">
+        Nome, e-mail e papel são definidos pelo administrador do sistema.
+      </p>
+    </section>
+
+    <section class="rounded-lg border border-border bg-card p-6">
+      <div class="flex items-center gap-2">
+        <ng-icon name="lucideKeyRound" size="1.15rem" class="text-primary" />
+        <h2 class="text-sm font-semibold tracking-tight">Trocar senha</h2>
+      </div>
+      <div class="mt-1 h-px w-full bg-border"></div>
+
+      <form class="mt-5 grid gap-4" (ngSubmit)="trocarSenha()">
+        @if (erroSenha()) {
+          <div
+            class="flex items-start gap-2 rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-xs text-destructive"
+          >
+            <ng-icon name="lucideCircleAlert" size="0.9rem" class="mt-0.5 shrink-0" />
+            <span>{{ erroSenha() }}</span>
+          </div>
+        }
+
+        <div class="grid gap-1.5">
+          <label
+            class="text-[0.7rem] font-semibold uppercase tracking-wide text-muted-foreground"
+            for="cfg-senha-atual"
+            >Senha atual</label
+          >
+          <input
+            hlmInput
+            id="cfg-senha-atual"
+            type="password"
+            [ngModel]="senhaAtual()"
+            name="senhaAtual"
+            (ngModelChange)="senhaAtual.set($event)"
+          />
+        </div>
+
+        <div class="grid gap-4 sm:grid-cols-2">
+          <div class="grid gap-1.5">
+            <label
+              class="text-[0.7rem] font-semibold uppercase tracking-wide text-muted-foreground"
+              for="cfg-nova-senha"
+              >Nova senha</label
+            >
+            <div class="relative">
+              <input
+                hlmInput
+                class="pr-9"
+                id="cfg-nova-senha"
+                [type]="senhaVisivel() ? 'text' : 'password'"
+                [ngModel]="novaSenha()"
+                name="novaSenha"
+                (ngModelChange)="novaSenha.set($event)"
+                placeholder="Ao menos 6 caracteres"
+              />
+              <button
+                type="button"
+                class="absolute inset-y-0 right-0 flex items-center px-2.5 text-muted-foreground hover:text-foreground"
+                (click)="alternarVisibilidadeSenha()"
+                [attr.aria-label]="senhaVisivel() ? 'Ocultar senha' : 'Mostrar senha'"
+              >
+                <span class="relative block size-4">
+                  <ng-icon
+                    name="lucideEye"
+                    size="1rem"
+                    class="absolute inset-0 transition-all duration-150"
+                    [class.opacity-0]="senhaVisivel()"
+                    [class.scale-75]="senhaVisivel()"
+                  />
+                  <ng-icon
+                    name="lucideEyeClosed"
+                    size="1rem"
+                    class="absolute inset-0 transition-all duration-150"
+                    [class.opacity-0]="!senhaVisivel()"
+                    [class.scale-75]="!senhaVisivel()"
+                  />
+                </span>
+              </button>
+            </div>
+          </div>
+
+          <div class="grid gap-1.5">
+            <label
+              class="text-[0.7rem] font-semibold uppercase tracking-wide text-muted-foreground"
+              for="cfg-confirmacao"
+              >Confirmar nova senha</label
+            >
+            <input
+              hlmInput
+              id="cfg-confirmacao"
+              [type]="senhaVisivel() ? 'text' : 'password'"
+              [ngModel]="confirmacao()"
+              name="confirmacao"
+              (ngModelChange)="confirmacao.set($event)"
+            />
+          </div>
+        </div>
+
+        <button
+          hlmBtn
+          type="submit"
+          class="h-9 w-fit"
+          [disabled]="salvandoSenha()"
+        >
+          {{ salvandoSenha() ? 'Trocando…' : 'Trocar senha' }}
+        </button>
+      </form>
+    </section>
+  </div>
+}
