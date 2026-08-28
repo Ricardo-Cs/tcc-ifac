@@ -6,16 +6,29 @@ export interface Usuario {
   email: string;
   papel: PapelUsuario;
   ativo: boolean;
+  senhaProvisoria: boolean;
 }
 
-/** Credenciais enviadas no login. */
+export interface CriarUsuario {
+  nome: string;
+  email: string;
+  papel: PapelUsuario;
+  ativo?: boolean;
+}
+
+export type AtualizarUsuario = Partial<CriarUsuario>;
+
 export interface Credenciais {
   email: string;
   senha: string;
 }
 
-/** Resposta do login: token JWT + usuário autenticado. */
 export interface RespostaLogin {
   token: string;
   usuario: Usuario;
+}
+
+export interface TrocarSenha {
+  senhaAtual: string;
+  novaSenha: string;
 }

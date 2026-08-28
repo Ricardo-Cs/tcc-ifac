@@ -11,7 +11,6 @@ import type {
 } from '@domain/comum/usuario';
 import { PapelUsuario } from '@domain/comum/enums';
 
-/** Conteúdo do JWT. `sub` é o id do usuário (convenção JWT). */
 export interface PayloadToken {
   sub: string;
   email: string;
@@ -35,8 +34,6 @@ export class AuthService {
 
   async login(email: string, senha: string): Promise<ResultadoLogin> {
     const usuario = await this.usuarios.buscarPorEmail(email);
-    // Mensagem única para os três casos (inexistente / inativo / senha errada):
-    // não revela ao atacante qual condição falhou.
     if (!usuario || !usuario.ativo) {
       throw new UnauthorizedException('Credenciais inválidas.');
     }
@@ -51,6 +48,7 @@ export class AuthService {
       email: usuario.email,
       papel: usuario.papel,
       ativo: usuario.ativo,
+      senhaProvisoria: usuario.senhaProvisoria,
     };
     const payload: PayloadToken = {
       sub: semSenha.id,
@@ -60,12 +58,30 @@ export class AuthService {
     return { token: await this.jwt.signAsync(payload), usuario: semSenha };
   }
 
-  /** Resolve o usuário atual (do `sub` do token) para o `GET /auth/me`. */
   async usuarioAtual(id: string): Promise<Usuario> {
     const usuario = await this.usuarios.buscarPorId(id);
     if (!usuario || !usuario.ativo) {
       throw new UnauthorizedException('Sessão inválida.');
     }
     return usuario;
+  }
+
+  async trocarSenha(
+    id: string,
+    senhaAtual: string,
+    novaSenha: string,
+  ): Promise<void> {
+    const usuario = await this.usuarios.buscarPorIdComSenha(id);
+    if (!usuario || !usuario.ativo) {
+      throw new UnauthorizedException('Sessão inválida.');
+    }
+    const senhaConfere = await this.hasher.comparar(
+      senhaAtual,
+      usuario.senhaHash,
+    );
+    if (!senhaConfere) {
+      throw new UnauthorizedException('Senha atual incorreta.');
+    }
+    await this.usuarios.trocarSenha(id, await this.hasher.hashear(novaSenha));
   }
 }

@@ -1,9 +1,8 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsEmail, IsNotEmpty, MaxLength } from 'class-validator';
+import { IsEmail, IsNotEmpty, MaxLength, MinLength } from 'class-validator';
 import { PapelUsuario } from '@domain/comum/enums';
 import { Usuario } from '@domain/comum/usuario';
 
-/** Corpo do login. */
 export class LoginDto {
   @ApiProperty({ example: 'admin@ifac.edu.br', format: 'email' })
   @IsEmail({}, { message: 'Informe um e-mail válido.' })
@@ -16,7 +15,6 @@ export class LoginDto {
   senha: string;
 }
 
-/** Usuário como devolvido pela API — nunca inclui a senha. */
 export class UsuarioResponseDto {
   @ApiProperty({ format: 'uuid' })
   id: string;
@@ -33,6 +31,12 @@ export class UsuarioResponseDto {
   @ApiProperty()
   ativo: boolean;
 
+  @ApiProperty({
+    description:
+      'true = ainda está na senha padrão; o front deve forçar a troca.',
+  })
+  senhaProvisoria: boolean;
+
   static fromDomain(usuario: Usuario): UsuarioResponseDto {
     const dto = new UsuarioResponseDto();
     dto.id = usuario.id;
@@ -40,11 +44,22 @@ export class UsuarioResponseDto {
     dto.email = usuario.email;
     dto.papel = usuario.papel;
     dto.ativo = usuario.ativo;
+    dto.senhaProvisoria = usuario.senhaProvisoria;
     return dto;
   }
 }
 
-/** Resposta do login: token JWT + usuário autenticado. */
+export class TrocarSenhaDto {
+  @ApiProperty({ description: 'Senha atual (ou a padrão, no primeiro login).' })
+  @IsNotEmpty({ message: 'Informe a senha atual.' })
+  senhaAtual: string;
+
+  @ApiProperty({ minLength: 6 })
+  @IsNotEmpty({ message: 'Informe a nova senha.' })
+  @MinLength(6, { message: 'A nova senha deve ter ao menos 6 caracteres.' })
+  novaSenha: string;
+}
+
 export class LoginResponseDto {
   @ApiProperty({
     description: 'Token JWT — enviar em `Authorization: Bearer`.',

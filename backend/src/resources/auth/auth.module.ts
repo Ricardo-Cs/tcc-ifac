@@ -10,6 +10,7 @@ import { TypeormUsuariosRepository } from '@infrastructure/persistence/typeorm/r
 import { BcryptHasher } from '@infrastructure/security/bcrypt.hasher';
 import { AuthController } from './auth.controller';
 import { JwtAuthGuard } from './jwt-auth.guard';
+import { PapeisGuard } from './papeis.guard';
 
 @Module({
   imports: [
@@ -29,8 +30,8 @@ import { JwtAuthGuard } from './jwt-auth.guard';
     AuthService,
     { provide: USUARIOS_AUTH_REPOSITORY, useClass: TypeormUsuariosRepository },
     { provide: SENHA_HASHER, useClass: BcryptHasher },
-    // Guard global: toda rota exige JWT, exceto as marcadas com @Publico().
     { provide: APP_GUARD, useClass: JwtAuthGuard },
+    { provide: APP_GUARD, useClass: PapeisGuard },
   ],
 })
 export class AuthModule {}

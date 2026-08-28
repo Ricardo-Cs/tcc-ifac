@@ -1,0 +1,204 @@
+@if (!ehAdmin()) {
+  <div class="p-6">
+    <div class="rounded-lg border border-border bg-card p-10 text-center">
+      <span class="text-[0.7rem] font-extrabold uppercase tracking-widest text-primary"
+        >Chronos</span
+      >
+      <h2 class="mt-2 text-base font-semibold tracking-tight">Usuários</h2>
+      <p class="mx-auto mt-1.5 max-w-md text-sm text-muted-foreground">
+        Esta área é restrita a administradores.
+      </p>
+    </div>
+  </div>
+} @else {
+  <div class="p-6">
+    <app-listagem
+      [itens]="usuarios()"
+      [colunas]="colunas"
+      [filtros]="filtros"
+      [textoBusca]="textoBusca"
+      [mostrarImportar]="false"
+      entidade="usuários"
+      (adicionar)="abrirNovo()"
+    >
+      <ng-template appLinhaListagem let-u>
+        <td class="px-4 py-3">
+          <div class="flex items-center gap-2.5">
+            <span
+              class="grid size-8 shrink-0 place-items-center rounded-full bg-primary/10 text-[0.7rem] font-semibold text-primary"
+              >{{ iniciais(u.nome) }}</span
+            >
+            <span class="font-medium text-foreground">{{ u.nome }}</span>
+            @if (ehEuMesmo(u)) {
+              <span
+                class="rounded-full bg-muted px-1.5 py-0.5 text-[0.65rem] font-medium text-muted-foreground"
+                >Você</span
+              >
+            }
+          </div>
+        </td>
+        <td class="px-4 py-3 text-muted-foreground">{{ u.email }}</td>
+        <td class="px-4 py-3 text-muted-foreground">{{ rotuloPapel(u.papel) }}</td>
+        <td class="px-4 py-3">
+          <div class="flex flex-wrap items-center gap-1">
+            @if (u.ativo) {
+              <span
+                class="inline-flex items-center rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-medium text-emerald-700"
+                >Ativo</span
+              >
+            } @else {
+              <span
+                class="inline-flex items-center rounded-full bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground"
+                >Inativo</span
+              >
+            }
+            @if (u.senhaProvisoria) {
+              <span
+                class="inline-flex items-center rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-700"
+                title="Ainda não trocou a senha padrão"
+                >Senha provisória</span
+              >
+            }
+          </div>
+        </td>
+        <td class="px-4 py-3">
+          <div class="flex items-center justify-end gap-0.5">
+            <button
+              hlmBtn
+              variant="ghost"
+              size="icon-sm"
+              type="button"
+              title="Editar"
+              (click)="editar(u)"
+            >
+              <ng-icon name="lucidePencil" size="1rem" />
+            </button>
+            <button
+              hlmBtn
+              variant="ghost"
+              size="icon-sm"
+              type="button"
+              title="Redefinir senha para a padrão"
+              (click)="pedirRedefinicaoSenha(u)"
+            >
+              <ng-icon name="lucideKeyRound" size="1rem" />
+            </button>
+            <button
+              hlmBtn
+              variant="ghost"
+              size="icon-sm"
+              type="button"
+              [title]="ehEuMesmo(u) ? 'Você não pode remover seu próprio usuário' : 'Remover'"
+              [disabled]="ehEuMesmo(u)"
+              class="text-muted-foreground hover:text-destructive"
+              (click)="pedirRemocao(u)"
+            >
+              <ng-icon name="lucideTrash2" size="1rem" />
+            </button>
+          </div>
+        </td>
+      </ng-template>
+    </app-listagem>
+  </div>
+
+  <app-form-dialog
+    [aberto]="dialogAberto()"
+    [titulo]="tituloDialog()"
+    descricao="Usuário com acesso ao sistema — papel define o que pode fazer na grade."
+    [salvando]="salvando()"
+    [erro]="erroForm()"
+    (fechar)="fecharDialog()"
+    (salvar)="salvar()"
+  >
+    <ng-icon formDialogIcone name="lucideShieldUser" size="1.15rem" />
+
+    <form class="grid gap-4" (ngSubmit)="salvar()">
+      <div class="grid gap-1.5">
+        <label
+          class="text-[0.7rem] font-semibold uppercase tracking-wide text-muted-foreground"
+          for="usr-nome"
+          >Nome</label
+        >
+        <input
+          hlmInput
+          id="usr-nome"
+          [ngModel]="rascunho().nome"
+          name="nome"
+          (ngModelChange)="atualizar('nome', $event)"
+          placeholder="Ex.: Maria Silva"
+        />
+      </div>
+
+      <div class="grid gap-4 sm:grid-cols-2">
+        <div class="grid gap-1.5">
+          <label
+            class="text-[0.7rem] font-semibold uppercase tracking-wide text-muted-foreground"
+            for="usr-email"
+            >E-mail</label
+          >
+          <input
+            hlmInput
+            id="usr-email"
+            type="email"
+            [ngModel]="rascunho().email"
+            name="email"
+            (ngModelChange)="atualizar('email', $event)"
+            placeholder="maria.silva@ifac.edu.br"
+          />
+        </div>
+
+        <div class="grid gap-1.5">
+          <label class="text-[0.7rem] font-semibold uppercase tracking-wide text-muted-foreground"
+            >Papel</label
+          >
+          <hlm-select
+            [ngModel]="rascunho().papel"
+            name="papel"
+            [itemToString]="rotuloPapel"
+            (ngModelChange)="atualizar('papel', $event)"
+          >
+            <hlm-select-trigger class="w-full">
+              <hlm-select-value placeholder="Selecione o papel" />
+            </hlm-select-trigger>
+            <hlm-select-content *hlmSelectPortal>
+              @for (p of papeis; track p.valor) {
+                <hlm-select-item [value]="p.valor">{{ p.rotulo }}</hlm-select-item>
+              }
+            </hlm-select-content>
+          </hlm-select>
+        </div>
+      </div>
+
+      @if (!editando()) {
+        <p class="rounded-md border border-border bg-muted/40 px-3 py-2 text-xs text-muted-foreground">
+          A senha inicial será <strong class="text-foreground">{{ senhaPadrao }}</strong> — repasse
+          ao usuário e peça para trocá-la no primeiro login.
+        </p>
+      }
+    </form>
+  </app-form-dialog>
+
+  <app-confirm-dialog
+    [aberto]="removendo() !== null"
+    titulo="Remover usuário"
+    [processando]="salvando()"
+    (fechar)="cancelarRemocao()"
+    (confirmar)="confirmarRemocao()"
+  >
+    Remover <strong>{{ removendo()?.nome }}</strong> ({{ removendo()?.email }})? Esta ação não pode
+    ser desfeita.
+  </app-confirm-dialog>
+
+  <app-confirm-dialog
+    [aberto]="redefinindo() !== null"
+    titulo="Redefinir senha"
+    rotuloConfirmar="Redefinir"
+    rotuloProcessando="Redefinindo…"
+    [processando]="salvando()"
+    (fechar)="cancelarRedefinicaoSenha()"
+    (confirmar)="confirmarRedefinicaoSenha()"
+  >
+    Redefinir a senha de <strong>{{ redefinindo()?.nome }}</strong> para a padrão ({{ senhaPadrao }})?
+    Ele precisará trocá-la de novo ao entrar.
+  </app-confirm-dialog>
+}

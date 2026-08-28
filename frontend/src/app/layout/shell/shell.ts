@@ -13,11 +13,11 @@ import {
   lucideHistory,
   lucideLandmark,
   lucideLayers,
-  lucideLayoutDashboard,
   lucideLogOut,
   lucidePanelLeft,
   lucideSchool,
   lucideSettings,
+  lucideShieldUser,
   lucideTable,
   lucideUserRound,
   lucideUsers,
@@ -59,11 +59,11 @@ const CONSULTA_DESKTOP = '(min-width: 1024px)';
       lucideHistory,
       lucideLandmark,
       lucideLayers,
-      lucideLayoutDashboard,
       lucideLogOut,
       lucidePanelLeft,
       lucideSchool,
       lucideSettings,
+      lucideShieldUser,
       lucideTable,
       lucideUserRound,
       lucideUsers,
@@ -94,7 +94,13 @@ export class ShellComponent {
 
   readonly periodo = inject(PeriodoState);
 
-  readonly grupos = NAV;
+  readonly grupos = computed(() => {
+    const papel = this.usuario()?.papel;
+    return NAV.map((grupo) => ({
+      ...grupo,
+      itens: grupo.itens.filter((item) => !item.papeis || (papel && item.papeis.includes(papel))),
+    })).filter((grupo) => grupo.itens.length > 0);
+  });
 
   readonly rotuloPeriodo = (codigo: string): string => {
     const p = this.periodo.periodos().find((x) => x.codigo === codigo);

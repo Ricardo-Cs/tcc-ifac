@@ -4,12 +4,6 @@ import { RespostaLogin, Usuario } from '../models/usuario.models';
 const CHAVE_TOKEN = 'chronos:token';
 const CHAVE_USUARIO = 'chronos:usuario';
 
-/**
- * Estado da sessão do usuário. Guarda o token JWT e o usuário autenticado em
- * signals e os persiste no localStorage — assim um F5 mantém a sessão sem nova
- * chamada ao servidor (o token, se inválido, é derrubado pelo interceptor no
- * primeiro 401).
- */
 @Injectable({ providedIn: 'root' })
 export class Sessao {
   private readonly _token = signal<string | null>(lerToken());
@@ -31,6 +25,11 @@ export class Sessao {
     this._usuario.set(null);
     localStorage.removeItem(CHAVE_TOKEN);
     localStorage.removeItem(CHAVE_USUARIO);
+  }
+
+  atualizarUsuario(usuario: Usuario): void {
+    this._usuario.set(usuario);
+    localStorage.setItem(CHAVE_USUARIO, JSON.stringify(usuario));
   }
 }
 

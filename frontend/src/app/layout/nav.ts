@@ -1,7 +1,10 @@
+import { PapelUsuario } from '../core/models/usuario.models';
+
 export interface ItemNav {
   readonly rota: string;
   readonly rotulo: string;
   readonly icone: string;
+  readonly papeis?: readonly PapelUsuario[];
 }
 
 export interface GrupoNav {
@@ -10,10 +13,6 @@ export interface GrupoNav {
 }
 
 export const NAV: readonly GrupoNav[] = [
-  {
-    titulo: null,
-    itens: [{ rota: '/dashboard', rotulo: 'Dashboard', icone: 'lucideLayoutDashboard' }],
-  },
   {
     titulo: 'Cadastros',
     itens: [
@@ -41,7 +40,15 @@ export const NAV: readonly GrupoNav[] = [
     ],
   },
   {
-    titulo: null,
-    itens: [{ rota: '/configuracoes', rotulo: 'Configurações', icone: 'lucideSettings' }],
+    titulo: 'Administração',
+    itens: [
+      {
+        rota: '/usuarios',
+        rotulo: 'Usuários',
+        icone: 'lucideShieldUser',
+        papeis: ['ADMIN'],
+      },
+      { rota: '/configuracoes', rotulo: 'Configurações', icone: 'lucideSettings' },
+    ],
   },
 ];

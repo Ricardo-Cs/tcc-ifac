@@ -2,7 +2,7 @@ import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 import { API_BASE } from './api-base';
-import { Credenciais, RespostaLogin, Usuario } from '../models/usuario.models';
+import { Credenciais, RespostaLogin, TrocarSenha, Usuario } from '../models/usuario.models';
 
 @Injectable({ providedIn: 'root' })
 export class AuthApi {
@@ -14,5 +14,9 @@ export class AuthApi {
 
   me(): Observable<Usuario> {
     return this.http.get<Usuario>(`${API_BASE}/auth/me`);
+  }
+
+  trocarSenha(dados: TrocarSenha): Observable<void> {
+    return this.http.patch<void>(`${API_BASE}/auth/senha`, dados);
   }
 }

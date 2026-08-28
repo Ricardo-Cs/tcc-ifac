@@ -4,10 +4,12 @@ import {
   Get,
   HttpCode,
   HttpStatus,
+  Patch,
   Post,
 } from '@nestjs/common';
 import {
   ApiBearerAuth,
+  ApiNoContentResponse,
   ApiOkResponse,
   ApiOperation,
   ApiTags,
@@ -15,7 +17,12 @@ import {
 } from '@nestjs/swagger';
 import { AuthService } from '@application/auth/auth.service';
 import type { PayloadToken } from '@application/auth/auth.service';
-import { LoginDto, LoginResponseDto, UsuarioResponseDto } from './auth.dto';
+import {
+  LoginDto,
+  LoginResponseDto,
+  TrocarSenhaDto,
+  UsuarioResponseDto,
+} from './auth.dto';
 import { Publico } from './publico.decorator';
 import { UsuarioAtual } from './usuario-atual.decorator';
 
@@ -46,5 +53,23 @@ export class AuthController {
     return UsuarioResponseDto.fromDomain(
       await this.auth.usuarioAtual(atual.sub),
     );
+  }
+
+  @Patch('senha')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @ApiBearerAuth()
+  @ApiOperation({
+    summary:
+      'Troca a senha do usuário autenticado — exige a senha atual (a padrão, no primeiro login).',
+  })
+  @ApiNoContentResponse({ description: 'Senha trocada.' })
+  @ApiUnauthorizedResponse({
+    description: 'Senha atual incorreta ou sessão inválida.',
+  })
+  async trocarSenha(
+    @Body() dto: TrocarSenhaDto,
+    @UsuarioAtual() atual: PayloadToken,
+  ): Promise<void> {
+    await this.auth.trocarSenha(atual.sub, dto.senhaAtual, dto.novaSenha);
   }
 }

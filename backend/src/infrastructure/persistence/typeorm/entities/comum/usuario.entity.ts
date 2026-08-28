@@ -18,4 +18,7 @@ export class UsuarioEntity extends AbstractEntity {
 
   @Column({ type: 'boolean', default: true })
   ativo: boolean;
+
+  @Column({ type: 'boolean', default: true })
+  senhaProvisoria: boolean;
 }

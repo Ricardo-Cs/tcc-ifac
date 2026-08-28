@@ -10,12 +10,16 @@ import { TurmasComponent } from './features/turmas/turmas';
 import { SalasComponent } from './features/salas/salas';
 import { OfertasComponent } from './features/ofertas/ofertas';
 import { LoginComponent } from './features/login/login';
+import { TrocarSenhaComponent } from './features/trocar-senha/trocar-senha';
+import { UsuariosComponent } from './features/usuarios/usuarios';
 import { GradePublicaComponent } from './features/grade-publica/grade-publica';
 import { ShellComponent } from './layout/shell/shell';
 import { authGuard } from './core/auth/auth-guard';
+import { trocarSenhaGuard } from './core/auth/trocar-senha-guard';
 
 export const routes: Routes = [
   { path: 'login', component: LoginComponent },
+  { path: 'trocar-senha', component: TrocarSenhaComponent, canActivate: [trocarSenhaGuard] },
   { path: 'publica', component: GradePublicaComponent },
   { path: 'publica/:codigo', component: GradePublicaComponent },
   {
@@ -24,7 +28,6 @@ export const routes: Routes = [
     canActivate: [authGuard],
     children: [
       { path: '', pathMatch: 'full', redirectTo: 'planejamento' },
-      { path: 'dashboard', component: EmConstrucaoComponent, data: { titulo: 'Dashboard' } },
       { path: 'cursos', component: CursosComponent, data: { titulo: 'Cursos' } },
       { path: 'professores', component: ProfessoresComponent, data: { titulo: 'Professores' } },
       { path: 'disciplinas', component: DisciplinasComponent, data: { titulo: 'Disciplinas' } },
@@ -57,6 +60,7 @@ export const routes: Routes = [
         component: GradeConsultaComponent,
         data: { titulo: 'Grade por sala', dimensao: 'sala' },
       },
+      { path: 'usuarios', component: UsuariosComponent, data: { titulo: 'Usuários' } },
       {
         path: 'configuracoes',
         component: EmConstrucaoComponent,
