@@ -29,6 +29,7 @@ import {
   LinhaVm,
   TODAS_AS_TURMAS,
   chaveCelula,
+  mapaConflitosPorAula,
   mapaSeveridadePorAula,
   montarLinhas,
 } from './grade.view';
@@ -201,6 +202,10 @@ export class GradeComponent {
     mapaSeveridadePorAula(this.grade()?.conflitos ?? []),
   );
 
+  private readonly conflitosPorAula = computed(() =>
+    mapaConflitosPorAula(this.grade()?.conflitos ?? []),
+  );
+
   readonly linhas = computed<LinhaVm[]>(() =>
     montarLinhas(
       this.aulasVisiveis(),
@@ -208,6 +213,7 @@ export class GradeComponent {
       this.severidadePorAula(),
       this.siglaPorCurso(),
       this.turnosVisiveis(),
+      this.conflitosPorAula(),
     ),
   );
 

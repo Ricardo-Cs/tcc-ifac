@@ -30,6 +30,7 @@ export function chaveCelula(dia: number, turno: string, ordem: number): string {
 export interface AulaVm {
   aula: Aula;
   severidade: Severidade | null;
+  conflitos: Conflito[];
   sigla: string | null;
 }
 
@@ -70,12 +71,25 @@ export function mapaSeveridadePorAula(conflitos: Conflito[]): Map<string, Severi
   return mapa;
 }
 
+export function mapaConflitosPorAula(conflitos: Conflito[]): Map<string, Conflito[]> {
+  const mapa = new Map<string, Conflito[]>();
+  for (const c of conflitos) {
+    for (const id of c.alocacoesEnvolvidas) {
+      const lista = mapa.get(id) ?? [];
+      lista.push(c);
+      mapa.set(id, lista);
+    }
+  }
+  return mapa;
+}
+
 export function montarLinhas(
   aulas: Aula[],
   slots: Slot[],
   severidadePorAula: Map<string, Severidade>,
   siglaPorCurso: Map<string, string>,
   turnos: Set<string> | null,
+  conflitosPorAula: Map<string, Conflito[]>,
 ): LinhaVm[] {
   const slotPorCelula = new Map<string, Slot>();
   for (const s of slots) {
@@ -93,6 +107,7 @@ export function montarLinhas(
   const aulaVm = (aula: Aula): AulaVm => ({
     aula,
     severidade: severidadePorAula.get(aula.id) ?? null,
+    conflitos: conflitosPorAula.get(aula.id) ?? [],
     sigla: aula.cursoId ? (siglaPorCurso.get(aula.cursoId) ?? null) : null,
   });
 

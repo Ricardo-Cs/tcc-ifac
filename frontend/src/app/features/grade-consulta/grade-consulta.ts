@@ -6,7 +6,7 @@ import { formatarHoras } from '../../core/format/horas';
 import { PeriodoState } from '../../core/state/periodo-state';
 import { Aula, Conflito, Grade } from '../../core/models/grade.models';
 import { GradeTabelaComponent } from '../grade/components/grade-tabela/grade-tabela';
-import { LinhaVm, mapaSeveridadePorAula, montarLinhas } from '../grade/grade.view';
+import { LinhaVm, mapaConflitosPorAula, mapaSeveridadePorAula, montarLinhas } from '../grade/grade.view';
 import { SEVERIDADE_RANK, pillSeveridade, rotuloSeveridade, rotuloTipo } from '../grade/severidade';
 
 type Dimensao = 'professor' | 'sala';
@@ -73,6 +73,10 @@ export class GradeConsultaComponent {
     mapaSeveridadePorAula(this.grade()?.conflitos ?? []),
   );
 
+  private readonly conflitosPorAula = computed(() =>
+    mapaConflitosPorAula(this.grade()?.conflitos ?? []),
+  );
+
   private readonly siglaPorCurso = computed(
     () => new Map((this.grade()?.cursos ?? []).map((c) => [c.id, c.sigla])),
   );
@@ -92,6 +96,7 @@ export class GradeConsultaComponent {
       this.severidadePorAula(),
       this.siglaPorCurso(),
       this.turnos(),
+      this.conflitosPorAula(),
     ),
   );
 

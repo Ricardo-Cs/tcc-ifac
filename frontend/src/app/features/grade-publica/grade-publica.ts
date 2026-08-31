@@ -7,7 +7,7 @@ import { GradeApi } from '../../core/api/grade-api';
 import { formatarHoras } from '../../core/format/horas';
 import { Aula, Grade, PeriodoPublicado } from '../../core/models/grade.models';
 import { GradeTabelaComponent } from '../grade/components/grade-tabela/grade-tabela';
-import { LinhaVm, mapaSeveridadePorAula, montarLinhas } from '../grade/grade.view';
+import { LinhaVm, mapaConflitosPorAula, mapaSeveridadePorAula, montarLinhas } from '../grade/grade.view';
 
 type Dimensao = 'turma' | 'professor';
 
@@ -138,6 +138,8 @@ export class GradePublicaComponent {
 
   private readonly severidadePorAula = computed(() => mapaSeveridadePorAula(this.grade()?.conflitos ?? []));
 
+  private readonly conflitosPorAula = computed(() => mapaConflitosPorAula(this.grade()?.conflitos ?? []));
+
   private readonly siglaPorCurso = computed(
     () => new Map((this.grade()?.cursos ?? []).map((c) => [c.id, c.sigla])),
   );
@@ -157,6 +159,7 @@ export class GradePublicaComponent {
       this.severidadePorAula(),
       this.siglaPorCurso(),
       this.turnos(),
+      this.conflitosPorAula(),
     ),
   );
 

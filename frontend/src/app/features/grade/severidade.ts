@@ -1,4 +1,4 @@
-import { Severidade } from '../../core/models/grade.models';
+import { Conflito, Severidade } from '../../core/models/grade.models';
 
 export const SEVERIDADE_RANK: Record<Severidade, number> = {
   FORTE: 0,
@@ -59,4 +59,8 @@ function humanizar(tipo: string): string {
 
 export function rotuloTipo(tipo: string): string {
   return TIPO_ROTULO[tipo] ?? humanizar(tipo);
+}
+
+export function mensagemConflitos(conflitos: Conflito[]): string {
+  return conflitos.map((c) => `${rotuloTipo(c.tipo)}: ${c.mensagem}`).join(' · ');
 }
