@@ -54,13 +54,13 @@ const ORDEM = (ordem: number, inicio: string, fim: string) => ({
 });
 
 const ORDENS_MANHA = [
-  ORDEM(1, '07:30', '08:20'),
-  ORDEM(2, '08:20', '09:10'),
-  ORDEM(3, '09:10', '10:00'),
-  ORDEM(4, '10:20', '11:10'),
-  ORDEM(5, '11:10', '12:00'),
+  ORDEM(1, '07:00', '07:50'),
+  ORDEM(2, '07:50', '08:40'),
+  ORDEM(3, '08:40', '09:30'),
+  ORDEM(4, '09:50', '10:40'),
+  ORDEM(5, '10:40', '11:30'),
+  ORDEM(6, '11:30', '12:20'),
 ];
-// TARDE — 5 ordens (o intervalo 16:00–16:20 não é slot).
 const ORDENS_TARDE = [
   ORDEM(1, '13:30', '14:20'),
   ORDEM(2, '14:20', '15:10'),
@@ -69,10 +69,10 @@ const ORDENS_TARDE = [
   ORDEM(5, '17:10', '18:00'),
 ];
 const ORDENS_NOITE = [
-  ORDEM(1, '18:50', '19:40'),
-  ORDEM(2, '19:40', '20:30'),
-  ORDEM(3, '20:40', '21:30'),
-  ORDEM(4, '21:30', '22:20'),
+  ORDEM(1, '19:00', '19:50'),
+  ORDEM(2, '19:50', '20:40'),
+  ORDEM(3, '20:50', '21:40'),
+  ORDEM(4, '21:40', '22:30'),
 ];
 
 const TURNOS = [
@@ -88,6 +88,7 @@ const DIAS = [
   { num: 3, sigla: 'QUA' },
   { num: 4, sigla: 'QUI' },
   { num: 5, sigla: 'SEX' },
+  { num: 6, sigla: 'SAB' },
 ];
 
 interface ProfessorSeed {

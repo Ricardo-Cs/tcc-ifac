@@ -9,6 +9,7 @@ import { ProfessoresComponent } from './features/professores/professores';
 import { TurmasComponent } from './features/turmas/turmas';
 import { SalasComponent } from './features/salas/salas';
 import { OfertasComponent } from './features/ofertas/ofertas';
+import { DisponibilidadesComponent } from './features/disponibilidades/disponibilidades';
 import { LoginComponent } from './features/login/login';
 import { TrocarSenhaComponent } from './features/trocar-senha/trocar-senha';
 import { UsuariosComponent } from './features/usuarios/usuarios';
@@ -42,7 +43,7 @@ export const routes: Routes = [
       { path: 'ofertas', component: OfertasComponent, data: { titulo: 'Ofertas' } },
       {
         path: 'disponibilidades',
-        component: EmConstrucaoComponent,
+        component: DisponibilidadesComponent,
         data: { titulo: 'Disponibilidades' },
       },
       {

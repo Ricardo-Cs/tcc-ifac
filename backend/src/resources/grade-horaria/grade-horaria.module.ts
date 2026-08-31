@@ -27,6 +27,7 @@ import { RegraInterjornada } from '@domain/grade-horaria/regras/interjornada';
 import { RegraIntrajornada } from '@domain/grade-horaria/regras/intrajornada';
 import { RegraTresTurnosNoDia } from '@domain/grade-horaria/regras/tres-turnos-no-dia';
 import { RegraCargaDiariaExcedida } from '@domain/grade-horaria/regras/carga-diaria-excedida';
+import { RegraRestricaoViolada } from '@domain/grade-horaria/regras/restricao-violada';
 import { GradeController } from './grade.controller';
 
 @Module({
@@ -59,6 +60,7 @@ import { GradeController } from './grade.controller';
         new RegraIntrajornada(),
         new RegraTresTurnosNoDia(),
         new RegraCargaDiariaExcedida(),
+        new RegraRestricaoViolada(),
       ] satisfies Regras,
     },
   ],

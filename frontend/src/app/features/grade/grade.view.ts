@@ -9,6 +9,7 @@ export const DIAS = [
   { num: 3, nome: 'Quarta' },
   { num: 4, nome: 'Quinta' },
   { num: 5, nome: 'Sexta' },
+  { num: 6, nome: 'Sábado' },
 ];
 
 export const TURNO_RANK: Record<string, number> = { MANHA: 0, TARDE: 1, NOITE: 2 };

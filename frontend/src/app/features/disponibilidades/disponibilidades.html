@@ -1,0 +1,211 @@
+<div class="grid gap-6 p-6">
+  @if (!periodoId()) {
+    <p class="text-muted-foreground">Nenhum período selecionado.</p>
+  } @else {
+    <div hlmCard class="flex items-center justify-between gap-4 p-4">
+      <div>
+        @if (carregandoColeta()) {
+          <p class="text-sm text-muted-foreground">Carregando coleta…</p>
+        } @else if (coleta(); as c) {
+          <p class="text-sm">
+            Coleta aberta em <strong>{{ formatarDataHora(c.importadoEm) }}</strong> por
+            <strong>{{ c.importadoPorNome }}</strong>
+            @if (c.arquivoOrigem) {
+              · {{ c.arquivoOrigem }}
+            }
+          </p>
+        } @else {
+          <p class="text-sm text-muted-foreground">
+            Nenhuma coleta de restrições aberta para {{ periodoState.selecionado()?.codigo }}.
+          </p>
+        }
+      </div>
+      <div>
+        @if (!carregandoColeta()) {
+          @if (coleta()) {
+            <button hlmBtn variant="outline" type="button" (click)="pedirFechamento()">
+              Fechar coleta
+            </button>
+          } @else {
+            <button hlmBtn type="button" [disabled]="abrindoColeta()" (click)="abrirColeta()">
+              {{ abrindoColeta() ? 'Abrindo…' : 'Abrir coleta' }}
+            </button>
+          }
+        }
+      </div>
+    </div>
+
+    <app-listagem
+      [itens]="restricoes()"
+      [colunas]="colunas"
+      [filtros]="filtros"
+      [textoBusca]="textoBusca"
+      [mostrarImportar]="false"
+      [mostrarAdicionar]="coleta() !== null"
+      entidade="restrições"
+      (adicionar)="abrirNovo()"
+    >
+      <ng-template appLinhaListagem let-r>
+        <td class="px-4 py-3 font-medium text-foreground">{{ r.professorNome }}</td>
+        <td class="px-4 py-3 text-muted-foreground">{{ r.slotHorarioCodigo }}</td>
+        <td class="px-4 py-3 text-center">
+          @if (r.amparoLegal) {
+            <span hlmBadge variant="secondary">Sim</span>
+          } @else {
+            <span class="text-muted-foreground">Não</span>
+          }
+        </td>
+        <td class="px-4 py-3 text-muted-foreground">{{ r.motivo || '—' }}</td>
+        <td class="px-4 py-3">
+          <div class="flex items-center justify-end">
+            <button
+              hlmBtn
+              variant="ghost"
+              size="icon-sm"
+              type="button"
+              title="Remover"
+              class="text-muted-foreground hover:text-destructive"
+              (click)="pedirRemocao(r)"
+            >
+              <ng-icon name="lucideTrash2" size="1rem" />
+            </button>
+          </div>
+        </td>
+      </ng-template>
+    </app-listagem>
+  }
+</div>
+
+<app-form-dialog
+  [aberto]="dialogAberto()"
+  titulo="Nova restrição de horário"
+  descricao="Marque o(s) horário(s) em que o professor não pode ser alocado."
+  [salvando]="salvando()"
+  [erro]="erroForm()"
+  larguraClasse="sm:max-w-2xl"
+  (fechar)="fecharDialog()"
+  (salvar)="salvar()"
+>
+  <ng-icon formDialogIcone name="lucideCalendarOff" size="1.15rem" />
+
+  <form class="grid gap-4" (ngSubmit)="salvar()">
+    <div class="grid gap-1.5">
+      <label class="text-[0.7rem] font-semibold uppercase tracking-wide text-muted-foreground"
+        >Professor</label
+      >
+      <hlm-select
+        [ngModel]="rascunho().professorId"
+        name="professorId"
+        [itemToString]="rotuloProfessor"
+        (ngModelChange)="atualizarProfessor($event)"
+      >
+        <hlm-select-trigger class="w-full">
+          <hlm-select-value placeholder="Selecione o professor" />
+        </hlm-select-trigger>
+        <hlm-select-content *hlmSelectPortal>
+          @for (p of professores(); track p.id) {
+            <hlm-select-item [value]="p.id">{{ p.nome }}</hlm-select-item>
+          }
+        </hlm-select-content>
+      </hlm-select>
+    </div>
+
+    <div class="grid gap-1.5">
+      <label class="text-[0.7rem] font-semibold uppercase tracking-wide text-muted-foreground"
+        >Horários restritos</label
+      >
+      <div class="max-h-64 overflow-auto rounded-md border">
+        <table class="w-full text-xs">
+          <thead>
+            <tr class="border-b bg-muted/40">
+              <th
+                class="sticky top-0 bg-muted/40 px-2 py-1.5 text-left font-medium text-muted-foreground"
+              >
+                Horário
+              </th>
+              @for (dia of dias; track dia.num) {
+                <th
+                  class="sticky top-0 bg-muted/40 px-2 py-1.5 text-center font-medium text-muted-foreground"
+                >
+                  {{ dia.nome }}
+                </th>
+              }
+            </tr>
+          </thead>
+          <tbody>
+            @for (linha of linhasGrid(); track linha.turno + linha.ordem) {
+              <tr class="border-b last:border-0">
+                <td class="whitespace-nowrap px-2 py-1.5 text-muted-foreground">
+                  {{ linha.horaInicio }}–{{ linha.horaFim }}
+                </td>
+                @for (dia of dias; track dia.num) {
+                  <td class="px-2 py-1.5 text-center">
+                    @if (linha.porDia.get(dia.num); as slot) {
+                      <input
+                        type="checkbox"
+                        class="h-3.5 w-3.5 accent-primary"
+                        [checked]="rascunho().slotIds.includes(slot.id)"
+                        (change)="alternarSlot(slot.id)"
+                      />
+                    }
+                  </td>
+                }
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="grid gap-1.5">
+      <label
+        class="text-[0.7rem] font-semibold uppercase tracking-wide text-muted-foreground"
+        for="restricao-motivo"
+        >Motivo</label
+      >
+      <textarea
+        hlmInput
+        id="restricao-motivo"
+        class="min-h-16"
+        [ngModel]="rascunho().motivo"
+        name="motivo"
+        (ngModelChange)="atualizarMotivo($event)"
+        placeholder="Ex.: horário de estudante (Art. 98 da Lei 8.112/90)"
+      ></textarea>
+    </div>
+
+    <label class="flex items-center gap-2 text-sm">
+      <input
+        type="checkbox"
+        class="h-3.5 w-3.5 accent-primary"
+        [checked]="rascunho().amparoLegal"
+        (change)="atualizarAmparoLegal($any($event.target).checked)"
+      />
+      Restrição amparada por dispositivo legal
+    </label>
+  </form>
+</app-form-dialog>
+
+<app-confirm-dialog
+  [aberto]="removendo() !== null"
+  titulo="Remover restrição"
+  [processando]="salvando()"
+  (fechar)="cancelarRemocao()"
+  (confirmar)="confirmarRemocao()"
+>
+  Remover a restrição de <strong>{{ removendo()?.professorNome }}</strong> em
+  <strong>{{ removendo()?.slotHorarioCodigo }}</strong
+  >?
+</app-confirm-dialog>
+
+<app-confirm-dialog
+  [aberto]="confirmandoFechamento()"
+  titulo="Fechar coleta de restrições"
+  rotuloConfirmar="Fechar coleta"
+  [processando]="fechandoColeta()"
+  (fechar)="cancelarFechamento()"
+  (confirmar)="confirmarFechamento()"
+>
+  Isso remove a coleta e todas as {{ restricoes().length }} restrições lançadas para este período.
+  Esta ação não pode ser desfeita.
+</app-confirm-dialog>

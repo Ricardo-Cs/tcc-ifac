@@ -96,7 +96,7 @@ export class SqlSnapshotLoader implements SnapshotLoader {
         `SELECT id, codigo, dia_semana, turno, ordem, hora_inicio, hora_fim FROM slot_horario`,
       ),
       this.dataSource.query(
-        `SELECT professor_id, slot_horario_id
+        `SELECT professor_id, slot_horario_id, amparo_legal
            FROM restricao_professor
           WHERE periodo_letivo_id = $1`,
         [periodoLetivoId],
@@ -218,10 +218,11 @@ export class SqlSnapshotLoader implements SnapshotLoader {
       ]),
     );
 
-    const restricoes = new Set<string>(
-      restricoesRows.map((row) =>
+    const restricoes = new Map<string, boolean>(
+      restricoesRows.map((row) => [
         chaveProfessorSlot(row.professor_id, row.slot_horario_id),
-      ),
+        row.amparo_legal,
+      ]),
     );
 
     return {

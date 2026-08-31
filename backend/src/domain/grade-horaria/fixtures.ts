@@ -137,7 +137,7 @@ export function montarSnapshot(entrada: {
   disciplinas?: DisciplinaSnapshot[];
   salas?: SalaSnapshot[];
   slots?: SlotSnapshot[];
-  restricoes?: string[];
+  restricoes?: [string, boolean][];
   coletaImportada?: boolean;
 }): GradeSnapshot {
   const dados: DadosSnapshot = {
@@ -150,7 +150,7 @@ export function montarSnapshot(entrada: {
     disciplinas: indexar(entrada.disciplinas ?? []),
     salas: indexar(entrada.salas ?? []),
     slots: indexar(entrada.slots ?? []),
-    restricoes: new Set(entrada.restricoes ?? []),
+    restricoes: new Map(entrada.restricoes ?? []),
     coletaImportada: entrada.coletaImportada ?? false,
   };
   return construirSnapshot(dados);

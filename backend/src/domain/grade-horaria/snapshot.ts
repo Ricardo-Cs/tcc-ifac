@@ -156,9 +156,14 @@ export interface DadosSnapshot {
   slots: Map<Id, SlotSnapshot>;
   /**
    * Restrições declaradas pelos professores no formulário. Presença da chave
-   * `${professorId}:${slotId}` = o professor marcou que NÃO pode nesse slot.
+   * `${professorId}:${slotId}` = o professor marcou que NÃO pode nesse slot; o
+   * valor é `amparoLegal` — se a restrição é amparada por dispositivo legal
+   * (ex.: Art. 98 da Lei 8.112/90) ou só uma preferência pessoal (consulta
+   * médica, buscar filho na escola etc.). É o que decide a SEVERIDADE em
+   * `RegraRestricaoViolada`: só a legal é inegociável (FORTE); a pessoal é
+   * POTENCIAL — a comissão avalia e pode aceitar com justificativa.
    */
-  restricoes: Set<string>;
+  restricoes: Map<string, boolean>;
   /**
    * A coleta do formulário deste período foi importada? Habilita o terceiro
    * estado: sem coleta, restrições ainda não entraram e o motor opera em modo
