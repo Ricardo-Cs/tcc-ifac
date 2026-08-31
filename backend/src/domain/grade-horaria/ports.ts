@@ -7,7 +7,7 @@
  * injeção. Assim o domínio + a orquestração continuam testáveis sem banco:
  * basta uma implementação em memória das portas.
  */
-import { DadosSnapshot } from './snapshot';
+import { DadosSnapshot, GradeSnapshot, Id } from './snapshot';
 import { Regra } from './regras/regra';
 
 /** Carrega o estado bruto de um período letivo para alimentar o motor. */
@@ -113,3 +113,22 @@ export interface PeriodosRepository {
 /** As regras do motor, injetadas para que a lista seja configurável no módulo. */
 export const REGRAS = Symbol('REGRAS');
 export type Regras = Regra[];
+
+/** Uma alocação proposta pelo gerador de rascunho inicial: ainda não gravada. */
+export interface PropostaAlocacao {
+  ofertaId: Id;
+  slotHorarioId: Id;
+}
+
+/**
+ * O algoritmo de rascunho inicial, injetado pelo MESMO motivo que `REGRAS`:
+ * trocar de algoritmo (ex.: um futuro solver de otimização) é trocar o
+ * provider no módulo Nest, sem tocar em `GerarGradeInicialUseCase`, controller
+ * ou testes de quem consome. A implementação de hoje (`GeradorGradeInicialGuloso`,
+ * em `gerar-grade-inicial.ts`) é só o baseline guloso — não é o único ponto
+ * de extensão possível, mas é o único que existe até aqui.
+ */
+export const GERADOR_GRADE_INICIAL = Symbol('GERADOR_GRADE_INICIAL');
+export interface GeradorGradeInicial {
+  gerar(snapshot: GradeSnapshot): PropostaAlocacao[];
+}

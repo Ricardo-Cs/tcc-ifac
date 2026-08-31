@@ -10,6 +10,7 @@ import { SnapshotCargaLetivaProvider } from '@application/grade-horaria/carga-le
 import {
   ACEITES_REPOSITORY,
   ALOCACOES_REPOSITORY,
+  GERADOR_GRADE_INICIAL,
   PERIODOS_REPOSITORY,
   REGRAS,
   Regras,
@@ -29,6 +30,7 @@ import { RegraIntrajornada } from '@domain/grade-horaria/regras/intrajornada';
 import { RegraTresTurnosNoDia } from '@domain/grade-horaria/regras/tres-turnos-no-dia';
 import { RegraCargaDiariaExcedida } from '@domain/grade-horaria/regras/carga-diaria-excedida';
 import { RegraRestricaoViolada } from '@domain/grade-horaria/regras/restricao-violada';
+import { GeradorGradeInicialGuloso } from '@domain/grade-horaria/gerar-grade-inicial';
 import { GradeController } from './grade.controller';
 
 @Module({
@@ -44,6 +46,7 @@ import { GradeController } from './grade.controller';
     { provide: ACEITES_REPOSITORY, useClass: SqlAceitesRepository },
     { provide: PERIODOS_REPOSITORY, useClass: SqlPeriodosRepository },
     { provide: ALOCACOES_REPOSITORY, useClass: SqlAlocacoesRepository },
+    { provide: GERADOR_GRADE_INICIAL, useClass: GeradorGradeInicialGuloso },
     {
       provide: CONFLITOS_PERIODO_CHECKER,
       useClass: AvaliarGradeConflitoForteChecker,

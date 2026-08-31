@@ -20,6 +20,7 @@
  */
 import { Modalidade, Turno } from '../academico/enums';
 import { ofertasAlocaveis } from './ofertas-alocaveis';
+import { GeradorGradeInicial, PropostaAlocacao } from './ports';
 import {
   GradeSnapshot,
   Id,
@@ -35,9 +36,11 @@ const TURNO_RANK: Record<Turno, number> = {
   [Turno.NOITE]: 2,
 };
 
-export interface PropostaAlocacao {
-  ofertaId: Id;
-  slotHorarioId: Id;
+/** Implementação de `GeradorGradeInicial` (ver `ports.ts`) sobre `gerarGradeInicial`. */
+export class GeradorGradeInicialGuloso implements GeradorGradeInicial {
+  gerar(snapshot: GradeSnapshot): PropostaAlocacao[] {
+    return gerarGradeInicial(snapshot);
+  }
 }
 
 export function gerarGradeInicial(snapshot: GradeSnapshot): PropostaAlocacao[] {
