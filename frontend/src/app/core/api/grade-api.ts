@@ -32,6 +32,10 @@ export class GradeApi {
     return this.http.get<OfertaAlocavel[]>(`${BASE}/grade/${periodoId}/ofertas-alocaveis`);
   }
 
+  gerarInicial(periodoId: string): Observable<Grade> {
+    return this.http.post<Grade>(`${BASE}/grade/${periodoId}/gerar-inicial`, {});
+  }
+
   criar(ofertaId: string, slotHorarioId: string): Observable<Grade> {
     return this.http.post<Grade>(`${BASE}/alocacoes`, {
       ofertaId,

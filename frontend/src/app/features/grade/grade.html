@@ -6,9 +6,12 @@
     [turmaSelecionada]="turmaSelecionada()"
     [totais]="totaisPorSeveridade()"
     [periodo]="periodo.selecionado()"
+    [editavel]="periodo.editavel()"
+    [gerando]="gerandoInicial()"
     (cursoChange)="selecionarCurso($event)"
     (turmaChange)="selecionarTurma($event)"
     (publicar)="pedirPublicacao()"
+    (gerarInicial)="gerarInicial()"
   />
 
   @if (erro()) {
@@ -73,7 +76,9 @@
 
 <app-confirm-dialog
   [aberto]="confirmandoPublicacao()"
-  [titulo]="periodo.selecionado()?.status === 'PUBLICADO' ? 'Atualizar grade pública' : 'Publicar período'"
+  [titulo]="
+    periodo.selecionado()?.status === 'PUBLICADO' ? 'Atualizar grade pública' : 'Publicar período'
+  "
   rotuloConfirmar="Publicar"
   rotuloProcessando="Publicando…"
   [processando]="publicando()"
@@ -82,11 +87,11 @@
 >
   @if (periodo.selecionado()?.status === 'PUBLICADO') {
     O link público de <strong>{{ periodo.selecionado()?.codigo }}</strong> já existe, mas mostra a
-    grade de quando foi publicada pela última vez — mudanças depois disso só aparecem lá quando
-    você publicar de novo. Confirma?
+    grade de quando foi publicada pela última vez — mudanças depois disso só aparecem lá quando você
+    publicar de novo. Confirma?
   } @else {
-    Publicar <strong>{{ periodo.selecionado()?.codigo }}</strong>? A grade fica acessível para
-    qualquer pessoa, sem login, em um link público. Só é possível publicar se não houver conflitos
-    fortes na grade.
+    Publicar <strong>{{ periodo.selecionado()?.codigo }}</strong
+    >? A grade fica acessível para qualquer pessoa, sem login, em um link público. Só é possível
+    publicar se não houver conflitos fortes na grade.
   }
 </app-confirm-dialog>

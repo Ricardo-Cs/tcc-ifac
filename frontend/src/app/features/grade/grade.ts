@@ -98,6 +98,8 @@ export class GradeComponent {
   readonly confirmandoPublicacao = signal(false);
   readonly publicando = signal(false);
 
+  readonly gerandoInicial = signal(false);
+
   readonly cursos = computed<Curso[]>(() => this.grade()?.cursos ?? []);
 
   private readonly cursoAtual = computed<Curso | null>(() => {
@@ -369,6 +371,24 @@ export class GradeComponent {
     });
   }
 
+  gerarInicial(): void {
+    const periodoId = this.periodo.selecionado()?.id;
+    if (!periodoId) return;
+    this.gerandoInicial.set(true);
+    this.erro.set(null);
+    this.api.gerarInicial(periodoId).subscribe({
+      next: (g) => {
+        this.aplicarGrade(g);
+        this.gerandoInicial.set(false);
+        this.toast.sucesso('Rascunho inicial gerado — revise os conflitos e ajuste como precisar.');
+      },
+      error: (e) => {
+        this.gerandoInicial.set(false);
+        this.aoFalharEscrita(e);
+      },
+    });
+  }
+
   private carregar(fonte: () => import('rxjs').Observable<Grade>): void {
     this.carregando.set(true);
     this.erro.set(null);
@@ -417,7 +437,9 @@ export class GradeComponent {
     const turmaValida =
       turma === this.TODAS || g.turmas.some((t) => t.id === turma && t.cursoId === cursoResolvido);
     if (!turmaValida) {
-      this.turmaSelecionada.set(cursoResolvido ? this.primeiraTurmaDoCurso(cursoResolvido) : this.TODAS);
+      this.turmaSelecionada.set(
+        cursoResolvido ? this.primeiraTurmaDoCurso(cursoResolvido) : this.TODAS,
+      );
     }
 
     this.carregarCatalogo(g.periodoLetivoId);

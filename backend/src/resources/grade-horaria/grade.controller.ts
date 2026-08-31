@@ -15,6 +15,7 @@ import { AvaliarGradeUseCase } from '@application/grade-horaria/avaliar-grade.us
 import { AlterarAlocacaoUseCase } from '@application/grade-horaria/alterar-alocacao.use-case';
 import { AceitarConflitoUseCase } from '@application/grade-horaria/aceitar-conflito.use-case';
 import { ListarOfertasAlocaveisUseCase } from '@application/grade-horaria/listar-ofertas-alocaveis.use-case';
+import { GerarGradeInicialUseCase } from '@application/grade-horaria/gerar-grade-inicial.use-case';
 import {
   GradeView,
   montarGradeView,
@@ -66,6 +67,7 @@ export class GradeController {
     private readonly alterarAlocacao: AlterarAlocacaoUseCase,
     private readonly aceitarConflito: AceitarConflitoUseCase,
     private readonly listarOfertasAlocaveis: ListarOfertasAlocaveisUseCase,
+    private readonly gerarGradeInicial: GerarGradeInicialUseCase,
     @Inject(PERIODOS_REPOSITORY)
     private readonly periodos: PeriodosRepository,
   ) {}
@@ -188,6 +190,21 @@ export class GradeController {
       versao !== undefined ? Number(versao) : undefined,
     );
     return this.gradeDoPeriodo(periodoLetivoId);
+  }
+
+  /**
+   * Rascunho inicial: encaixa as ofertas alocáveis do período nos primeiros
+   * slots livres, uma alocação comum por vez (ver `gerarGradeInicial`, no
+   * domínio). Não é geração autoritativa — o resultado é só ponto de partida,
+   * totalmente editável/removível como qualquer alocação manual.
+   */
+  @Post('grade/:periodoId/gerar-inicial')
+  async gerarInicial(
+    @Param('periodoId') periodoId: string,
+    @UsuarioAtual() usuario: PayloadToken,
+  ): Promise<GradeView> {
+    await this.gerarGradeInicial.executar(periodoId, usuario.sub);
+    return this.gradeDoPeriodo(periodoId);
   }
 
   @Post('conflitos/aceite')

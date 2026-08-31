@@ -6,7 +6,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 **Chronos** — sistema web de apoio à decisão para montagem de grade horária do IFAC (campus Rio Branco), atendendo três modalidades simultâneas: superior, técnico integrado e técnico subsequente. É um TCC.
 
-Princípio central que molda toda a arquitetura: **o sistema não gera a grade e não bloqueia alocações conflitantes.** Ele registra o que a comissão de horários decidir e _sinaliza_ conflitos em tempo real. **Conflito é informação, não violação de invariante** — nunca é persistido, é sempre recalculado a partir do estado atual da grade.
+Princípio central que molda toda a arquitetura: **o sistema não gera a grade de forma autoritativa e não bloqueia alocações conflitantes.** Ele registra o que a comissão de horários decidir e _sinaliza_ conflitos em tempo real. **Conflito é informação, não violação de invariante** — nunca é persistido, é sempre recalculado a partir do estado atual da grade.
+
+Existe um gerador de **rascunho inicial** (`domain/grade-horaria/gerar-grade-inicial.ts`, exposto em `POST /grade/:periodoId/gerar-inicial`) que não contradiz esse princípio: é um algoritmo guloso simples, sem otimização, que só poupa o trabalho de arrastar manualmente as ofertas óbvias — grava alocações comuns, uma a uma, pela mesma porta que a interface usa. O resultado nunca é autoritativo: continua 100% editável/removível, o motor de conflitos roda em cima dele exatamente como rodaria em cima de qualquer alocação manual, e a comissão pode ignorar, mover ou descartar tudo. Não confundir com um solver de otimização — não existe, e não é a proposta.
 
 A linguagem ubíqua do negócio é em **português** (Turma, Oferta, Modalidade, Conflito); os nomes estruturais são em **inglês** (domain, application, infrastructure, entities). Não traduzir termos de negócio.
 

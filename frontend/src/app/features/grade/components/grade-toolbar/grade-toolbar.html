@@ -51,22 +51,47 @@
         class="rounded-full px-2.5 py-1 text-xs font-medium"
         [class]="pillForte()"
         [class.opacity-40]="!totais().FORTE"
-      >{{ totais().FORTE }} fortes</span>
+        >{{ totais().FORTE }} fortes</span
+      >
       <span
         class="rounded-full px-2.5 py-1 text-xs font-medium"
         [class]="pillPotencial()"
         [class.opacity-40]="!totais().POTENCIAL"
-      >{{ totais().POTENCIAL }} potenciais</span>
+        >{{ totais().POTENCIAL }} potenciais</span
+      >
       <span
         class="rounded-full px-2.5 py-1 text-xs font-medium"
         [class]="pillFraco()"
         [class.opacity-40]="!totais().FRACO"
-      >{{ totais().FRACO }} fracos</span>
+        >{{ totais().FRACO }} fracos</span
+      >
     </div>
+
+    @if (editavel()) {
+      <button
+        hlmBtn
+        variant="outline"
+        size="sm"
+        class="gap-1.5"
+        type="button"
+        [disabled]="gerando()"
+        (click)="gerarInicial.emit()"
+      >
+        <ng-icon name="lucideWandSparkles" size="1rem" />
+        {{ gerando() ? 'Gerando…' : 'Gerar rascunho inicial' }}
+      </button>
+    }
 
     @if (periodo(); as p) {
       @if (p.status === 'PUBLICADO') {
-        <a hlmBtn variant="outline" size="sm" class="gap-1.5" [routerLink]="['/publica', p.codigo]" target="_blank">
+        <a
+          hlmBtn
+          variant="outline"
+          size="sm"
+          class="gap-1.5"
+          [routerLink]="['/publica', p.codigo]"
+          target="_blank"
+        >
           <ng-icon name="lucideGlobe" size="1rem" />
           Grade pública
         </a>
