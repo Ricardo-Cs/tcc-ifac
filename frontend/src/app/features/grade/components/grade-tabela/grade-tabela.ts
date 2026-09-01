@@ -1,16 +1,18 @@
 import { Component, computed, input, output } from '@angular/core';
+import { CdkDragDrop, CdkDropList } from '@angular/cdk/drag-drop';
+import { CdkScrollable } from '@angular/cdk/scrolling';
 import { Aula } from '../../../../core/models/grade.models';
 import { AulaCartaoComponent } from '../aula-cartao/aula-cartao';
-import { CelulaVm, LinhaVm, DIAS, chaveCelula } from '../../grade.view';
+import { CelulaVm, ItemArrastavel, LinhaVm, DIAS, chaveCelula } from '../../grade.view';
 
-export interface EventoCelula {
+export interface EventoSoltar {
   celula: CelulaVm;
-  evento: DragEvent;
+  item: ItemArrastavel;
 }
 
 @Component({
   selector: 'app-grade-tabela',
-  imports: [AulaCartaoComponent],
+  imports: [AulaCartaoComponent, CdkDropList, CdkScrollable],
   templateUrl: './grade-tabela.html',
 })
 export class GradeTabelaComponent {
@@ -21,9 +23,9 @@ export class GradeTabelaComponent {
   readonly vendoTodos = input(false);
   readonly vendoVariasTurmas = input(false);
 
-  readonly sobrevoar = output<EventoCelula>();
-  readonly soltar = output<EventoCelula>();
-  readonly iniciarArraste = output<Aula>();
+  readonly entrarCelula = output<CelulaVm>();
+  readonly sairCelula = output<void>();
+  readonly soltar = output<EventoSoltar>();
   readonly terminarArraste = output<void>();
   readonly remover = output<Aula>();
   readonly definirSala = output<Aula>();
@@ -44,5 +46,11 @@ export class GradeTabelaComponent {
 
   ehAlvo(celula: CelulaVm): boolean {
     return this.celulaAlvo() === chaveCelula(celula.dia, celula.turno, celula.ordem);
+  }
+
+  aoSoltar(celula: CelulaVm, evento: CdkDragDrop<CelulaVm, unknown>): void {
+    const item = evento.item.data as unknown as ItemArrastavel | undefined;
+    if (!item) return;
+    this.soltar.emit({ celula, item });
   }
 }

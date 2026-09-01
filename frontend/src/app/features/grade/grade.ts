@@ -16,14 +16,16 @@ import {
   Slot,
   Turma,
 } from '../../core/models/grade.models';
+import { CdkDropListGroup } from '@angular/cdk/drag-drop';
 import { GradeToolbarComponent } from './components/grade-toolbar/grade-toolbar';
-import { GradeTabelaComponent, EventoCelula } from './components/grade-tabela/grade-tabela';
+import { GradeTabelaComponent, EventoSoltar } from './components/grade-tabela/grade-tabela';
 import { ConflitosPainelComponent } from './components/conflitos-painel/conflitos-painel';
 import { CatalogoOfertasComponent } from './components/catalogo-ofertas/catalogo-ofertas';
 import { SalaDialogComponent } from './components/sala-dialog/sala-dialog';
 import { ConfirmDialogComponent } from '../../shared/confirm-dialog/confirm-dialog';
 import { SEVERIDADE_RANK } from './severidade';
 import {
+  CelulaVm,
   ConflitoVm,
   EscopoConflitos,
   LinhaVm,
@@ -37,6 +39,7 @@ import {
 @Component({
   selector: 'app-grade',
   imports: [
+    CdkDropListGroup,
     GradeToolbarComponent,
     GradeTabelaComponent,
     ConflitosPainelComponent,
@@ -85,9 +88,6 @@ export class GradeComponent {
 
   readonly turmaSelecionada = signal<string | null>(null);
 
-  readonly arrastando = signal<Aula | null>(null);
-
-  readonly arrastandoOferta = signal<OfertaAlocavel | null>(null);
   readonly celulaAlvo = signal<string | null>(null);
 
   readonly conflitoEmFoco = signal<Conflito | null>(null);
@@ -255,42 +255,31 @@ export class GradeComponent {
 
   readonly aceitandoChave = computed(() => this.aceitando()?.chave ?? null);
 
-  aoIniciarArraste(aula: Aula): void {
-    this.arrastando.set(aula);
-  }
-
-  aoIniciarArrasteOferta(oferta: OfertaAlocavel): void {
-    this.arrastandoOferta.set(oferta);
-  }
-
   aoTerminarArraste(): void {
-    this.arrastando.set(null);
-    this.arrastandoOferta.set(null);
     this.celulaAlvo.set(null);
   }
 
-  aoSobrevoar({ celula, evento }: EventoCelula): void {
-    if (!this.arrastando() && !this.arrastandoOferta()) return;
-    evento.preventDefault();
+  aoEntrarCelula(celula: CelulaVm): void {
     this.celulaAlvo.set(chaveCelula(celula.dia, celula.turno, celula.ordem));
   }
 
-  aoSoltar({ celula, evento }: EventoCelula): void {
-    evento.preventDefault();
-    const aula = this.arrastando();
-    const oferta = this.arrastandoOferta();
+  aoSairCelula(): void {
+    this.celulaAlvo.set(null);
+  }
+
+  aoSoltar({ celula, item }: EventoSoltar): void {
+    this.celulaAlvo.set(null);
     const slotDestino = this.slotPorCelula().get(
       chaveCelula(celula.dia, celula.turno, celula.ordem),
     );
-    this.aoTerminarArraste();
     if (!slotDestino) return;
 
-    if (oferta) {
-      this.executar(() => this.api.criar(oferta.ofertaId, slotDestino.id));
+    if (item.tipo === 'oferta') {
+      this.executar(() => this.api.criar(item.oferta.ofertaId, slotDestino.id));
       return;
     }
 
-    if (!aula) return;
+    const aula = item.aula;
     if (aula.slot?.id === slotDestino.id) return;
     this.executar(() => this.api.mover(aula.id, slotDestino.id, aula.version));
   }

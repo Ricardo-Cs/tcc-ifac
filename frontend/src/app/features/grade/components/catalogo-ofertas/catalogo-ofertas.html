@@ -14,33 +14,39 @@
   </p>
   }
 
-  @for (oferta of ofertas(); track oferta.ofertaId) {
-  <div class="mb-2.5 cursor-grab rounded-lg border border-border p-2.5 active:cursor-grabbing" draggable="true"
-    (dragstart)="iniciarArraste.emit(oferta)" (dragend)="terminarArraste.emit()">
-    <div class="mb-1 flex items-start justify-between gap-2">
-      <span class="text-[0.82rem] font-medium leading-snug">
-        {{ oferta.disciplina?.nome ?? 'Disciplina sem nome' }}
-      </span>
-      <span
-        class="shrink-0 rounded bg-primary/10 px-1.5 py-0.5 text-[0.62rem] font-bold tracking-wide text-primary uppercase"
-        [title]="oferta.aulasAlocadas + ' de ' + oferta.aulasSemana + ' aulas já na grade'">
-        faltam {{ oferta.aulasRestantes }}
-      </span>
+  <div cdkDropList cdkDropListSortingDisabled [cdkDropListEnterPredicate]="aceitaOferta">
+    @for (item of itens(); track item.oferta.ofertaId) {
+    <div
+      cdkDrag
+      [cdkDragData]="item.dados"
+      [cdkDragStartDelay]="atrasoArraste"
+      (cdkDragEnded)="terminarArraste.emit()"
+      class="mb-2.5 cursor-grab rounded-lg border border-border bg-card p-2.5 active:cursor-grabbing [&.cdk-drag-placeholder]:opacity-40 [&.cdk-drag-preview]:shadow-lg">
+      <div class="mb-1 flex items-start justify-between gap-2">
+        <span class="text-[0.82rem] font-medium leading-snug">
+          {{ item.oferta.disciplina?.nome ?? 'Disciplina sem nome' }}
+        </span>
+        <span
+          class="shrink-0 rounded bg-primary/10 px-1.5 py-0.5 text-[0.62rem] font-bold tracking-wide text-primary uppercase"
+          [title]="item.oferta.aulasAlocadas + ' de ' + item.oferta.aulasSemana + ' aulas já na grade'">
+          faltam {{ item.oferta.aulasRestantes }}
+        </span>
+      </div>
+
+      @if (item.oferta.disciplina?.codigo) {
+      <p class="text-[0.7rem] text-muted-foreground">{{ item.oferta.disciplina?.codigo }}</p>
+      }
+
+      @if (item.oferta.turma) {
+      <p class="text-[0.7rem] text-muted-foreground">{{ item.oferta.turma }}</p>
+      }
+
+      @if (item.oferta.professores.length) {
+      <p class="mt-1 text-[0.72rem] leading-snug">{{ item.oferta.professores.join(', ') }}</p>
+      } @else {
+      <p class="mt-1 text-[0.72rem] italic text-muted-foreground">Sem professor definido</p>
+      }
     </div>
-
-    @if (oferta.disciplina?.codigo) {
-    <p class="text-[0.7rem] text-muted-foreground">{{ oferta.disciplina?.codigo }}</p>
-    }
-
-    @if (oferta.turma) {
-    <p class="text-[0.7rem] text-muted-foreground">{{ oferta.turma }}</p>
-    }
-
-    @if (oferta.professores.length) {
-    <p class="mt-1 text-[0.72rem] leading-snug">{{ oferta.professores.join(', ') }}</p>
-    } @else {
-    <p class="mt-1 text-[0.72rem] italic text-muted-foreground">Sem professor definido</p>
     }
   </div>
-  }
 </aside>

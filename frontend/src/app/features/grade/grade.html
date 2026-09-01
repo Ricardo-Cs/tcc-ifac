@@ -26,13 +26,13 @@
     <div class="mx-6 mt-4 text-sm text-muted-foreground">Carregando a grade…</div>
   } @else if (grade()) {
     <div
+      cdkDropListGroup
       class="grid items-start gap-5 p-6"
       [class]="periodo.editavel() ? 'lg:grid-cols-[240px_1fr_320px]' : 'lg:grid-cols-[1fr_320px]'"
     >
       @if (periodo.editavel()) {
         <app-catalogo-ofertas
           [ofertas]="ofertasCatalogo()"
-          (iniciarArraste)="aoIniciarArrasteOferta($event)"
           (terminarArraste)="aoTerminarArraste()"
         />
       }
@@ -44,9 +44,9 @@
         [idsEmFoco]="idsEmFoco()"
         [editavel]="periodo.editavel()"
         [vendoVariasTurmas]="vendoVariasTurmas()"
-        (sobrevoar)="aoSobrevoar($event)"
+        (entrarCelula)="aoEntrarCelula($event)"
+        (sairCelula)="aoSairCelula()"
         (soltar)="aoSoltar($event)"
-        (iniciarArraste)="aoIniciarArraste($event)"
         (terminarArraste)="aoTerminarArraste()"
         (remover)="remover($event)"
         (definirSala)="abrirSala($event)"

@@ -1,18 +1,20 @@
 <article
-  class="mb-1.5 flex flex-col gap-0.5 rounded-md border border-border p-1.5 text-xs leading-tight outline-none last:mb-0 focus-visible:ring-2 focus-visible:ring-ring"
+  cdkDrag
+  [cdkDragData]="dadosArraste()"
+  [cdkDragDisabled]="!editavel()"
+  [cdkDragStartDelay]="atrasoArraste"
+  (cdkDragEnded)="terminarArraste.emit()"
+  class="mb-1.5 flex flex-col gap-0.5 rounded-md border border-border p-1.5 text-xs leading-tight outline-none last:mb-0 focus-visible:ring-2 focus-visible:ring-ring [&.cdk-drag-placeholder]:opacity-40 [&.cdk-drag-preview]:shadow-lg"
   [class]="classeCartao()"
   [class.cursor-grab]="editavel()"
   [class.active:cursor-grabbing]="editavel()"
   [class.ring-2]="emFoco()"
   [class.ring-ring]="emFoco()"
-  [attr.draggable]="editavel()"
   [attr.tabindex]="temConflito() ? 0 : null"
   [hlmTooltip]="mensagemConflito()"
   [tooltipDisabled]="!temConflito()"
   position="top"
   [showDelay]="150"
-  (dragstart)="iniciarArraste.emit(aula())"
-  (dragend)="terminarArraste.emit()"
 >
   <div class="flex items-center justify-between gap-1">
     <span class="flex items-center gap-1">

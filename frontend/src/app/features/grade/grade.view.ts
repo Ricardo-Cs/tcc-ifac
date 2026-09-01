@@ -1,7 +1,13 @@
-import { Aula, Conflito, Severidade, Slot } from '../../core/models/grade.models';
+import { Aula, Conflito, OfertaAlocavel, Severidade, Slot } from '../../core/models/grade.models';
 import { SEVERIDADE_RANK } from './severidade';
 
 export const TODAS_AS_TURMAS = '__todas__';
+
+export const ATRASO_ARRASTE = { touch: 220, mouse: 0 };
+
+export type ItemArrastavel =
+  | { tipo: 'aula'; aula: Aula }
+  | { tipo: 'oferta'; oferta: OfertaAlocavel };
 
 export const DIAS = [
   { num: 1, nome: 'Segunda' },
