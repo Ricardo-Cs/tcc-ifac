@@ -282,9 +282,20 @@ reunião de 05/08/2026 (grupos mantidos + descontos anotados, tudo manual).
 
 ## B6. Loader do snapshot
 
-20. Ao carregar um período 20XX.2, incluir as ofertas ANUAIS que começaram em
-    20XX.1 do mesmo ano (com suas alocações) — o professor do integrado está
-    de fato ocupado naqueles slots nos dois semestres.
+20. FEITA (01/set/2026): ao carregar um período 20XX.2, o loader agora inclui
+    as ofertas ANUAIS que começaram em 20XX.1 do mesmo ano (com suas alocações
+    e professores) no snapshot — o professor do integrado aparece de fato
+    ocupado naqueles slots nos dois semestres, tanto para o motor de conflitos
+    quanto na grade exibida. `SqlSnapshotLoader.carregar` resolve o período
+    anterior (mesmo ano, semestre 1) e só dispara as 3 queries extras
+    (`oferta_disciplina`/`alocacao_aula`/`professor_oferta` filtradas por
+    `regime = 'ANUAL'`) quando o período pedido é semestre 2. Ponta solta: as
+    alocações trazidas do semestre anterior pertencem àquele período para fins
+    de edição — `PeriodoEditavelGuard` bloqueará tentativas de mover/remover
+    essas células enquanto o período ativo for o 2, mesmo que a interface as
+    mostre juntas na mesma grade (mesmo padrão de "read-only só reflete no
+    front" já aceito em outros pontos do sistema). Não validado ao vivo (sem
+    Postgres no ambiente do agente).
 
 ## B7. Sequência já planejada (inalterada, reordenada com o novo escopo)
 

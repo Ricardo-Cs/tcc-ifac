@@ -23,27 +23,26 @@ import {
 } from '../../../domain/grade-horaria/snapshot';
 import { SnapshotLoader } from '@domain/grade-horaria/ports';
 
-/**
- * Loader do snapshot em SQL cru (`persistence/sql/`). Carrega o período inteiro
- * em poucas queries chatas e devolve os DADOS BRUTOS — quem deriva os índices é
- * `construirSnapshot` no domínio, para que a coerência índice↔alocação viva num
- * lugar só. SQL em vez de repositório com relações: a carga do snapshot é um
- * read model plano; hidratar entidades com joins profundos custaria mais e não
- * traria nada.
- *
- * Os nomes de coluna são snake_case porque a `SnakeNamingStrategy` mapeia as
- * relações (`oferta` -> `oferta_id`, `slotHorario` -> `slot_horario_id`) e os
- * campos camelCase (`grupoBloco` -> `grupo_bloco`) assim. Se uma entidade for
- * renomeada, é aqui que o SQL precisa acompanhar.
- *
- * Escopo protótipo: carrega SÓ o período pedido. Trazer as ofertas ANUAIS do
- * semestre anterior do mesmo ano (item B6/20 do backlog) fica para depois.
- */
 @Injectable()
 export class SqlSnapshotLoader implements SnapshotLoader {
   constructor(@InjectDataSource() private readonly dataSource: DataSource) {}
 
   async carregar(periodoLetivoId: string): Promise<DadosSnapshot> {
+    const periodoRows = await this.dataSource.query(
+      `SELECT ano, semestre FROM periodo_letivo WHERE id = $1`,
+      [periodoLetivoId],
+    );
+    const periodoAtual = periodoRows[0];
+
+    let periodoAnteriorId: string | null = null;
+    if (periodoAtual && Number(periodoAtual.semestre) === 2) {
+      const anterioresRows = await this.dataSource.query(
+        `SELECT id FROM periodo_letivo WHERE ano = $1 AND semestre = 1`,
+        [periodoAtual.ano],
+      );
+      periodoAnteriorId = anterioresRows[0]?.id ?? null;
+    }
+
     const [
       alocacoesRows,
       ofertasRows,
@@ -56,6 +55,9 @@ export class SqlSnapshotLoader implements SnapshotLoader {
       slotsRows,
       restricoesRows,
       coletaRows,
+      ofertasAnuaisRows,
+      alocacoesAnuaisRows,
+      profOfertaAnuaisRows,
     ] = await Promise.all([
       this.dataSource.query(
         `SELECT id, oferta_id, slot_horario_id, sala_id, grupo_bloco, version
@@ -76,8 +78,6 @@ export class SqlSnapshotLoader implements SnapshotLoader {
           WHERE o.periodo_letivo_id = $1`,
         [periodoLetivoId],
       ),
-      // Tabelas de referência (professores, turmas, cursos, disciplinas, salas,
-      // slots) são pequenas — carregar inteiras evita joins e é barato num campus.
       this.dataSource.query(
         `SELECT id, nome, grupo_regime, ajuste_carga_horas, ajuste_carga_motivo
            FROM professor`,
@@ -105,21 +105,49 @@ export class SqlSnapshotLoader implements SnapshotLoader {
         `SELECT 1 FROM coleta_restricao WHERE periodo_letivo_id = $1 LIMIT 1`,
         [periodoLetivoId],
       ),
+      periodoAnteriorId
+        ? this.dataSource.query(
+            `SELECT id, turma_id, disciplina_id, aulas_semana
+               FROM oferta_disciplina
+              WHERE periodo_letivo_id = $1 AND regime = 'ANUAL'`,
+            [periodoAnteriorId],
+          )
+        : Promise.resolve([]),
+      periodoAnteriorId
+        ? this.dataSource.query(
+            `SELECT a.id, a.oferta_id, a.slot_horario_id, a.sala_id, a.grupo_bloco, a.version
+               FROM alocacao_aula a
+               JOIN oferta_disciplina o ON o.id = a.oferta_id
+              WHERE o.periodo_letivo_id = $1 AND o.regime = 'ANUAL'`,
+            [periodoAnteriorId],
+          )
+        : Promise.resolve([]),
+      periodoAnteriorId
+        ? this.dataSource.query(
+            `SELECT po.oferta_id, po.professor_id, po.proporcao_carga
+               FROM professor_oferta po
+               JOIN oferta_disciplina o ON o.id = po.oferta_id
+              WHERE o.periodo_letivo_id = $1 AND o.regime = 'ANUAL'`,
+            [periodoAnteriorId],
+          )
+        : Promise.resolve([]),
     ]);
 
-    // Participações agrupadas por oferta, para montar OfertaSnapshot.professores.
+    const todasOfertasRows = [...ofertasRows, ...ofertasAnuaisRows];
+    const todasAlocacoesRows = [...alocacoesRows, ...alocacoesAnuaisRows];
+    const todasProfOfertaRows = [...profOfertaRows, ...profOfertaAnuaisRows];
+
     const participacoesPorOferta = new Map<Id, ParticipacaoProfessor[]>();
-    for (const row of profOfertaRows) {
+    for (const row of todasProfOfertaRows) {
       const lista = participacoesPorOferta.get(row.oferta_id) ?? [];
       lista.push({
         professorId: row.professor_id,
-        // proporcao_carga é numeric => o driver devolve string.
         proporcaoCarga: parseFloat(row.proporcao_carga),
       });
       participacoesPorOferta.set(row.oferta_id, lista);
     }
 
-    const alocacoes: AlocacaoSnapshot[] = alocacoesRows.map((row) => ({
+    const alocacoes: AlocacaoSnapshot[] = todasAlocacoesRows.map((row) => ({
       id: row.id,
       ofertaId: row.oferta_id,
       slotId: row.slot_horario_id,
@@ -129,7 +157,7 @@ export class SqlSnapshotLoader implements SnapshotLoader {
     }));
 
     const ofertas = new Map<Id, OfertaSnapshot>(
-      ofertasRows.map((row) => [
+      todasOfertasRows.map((row) => [
         row.id,
         {
           id: row.id,
