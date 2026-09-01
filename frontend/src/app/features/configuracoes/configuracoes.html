@@ -41,8 +41,62 @@
         }
       </div>
 
+      <form class="mt-5 grid gap-4" (ngSubmit)="salvarPerfil()">
+        @if (erroPerfil()) {
+          <div
+            class="flex items-start gap-2 rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-xs text-destructive"
+          >
+            <ng-icon name="lucideCircleAlert" size="0.9rem" class="mt-0.5 shrink-0" />
+            <span>{{ erroPerfil() }}</span>
+          </div>
+        }
+
+        <div class="grid gap-4 sm:grid-cols-2">
+          <div class="grid gap-1.5">
+            <label
+              class="text-[0.7rem] font-semibold uppercase tracking-wide text-muted-foreground"
+              for="cfg-nome"
+              >Nome</label
+            >
+            <input
+              hlmInput
+              id="cfg-nome"
+              type="text"
+              [ngModel]="nome()"
+              name="nome"
+              (ngModelChange)="nome.set($event)"
+            />
+          </div>
+
+          <div class="grid gap-1.5">
+            <label
+              class="text-[0.7rem] font-semibold uppercase tracking-wide text-muted-foreground"
+              for="cfg-email"
+              >E-mail</label
+            >
+            <input
+              hlmInput
+              id="cfg-email"
+              type="email"
+              [ngModel]="email()"
+              name="email"
+              (ngModelChange)="email.set($event)"
+            />
+          </div>
+        </div>
+
+        <button
+          hlmBtn
+          type="submit"
+          class="h-9 w-fit"
+          [disabled]="salvandoPerfil()"
+        >
+          {{ salvandoPerfil() ? 'Salvando…' : 'Salvar' }}
+        </button>
+      </form>
+
       <p class="mt-4 text-xs text-muted-foreground">
-        Nome, e-mail e papel são definidos pelo administrador do sistema.
+        O papel é definido pelo administrador do sistema.
       </p>
     </section>
 

@@ -1,5 +1,11 @@
-import { ApiProperty } from '@nestjs/swagger';
-import { IsEmail, IsNotEmpty, MaxLength, MinLength } from 'class-validator';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import {
+  IsEmail,
+  IsNotEmpty,
+  IsOptional,
+  MaxLength,
+  MinLength,
+} from 'class-validator';
 import { PapelUsuario } from '@domain/comum/enums';
 import { Usuario } from '@domain/comum/usuario';
 
@@ -47,6 +53,20 @@ export class UsuarioResponseDto {
     dto.senhaProvisoria = usuario.senhaProvisoria;
     return dto;
   }
+}
+
+export class AtualizarPerfilDto {
+  @ApiPropertyOptional({ example: 'Maria Silva', maxLength: 255 })
+  @IsOptional()
+  @IsNotEmpty({ message: 'O nome não pode ficar em branco.' })
+  @MaxLength(255)
+  nome?: string;
+
+  @ApiPropertyOptional({ example: 'maria.silva@ifac.edu.br', maxLength: 255 })
+  @IsOptional()
+  @IsEmail({}, { message: 'Informe um e-mail válido.' })
+  @MaxLength(255)
+  email?: string;
 }
 
 export class TrocarSenhaDto {

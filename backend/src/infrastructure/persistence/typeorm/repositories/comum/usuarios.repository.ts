@@ -2,6 +2,7 @@ import { ConflictException, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import {
+  AtualizarPerfilInput,
   AtualizarUsuarioInput,
   CriarUsuarioInput,
   Usuario,
@@ -51,6 +52,13 @@ export class TypeormUsuariosRepository
       { id },
       { senha: senhaHash, senhaProvisoria: false },
     );
+  }
+
+  atualizarPerfil(
+    id: string,
+    dados: AtualizarPerfilInput,
+  ): Promise<Usuario | null> {
+    return this.atualizar(id, dados);
   }
 
   async listar(): Promise<Usuario[]> {

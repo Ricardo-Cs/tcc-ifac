@@ -14,11 +14,20 @@ export type UsuarioComSenha = Usuario & { senhaHash: string };
 export const SENHA_PADRAO_INICIAL = 'senha123';
 
 export const USUARIOS_AUTH_REPOSITORY = Symbol('USUARIOS_AUTH_REPOSITORY');
+export interface AtualizarPerfilInput {
+  nome?: string;
+  email?: string;
+}
+
 export interface UsuariosAuthRepository {
   buscarPorEmail(email: string): Promise<UsuarioComSenha | null>;
   buscarPorId(id: string): Promise<Usuario | null>;
   buscarPorIdComSenha(id: string): Promise<UsuarioComSenha | null>;
   trocarSenha(id: string, senhaHash: string): Promise<void>;
+  atualizarPerfil(
+    id: string,
+    dados: AtualizarPerfilInput,
+  ): Promise<Usuario | null>;
 }
 
 export const SENHA_HASHER = Symbol('SENHA_HASHER');

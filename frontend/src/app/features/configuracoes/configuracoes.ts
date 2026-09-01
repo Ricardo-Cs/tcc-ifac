@@ -58,6 +58,36 @@ export class ConfiguracoesComponent {
     return (partes[0][0] + (partes[1]?.[0] ?? '')).toUpperCase();
   });
 
+  readonly nome = signal(this.usuario()?.nome ?? '');
+  readonly email = signal(this.usuario()?.email ?? '');
+  readonly salvandoPerfil = signal(false);
+  readonly erroPerfil = signal<string | null>(null);
+
+  salvarPerfil(): void {
+    const nome = this.nome().trim();
+    const email = this.email().trim();
+    if (!nome || !email) {
+      this.erroPerfil.set('Preencha nome e e-mail.');
+      return;
+    }
+    this.erroPerfil.set(null);
+
+    this.salvandoPerfil.set(true);
+    this.api.atualizarPerfil({ nome, email }).subscribe({
+      next: (usuario) => {
+        this.sessao.atualizarUsuario(usuario);
+        this.nome.set(usuario.nome);
+        this.email.set(usuario.email);
+        this.salvandoPerfil.set(false);
+        this.toast.sucesso('Perfil atualizado com sucesso');
+      },
+      error: (erro: unknown) => {
+        this.salvandoPerfil.set(false);
+        this.erroPerfil.set(mensagemErro(erro, 'Não foi possível atualizar o perfil.'));
+      },
+    });
+  }
+
   readonly senhaAtual = signal('');
   readonly novaSenha = signal('');
   readonly confirmacao = signal('');

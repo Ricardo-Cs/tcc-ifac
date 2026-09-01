@@ -294,8 +294,8 @@ reunião de 05/08/2026 (grupos mantidos + descontos anotados, tudo manual).
     de edição — `PeriodoEditavelGuard` bloqueará tentativas de mover/remover
     essas células enquanto o período ativo for o 2, mesmo que a interface as
     mostre juntas na mesma grade (mesmo padrão de "read-only só reflete no
-    front" já aceito em outros pontos do sistema). Não validado ao vivo (sem
-    Postgres no ambiente do agente).
+    front" já aceito em outros pontos do sistema). Validado ao vivo pelo
+    usuário em 01/set/2026.
 
 ## B7. Sequência já planejada (inalterada, reordenada com o novo escopo)
 

@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   Body,
   Controller,
   Get,
@@ -9,6 +10,7 @@ import {
 } from '@nestjs/common';
 import {
   ApiBearerAuth,
+  ApiConflictResponse,
   ApiNoContentResponse,
   ApiOkResponse,
   ApiOperation,
@@ -18,6 +20,7 @@ import {
 import { AuthService } from '@application/auth/auth.service';
 import type { PayloadToken } from '@application/auth/auth.service';
 import {
+  AtualizarPerfilDto,
   LoginDto,
   LoginResponseDto,
   TrocarSenhaDto,
@@ -52,6 +55,25 @@ export class AuthController {
   async me(@UsuarioAtual() atual: PayloadToken): Promise<UsuarioResponseDto> {
     return UsuarioResponseDto.fromDomain(
       await this.auth.usuarioAtual(atual.sub),
+    );
+  }
+
+  @Patch('me')
+  @ApiBearerAuth()
+  @ApiOperation({
+    summary: 'Atualiza nome e/ou e-mail do usuário autenticado.',
+  })
+  @ApiOkResponse({ type: UsuarioResponseDto })
+  @ApiConflictResponse({ description: 'Já existe usuário com esse e-mail.' })
+  async atualizarPerfil(
+    @Body() dto: AtualizarPerfilDto,
+    @UsuarioAtual() atual: PayloadToken,
+  ): Promise<UsuarioResponseDto> {
+    if (dto.nome === undefined && dto.email === undefined) {
+      throw new BadRequestException('Informe nome e/ou email.');
+    }
+    return UsuarioResponseDto.fromDomain(
+      await this.auth.atualizarPerfil(atual.sub, dto),
     );
   }
 

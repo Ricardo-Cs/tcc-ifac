@@ -6,6 +6,7 @@ import {
   Usuario,
 } from '@domain/comum/usuario';
 import type {
+  AtualizarPerfilInput,
   SenhaHasher,
   UsuariosAuthRepository,
 } from '@domain/comum/usuario';
@@ -61,6 +62,17 @@ export class AuthService {
   async usuarioAtual(id: string): Promise<Usuario> {
     const usuario = await this.usuarios.buscarPorId(id);
     if (!usuario || !usuario.ativo) {
+      throw new UnauthorizedException('Sessão inválida.');
+    }
+    return usuario;
+  }
+
+  async atualizarPerfil(
+    id: string,
+    dados: AtualizarPerfilInput,
+  ): Promise<Usuario> {
+    const usuario = await this.usuarios.atualizarPerfil(id, dados);
+    if (!usuario) {
       throw new UnauthorizedException('Sessão inválida.');
     }
     return usuario;
