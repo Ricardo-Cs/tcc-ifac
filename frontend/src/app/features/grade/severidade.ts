@@ -43,8 +43,6 @@ const TIPO_ROTULO: Record<string, string> = {
   CARGA_SEMANAL_EXCEDIDA: 'Carga semanal excedida',
   RESTRICAO_NAO_IMPORTADA: 'Coleta não importada',
   CARGA_OFERTA_INCOMPLETA: 'Carga da oferta incompleta',
-  CAPACIDADE_SALA_INSUFICIENTE: 'Sala pequena para a turma',
-  TIPO_SALA_INADEQUADO: 'Tipo de sala inadequado',
   HORARIO_NAO_PREFERIDO: 'Horário não preferido',
   INTERJORNADA_VIOLADA: 'Descanso entre dias',
   INTRAJORNADA_VIOLADA: 'Intervalo entre turnos',

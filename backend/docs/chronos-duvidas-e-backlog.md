@@ -303,10 +303,14 @@ reunião de 05/08/2026 (grupos mantidos + descontos anotados, tudo manual).
     codocência Flavio/Marlon, sala dupla LAB 3/LAB 4, geminadas como norma,
     slots com intervalo entre 3º e 4º). Incluir os casos das três modalidades
     e as situações conflitantes de propósito.
-22. Regras restantes do plano original: restrição violada, capacidade/tipo
-    de sala. (Sala ocupada — FEITA. Carga de oferta incompleta — CANCELADA:
-    o catálogo de ofertas alocáveis já mostra "faltam N" por oferta, torna
-    a regra redundante.)
+22. Regras restantes do plano original: nenhuma. (Sala ocupada e restrição
+    violada — FEITAS. Carga de oferta incompleta — CANCELADA: o catálogo de
+    ofertas alocáveis já mostra "faltam N" por oferta, torna a regra
+    redundante. Capacidade e tipo de sala — CANCELADAS (02/set/2026, decisão
+    do usuário): não serão necessárias; os valores `CAPACIDADE_SALA_INSUFICIENTE`
+    e `TIPO_SALA_INADEQUADO` foram removidos do enum `TipoConflito` e do rótulo
+    do front. `sala.capacidade` e `disciplina.tipoSalaRequerido` continuam no
+    cadastro como informação para a comissão — só deixaram de virar conflito.)
 23. Loader do snapshot (SQL cru em persistence/sql/).
 24. Endpoints: GET /grade/:periodoId, POST /simular, POST /alocacoes.
 25. Estados do período + trava de publicação (usa B1.8). ATENÇÃO: ver a NOTA
