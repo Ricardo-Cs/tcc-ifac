@@ -19,6 +19,7 @@ import {
   Disciplina,
   Oferta,
   Professor,
+  ResultadoImportacaoProfessores,
   Sala,
   Turma,
 } from '../models/academico.models';
@@ -26,7 +27,6 @@ import {
 @Injectable({ providedIn: 'root' })
 export class AcademicoApi {
   private readonly http = inject(HttpClient);
-
 
   listarCursos(): Observable<Curso[]> {
     return this.http.get<Curso[]>(`${API_BASE}/cursos`);
@@ -44,7 +44,6 @@ export class AcademicoApi {
     return this.http.delete<void>(`${API_BASE}/cursos/${id}`);
   }
 
-
   listarProfessores(): Observable<Professor[]> {
     return this.http.get<Professor[]>(`${API_BASE}/professores`);
   }
@@ -53,10 +52,7 @@ export class AcademicoApi {
     return this.http.post<Professor>(`${API_BASE}/professores`, dados);
   }
 
-  atualizarProfessor(
-    id: string,
-    dados: AtualizarProfessor,
-  ): Observable<Professor> {
+  atualizarProfessor(id: string, dados: AtualizarProfessor): Observable<Professor> {
     return this.http.patch<Professor>(`${API_BASE}/professores/${id}`, dados);
   }
 
@@ -64,6 +60,14 @@ export class AcademicoApi {
     return this.http.delete<void>(`${API_BASE}/professores/${id}`);
   }
 
+  importarProfessores(arquivo: File): Observable<ResultadoImportacaoProfessores> {
+    const formData = new FormData();
+    formData.append('arquivo', arquivo);
+    return this.http.post<ResultadoImportacaoProfessores>(
+      `${API_BASE}/professores/importar`,
+      formData,
+    );
+  }
 
   listarDisciplinas(): Observable<Disciplina[]> {
     return this.http.get<Disciplina[]>(`${API_BASE}/disciplinas`);
@@ -73,17 +77,13 @@ export class AcademicoApi {
     return this.http.post<Disciplina>(`${API_BASE}/disciplinas`, dados);
   }
 
-  atualizarDisciplina(
-    id: string,
-    dados: AtualizarDisciplina,
-  ): Observable<Disciplina> {
+  atualizarDisciplina(id: string, dados: AtualizarDisciplina): Observable<Disciplina> {
     return this.http.patch<Disciplina>(`${API_BASE}/disciplinas/${id}`, dados);
   }
 
   removerDisciplina(id: string): Observable<void> {
     return this.http.delete<void>(`${API_BASE}/disciplinas/${id}`);
   }
-
 
   listarTurmas(): Observable<Turma[]> {
     return this.http.get<Turma[]>(`${API_BASE}/turmas`);
@@ -101,7 +101,6 @@ export class AcademicoApi {
     return this.http.delete<void>(`${API_BASE}/turmas/${id}`);
   }
 
-
   listarSalas(): Observable<Sala[]> {
     return this.http.get<Sala[]>(`${API_BASE}/salas`);
   }
@@ -117,7 +116,6 @@ export class AcademicoApi {
   removerSala(id: string): Observable<void> {
     return this.http.delete<void>(`${API_BASE}/salas/${id}`);
   }
-
 
   listarOfertas(periodoLetivoId?: string): Observable<Oferta[]> {
     const params = periodoLetivoId

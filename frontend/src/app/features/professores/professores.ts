@@ -1,14 +1,18 @@
 import { Component, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { NgIcon, provideIcons } from '@ng-icons/core';
-import { lucidePencil, lucideTrash2, lucideUsers } from '@ng-icons/lucide';
+import { lucidePencil, lucideTrash2, lucideUpload, lucideUsers } from '@ng-icons/lucide';
 import { HlmButton } from '@spartan-ng/helm/button';
 import { HlmInput } from '@spartan-ng/helm/input';
 import { HlmSelectImports } from '@spartan-ng/helm/select';
 import { AcademicoApi } from '../../core/api/academico-api';
 import { mensagemErro } from '../../core/api/erro-http';
 import { formatarHoras } from '../../core/format/horas';
-import { GrupoRegime, Professor } from '../../core/models/academico.models';
+import {
+  GrupoRegime,
+  Professor,
+  ResultadoImportacaoProfessores,
+} from '../../core/models/academico.models';
 import { ToastService } from '../../core/toast';
 import { ConfirmDialogComponent } from '../../shared/confirm-dialog/confirm-dialog';
 import { FormDialogComponent } from '../../shared/form-dialog/form-dialog';
@@ -27,7 +31,7 @@ const REGIMES = [
 
 interface RascunhoProfessor {
   nome: string;
-  siape: string;
+  identificador: string;
   email: string;
   titulacao: string;
   grupoRegime: GrupoRegime | '';
@@ -35,7 +39,7 @@ interface RascunhoProfessor {
 
 const RASCUNHO_VAZIO: RascunhoProfessor = {
   nome: '',
-  siape: '',
+  identificador: '',
   email: '',
   titulacao: '',
   grupoRegime: '',
@@ -54,7 +58,7 @@ const RASCUNHO_VAZIO: RascunhoProfessor = {
     ListagemLinhaDirective,
     ...HlmSelectImports,
   ],
-  providers: [provideIcons({ lucidePencil, lucideTrash2, lucideUsers })],
+  providers: [provideIcons({ lucidePencil, lucideTrash2, lucideUpload, lucideUsers })],
   templateUrl: './professores.html',
 })
 export class ProfessoresComponent {
@@ -68,7 +72,7 @@ export class ProfessoresComponent {
 
   readonly colunas: ColunaListagem[] = [
     { rotulo: 'Nome' },
-    { rotulo: 'SIAPE', largura: 'w-40' },
+    { rotulo: 'Identificador', largura: 'w-40' },
     { rotulo: 'Regime', largura: 'w-40' },
     { rotulo: 'Carga atual', largura: 'w-32' },
     { rotulo: 'Status', largura: 'w-32' },
@@ -79,7 +83,7 @@ export class ProfessoresComponent {
     { chave: 'regime', rotulo: 'Regime', valor: (p) => this.rotuloRegime(p.grupoRegime) },
   ];
 
-  readonly textoBusca = (p: Professor): string => `${p.nome} ${p.siape}`;
+  readonly textoBusca = (p: Professor): string => `${p.nome} ${p.identificador}`;
 
   constructor() {
     this.carregar();
@@ -93,8 +97,8 @@ export class ProfessoresComponent {
     });
   }
 
-  readonly rotuloRegime = (valor: string): string =>
-    REGIMES.find((r) => r.valor === valor)?.rotulo ?? valor;
+  readonly rotuloRegime = (valor: string | null): string =>
+    valor ? (REGIMES.find((r) => r.valor === valor)?.rotulo ?? valor) : 'Não informado';
 
   iniciais(nome: string): string {
     const partes = nome.trim().split(/\s+/);
@@ -125,18 +129,72 @@ export class ProfessoresComponent {
     this.dialogAberto.set(true);
   }
 
+  readonly importarAberto = signal(false);
+  readonly importando = signal(false);
+  readonly arquivoImportar = signal<File | null>(null);
+  readonly erroImportar = signal<string | null>(null);
+  readonly resultadoImportar = signal<ResultadoImportacaoProfessores | null>(null);
+
   abrirImportar(): void {
-    this.toast.aviso('Funcionalidade de importar ainda não implementada...');
+    this.arquivoImportar.set(null);
+    this.erroImportar.set(null);
+    this.resultadoImportar.set(null);
+    this.importarAberto.set(true);
+  }
+
+  fecharImportar(): void {
+    this.importarAberto.set(false);
+  }
+
+  selecionarArquivo(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const arquivo = input.files?.[0] ?? null;
+    this.arquivoImportar.set(arquivo);
+    this.erroImportar.set(null);
+    this.resultadoImportar.set(null);
+  }
+
+  confirmarImportar(): void {
+    const arquivo = this.arquivoImportar();
+    if (!arquivo) {
+      this.erroImportar.set('Selecione um arquivo CSV ou XLSX.');
+      return;
+    }
+    this.erroImportar.set(null);
+    this.importando.set(true);
+
+    this.api.importarProfessores(arquivo).subscribe({
+      next: (resultado) => {
+        this.importando.set(false);
+        this.resultadoImportar.set(resultado);
+        this.carregar();
+        if (resultado.erros.length === 0) {
+          this.toast.sucesso(
+            `${resultado.criados} criado(s), ${resultado.atualizados} atualizado(s)`,
+          );
+          this.fecharImportar();
+        } else {
+          this.toast.aviso(
+            `${resultado.erros.length} linha(s) com erro`,
+            `${resultado.criados} criado(s), ${resultado.atualizados} atualizado(s)`,
+          );
+        }
+      },
+      error: (err) => {
+        this.importando.set(false);
+        this.erroImportar.set(mensagemErro(err, 'Não foi possível importar o arquivo.'));
+      },
+    });
   }
 
   editar(professor: Professor): void {
     this.editando.set(professor);
     this.rascunho.set({
       nome: professor.nome,
-      siape: professor.siape,
+      identificador: professor.identificador,
       email: professor.email ?? '',
       titulacao: professor.titulacao ?? '',
-      grupoRegime: professor.grupoRegime,
+      grupoRegime: professor.grupoRegime ?? '',
     });
     this.erroForm.set(null);
     this.dialogAberto.set(true);
@@ -149,23 +207,19 @@ export class ProfessoresComponent {
   salvar(): void {
     const r = this.rascunho();
     const nome = r.nome.trim();
-    const siape = r.siape.trim();
-    if (!nome || !siape || !r.grupoRegime) {
-      this.erroForm.set('Nome, SIAPE e regime são obrigatórios.');
-      return;
-    }
-    if (!/^\d{7,8}$/.test(siape)) {
-      this.erroForm.set('O SIAPE deve ter 7 ou 8 dígitos.');
+    const identificador = r.identificador.trim();
+    if (!nome || !identificador) {
+      this.erroForm.set('Nome e identificador são obrigatórios.');
       return;
     }
     this.erroForm.set(null);
 
     const dados = {
       nome,
-      siape,
+      identificador,
       email: r.email.trim() || null,
       titulacao: r.titulacao.trim() || null,
-      grupoRegime: r.grupoRegime,
+      grupoRegime: r.grupoRegime || null,
     };
     const alvo = this.editando();
     this.salvando.set(true);

@@ -6,11 +6,14 @@ import {
   IsInt,
   IsNotEmpty,
   IsOptional,
-  Matches,
   MaxLength,
 } from 'class-validator';
 import { GrupoRegime } from '@domain/academico/enums';
 import { Professor } from '@domain/academico/professor';
+import {
+  ErroImportacaoProfessor,
+  ResultadoImportacaoProfessores,
+} from '@application/academico/importar-professores.use-case';
 
 export class CriarProfessorDto {
   @ApiProperty({ example: 'Maria Silva', maxLength: 255 })
@@ -25,27 +28,32 @@ export class CriarProfessorDto {
   email?: string | null;
 
   @ApiProperty({
-    description: 'Matrícula SIAPE — 7 ou 8 dígitos. Único no sistema.',
+    description:
+      'Identificador do professor na origem dos dados (SIAPE, matrícula do ' +
+      'SUAP ou equivalente). Único no sistema.',
     example: '1234567',
+    maxLength: 50,
   })
   @IsNotEmpty()
-  @Matches(/^\d{7,8}$/, {
-    message: 'siape deve conter 7 ou 8 dígitos.',
-  })
-  siape: string;
+  @MaxLength(50)
+  identificador: string;
 
   @ApiPropertyOptional({ example: 'Doutorado', maxLength: 100, nullable: true })
   @IsOptional()
   @MaxLength(100)
   titulacao?: string | null;
 
-  @ApiProperty({
+  @ApiPropertyOptional({
     enum: GrupoRegime,
-    description: 'Grupo de regime de trabalho (RAD, Arts. 14-15).',
+    description:
+      'Grupo de regime de trabalho (RAD, Arts. 14-15). Ausente quando a ' +
+      'origem dos dados não informa o regime.',
     example: GrupoRegime.G1,
+    nullable: true,
   })
+  @IsOptional()
   @IsEnum(GrupoRegime)
-  grupoRegime: GrupoRegime;
+  grupoRegime?: GrupoRegime | null;
 
   @ApiPropertyOptional({
     description:
@@ -84,13 +92,13 @@ export class ProfessorResponseDto {
   email: string | null;
 
   @ApiProperty()
-  siape: string;
+  identificador: string;
 
   @ApiProperty({ nullable: true, type: String })
   titulacao: string | null;
 
-  @ApiProperty({ enum: GrupoRegime })
-  grupoRegime: GrupoRegime;
+  @ApiProperty({ enum: GrupoRegime, nullable: true })
+  grupoRegime: GrupoRegime | null;
 
   @ApiProperty({ nullable: true, type: Number })
   ajusteCargaHoras: number | null;
@@ -114,13 +122,57 @@ export class ProfessorResponseDto {
     dto.id = professor.id;
     dto.nome = professor.nome;
     dto.email = professor.email;
-    dto.siape = professor.siape;
+    dto.identificador = professor.identificador;
     dto.titulacao = professor.titulacao;
     dto.grupoRegime = professor.grupoRegime;
     dto.ajusteCargaHoras = professor.ajusteCargaHoras;
     dto.ajusteCargaMotivo = professor.ajusteCargaMotivo;
     dto.ativo = professor.ativo;
     dto.cargaHorariaAtual = professor.cargaHorariaAtual;
+    return dto;
+  }
+}
+
+export class ErroImportacaoProfessorDto {
+  @ApiProperty({
+    description: 'Número da linha na planilha (cabeçalho = linha 1).',
+  })
+  linha: number;
+
+  @ApiProperty()
+  motivo: string;
+
+  static fromDomain(erro: ErroImportacaoProfessor): ErroImportacaoProfessorDto {
+    const dto = new ErroImportacaoProfessorDto();
+    dto.linha = erro.linha;
+    dto.motivo = erro.motivo;
+    return dto;
+  }
+}
+
+export class ImportarProfessoresResponseDto {
+  @ApiProperty()
+  totalLinhas: number;
+
+  @ApiProperty()
+  criados: number;
+
+  @ApiProperty()
+  atualizados: number;
+
+  @ApiProperty({ type: ErroImportacaoProfessorDto, isArray: true })
+  erros: ErroImportacaoProfessorDto[];
+
+  static fromDomain(
+    resultado: ResultadoImportacaoProfessores,
+  ): ImportarProfessoresResponseDto {
+    const dto = new ImportarProfessoresResponseDto();
+    dto.totalLinhas = resultado.totalLinhas;
+    dto.criados = resultado.criados;
+    dto.atualizados = resultado.atualizados;
+    dto.erros = resultado.erros.map((erro) =>
+      ErroImportacaoProfessorDto.fromDomain(erro),
+    );
     return dto;
   }
 }

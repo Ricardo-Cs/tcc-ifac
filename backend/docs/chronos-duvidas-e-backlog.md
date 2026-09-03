@@ -311,6 +311,19 @@ reunião de 05/08/2026 (grupos mantidos + descontos anotados, tudo manual).
     e `TIPO_SALA_INADEQUADO` foram removidos do enum `TipoConflito` e do rótulo
     do front. `sala.capacidade` e `disciplina.tipoSalaRequerido` continuam no
     cadastro como informação para a comissão — só deixaram de virar conflito.)
+    FAXINA DO ENUM (02/set/2026): na mesma leva saíram `CARGA_SEMANAL_EXCEDIDA`,
+    `CARGA_OFERTA_INCOMPLETA` (ambas canceladas em 26/ago), `RESTRICAO_NAO_IMPORTADA`
+    (nunca usada) e `HORARIO_NAO_PREFERIDO`. O enum `TipoConflito` agora tem
+    exatamente os 8 valores que as 8 regras registradas emitem.
+    Sobre `HORARIO_NAO_PREFERIDO` — se a preferência ("posso, mas prefiro não",
+    distinta do impedimento que `RESTRICAO_VIOLADA` já cobre em dois graus) um dia
+    for coletada pelo formulário, ela entra como TERCEIRA SEVERIDADE (`FRACO`) de
+    `RESTRICAO_VIOLADA`, NÃO como tipo próprio: `chaveConflito` é
+    `tipo :: contexto :: participantes` e deixa a severidade de fora de propósito,
+    então um tipo separado faria a chave mudar quando a mesma restrição fosse
+    reclassificada sem a aula sair do slot — e o aceite dado antes se perderia.
+    Exigiria também um terceiro estado no lugar de `restricao_professor.amparoLegal`
+    (hoje booleano) e depende da dúvida A2 nº 7.
 23. Loader do snapshot (SQL cru em persistence/sql/).
 24. Endpoints: GET /grade/:periodoId, POST /simular, POST /alocacoes.
 25. Estados do período + trava de publicação (usa B1.8). ATENÇÃO: ver a NOTA

@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   Body,
   Controller,
   Delete,
@@ -9,9 +10,14 @@ import {
   ParseUUIDPipe,
   Patch,
   Post,
+  UploadedFile,
+  UseInterceptors,
 } from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
 import {
+  ApiBody,
   ApiConflictResponse,
+  ApiConsumes,
   ApiCreatedResponse,
   ApiNoContentResponse,
   ApiNotFoundResponse,
@@ -20,17 +26,26 @@ import {
   ApiParam,
   ApiTags,
 } from '@nestjs/swagger';
+import { memoryStorage } from 'multer';
 import { ProfessoresService } from '@application/academico/professores.service';
+import { ImportarProfessoresUseCase } from '@application/academico/importar-professores.use-case';
 import {
   AtualizarProfessorDto,
   CriarProfessorDto,
+  ImportarProfessoresResponseDto,
   ProfessorResponseDto,
 } from './professores.dto';
+import { lerLinhasProfessores } from './importar-professores.parser';
+
+const TAMANHO_MAXIMO_ARQUIVO_IMPORTACAO = 5 * 1024 * 1024;
 
 @ApiTags('professores')
 @Controller('professores')
 export class ProfessoresController {
-  constructor(private readonly professores: ProfessoresService) {}
+  constructor(
+    private readonly professores: ProfessoresService,
+    private readonly importarProfessores: ImportarProfessoresUseCase,
+  ) {}
 
   @Get()
   @ApiOperation({ summary: 'Lista todos os professores, ordenados por nome.' })
@@ -59,10 +74,51 @@ export class ProfessoresController {
   @ApiOperation({ summary: 'Cadastra um novo professor.' })
   @ApiCreatedResponse({ type: ProfessorResponseDto })
   @ApiConflictResponse({
-    description: 'Já existe professor com o mesmo SIAPE.',
+    description: 'Já existe professor com o mesmo identificador.',
   })
   async criar(@Body() dto: CriarProfessorDto): Promise<ProfessorResponseDto> {
     return ProfessorResponseDto.fromDomain(await this.professores.criar(dto));
+  }
+
+  @Post('importar')
+  @UseInterceptors(
+    FileInterceptor('arquivo', {
+      storage: memoryStorage(),
+      limits: { fileSize: TAMANHO_MAXIMO_ARQUIVO_IMPORTACAO },
+    }),
+  )
+  @ApiOperation({
+    summary: 'Importa professores em lote a partir de um arquivo CSV ou XLSX.',
+    description:
+      'Faz upsert por identificador: linha com identificador já cadastrado ' +
+      'atualiza apenas os campos presentes na planilha; identificador novo ' +
+      'cria o professor. Colunas aceitas: nome, identificador (ou siape / ' +
+      'matricula), email, titulacao, grupoRegime, ajusteCargaHoras, ' +
+      'ajusteCargaMotivo, ativo.',
+  })
+  @ApiConsumes('multipart/form-data')
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: { arquivo: { type: 'string', format: 'binary' } },
+      required: ['arquivo'],
+    },
+  })
+  @ApiOkResponse({ type: ImportarProfessoresResponseDto })
+  async importar(
+    @UploadedFile() arquivo?: Express.Multer.File,
+  ): Promise<ImportarProfessoresResponseDto> {
+    if (!arquivo) {
+      throw new BadRequestException('Nenhum arquivo enviado.');
+    }
+    const linhas = await lerLinhasProfessores(arquivo);
+    if (linhas.length === 0) {
+      throw new BadRequestException(
+        'O arquivo não contém linhas para importar.',
+      );
+    }
+    const resultado = await this.importarProfessores.executar(linhas);
+    return ImportarProfessoresResponseDto.fromDomain(resultado);
   }
 
   @Patch(':id')
@@ -71,7 +127,7 @@ export class ProfessoresController {
   @ApiOkResponse({ type: ProfessorResponseDto })
   @ApiNotFoundResponse({ description: 'Professor não encontrado.' })
   @ApiConflictResponse({
-    description: 'Já existe professor com o mesmo SIAPE.',
+    description: 'Já existe professor com o mesmo identificador.',
   })
   async atualizar(
     @Param('id', ParseUUIDPipe) id: string,

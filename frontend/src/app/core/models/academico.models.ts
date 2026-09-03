@@ -29,9 +29,9 @@ export interface Professor {
   id: string;
   nome: string;
   email: string | null;
-  siape: string;
+  identificador: string;
   titulacao: string | null;
-  grupoRegime: GrupoRegime;
+  grupoRegime: GrupoRegime | null;
   ajusteCargaHoras: number | null;
   ajusteCargaMotivo: string | null;
   ativo: boolean;
@@ -41,15 +41,27 @@ export interface Professor {
 export interface CriarProfessor {
   nome: string;
   email?: string | null;
-  siape: string;
+  identificador: string;
   titulacao?: string | null;
-  grupoRegime: GrupoRegime;
+  grupoRegime?: GrupoRegime | null;
   ajusteCargaHoras?: number | null;
   ajusteCargaMotivo?: string | null;
   ativo?: boolean;
 }
 
 export type AtualizarProfessor = Partial<CriarProfessor>;
+
+export interface ErroImportacaoProfessor {
+  linha: number;
+  motivo: string;
+}
+
+export interface ResultadoImportacaoProfessores {
+  totalLinhas: number;
+  criados: number;
+  atualizados: number;
+  erros: ErroImportacaoProfessor[];
+}
 
 export interface Disciplina {
   id: string;

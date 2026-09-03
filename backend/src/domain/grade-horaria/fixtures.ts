@@ -1,8 +1,4 @@
-/**
- * Helpers para montar snapshots literais nos testes. Não é código de produção —
- * só existe para deixar os testes das regras triviais de escrever e ler.
- */
-import { GrupoRegime, Modalidade, TipoSala, Turno } from '../academico/enums';
+import { GrupoRegime, Modalidade, Turno } from '../academico/enums';
 import { construirSnapshot } from './construir-snapshot';
 import {
   AlocacaoSnapshot,
@@ -26,11 +22,6 @@ export function alocacao(
   return { salaId: null, grupoBloco: null, version: 1, ...p };
 }
 
-/**
- * Monta uma oferta de teste. Aceita `professores` explícito (com proporção, para
- * codocência 70/30) OU o atalho `professorIds` — cada id vira participação de
- * 100% (professor único, o caso comum). Passar os dois é erro de teste.
- */
 export function oferta(
   p: Partial<Omit<OfertaSnapshot, 'professores'>> &
     Pick<OfertaSnapshot, 'id' | 'turmaId'> & {
@@ -70,7 +61,6 @@ export function turma(
 ): TurmaSnapshot {
   return {
     nome: `Turma ${p.id}`,
-    quantidadeAlunos: null,
     cursoId: `curso-${p.id}`,
     ...p,
   };
@@ -91,7 +81,7 @@ export function curso(
 export function sala(
   p: Partial<SalaSnapshot> & Pick<SalaSnapshot, 'id'>,
 ): SalaSnapshot {
-  return { nome: `Sala ${p.id}`, tipo: TipoSala.COMUM, capacidade: null, ...p };
+  return { nome: `Sala ${p.id}`, ...p };
 }
 
 export function disciplina(
@@ -100,7 +90,6 @@ export function disciplina(
   return {
     codigo: p.id,
     nome: `Disciplina ${p.id}`,
-    tipoSalaRequerido: null,
     ...p,
   };
 }
@@ -123,10 +112,6 @@ function indexar<T extends { id: string }>(itens: T[]): Map<string, T> {
   return new Map(itens.map((i) => [i.id, i]));
 }
 
-/**
- * Monta um GradeSnapshot a partir de listas soltas. Preenche os mapas e deixa a
- * fábrica computar os índices. Campos omitidos assumem defaults sensatos.
- */
 export function montarSnapshot(entrada: {
   periodoLetivoId?: string;
   alocacoes?: AlocacaoSnapshot[];

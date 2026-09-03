@@ -92,47 +92,131 @@ const DIAS = [
 ];
 
 interface ProfessorSeed {
-  siape: string;
+  identificador: string;
   nome: string;
   grupoRegime: GrupoRegime;
 }
 
 const PROFESSORES: ProfessorSeed[] = [
-  { siape: '10000001', nome: 'Jonas Pontes', grupoRegime: GrupoRegime.G1 },
-  { siape: '10000002', nome: 'Darueck Campos', grupoRegime: GrupoRegime.G1 },
-  { siape: '10000003', nome: 'Alvaro Rios', grupoRegime: GrupoRegime.G1 },
-  { siape: '10000004', nome: 'Mauricio Cunha', grupoRegime: GrupoRegime.G1 },
-  { siape: '10000005', nome: 'Flavio Farias', grupoRegime: GrupoRegime.G1 },
   {
-    siape: '10000006',
+    identificador: '10000001',
+    nome: 'Jonas Pontes',
+    grupoRegime: GrupoRegime.G1,
+  },
+  {
+    identificador: '10000002',
+    nome: 'Darueck Campos',
+    grupoRegime: GrupoRegime.G1,
+  },
+  {
+    identificador: '10000003',
+    nome: 'Alvaro Rios',
+    grupoRegime: GrupoRegime.G1,
+  },
+  {
+    identificador: '10000004',
+    nome: 'Mauricio Cunha',
+    grupoRegime: GrupoRegime.G1,
+  },
+  {
+    identificador: '10000005',
+    nome: 'Flavio Farias',
+    grupoRegime: GrupoRegime.G1,
+  },
+  {
+    identificador: '10000006',
     nome: 'Ana Beatriz Lima',
     grupoRegime: GrupoRegime.G3_40H,
   },
-  { siape: '10000007', nome: 'Carlos Nogueira', grupoRegime: GrupoRegime.G1 },
-  { siape: '10000008', nome: 'Marina Lopes', grupoRegime: GrupoRegime.G2 },
-  { siape: '10000009', nome: 'Rafael Souza', grupoRegime: GrupoRegime.G3_40H },
-  { siape: '10000010', nome: 'Patrícia Gomes', grupoRegime: GrupoRegime.G1 },
-  { siape: '10000011', nome: 'Diego Alves', grupoRegime: GrupoRegime.G2 },
-  // Os que aparecem na grade real de SI (4º e 6º períodos).
-  { siape: '10000012', nome: 'Marlon Teixeira', grupoRegime: GrupoRegime.G1 },
-  { siape: '10000013', nome: 'Diego Canizio', grupoRegime: GrupoRegime.G1 },
-  { siape: '10000014', nome: 'Henrique Canizo', grupoRegime: GrupoRegime.G1 },
-  { siape: '10000015', nome: 'Gustavo Cardial', grupoRegime: GrupoRegime.G1 },
-  { siape: '10000016', nome: 'Tania Facanha', grupoRegime: GrupoRegime.G1 },
-  { siape: '10000017', nome: 'Valdenir Cardoso', grupoRegime: GrupoRegime.G1 },
-  { siape: '10000018', nome: 'Breno Silveira', grupoRegime: GrupoRegime.G1 },
   {
-    siape: '10000019',
+    identificador: '10000007',
+    nome: 'Carlos Nogueira',
+    grupoRegime: GrupoRegime.G1,
+  },
+  {
+    identificador: '10000008',
+    nome: 'Marina Lopes',
+    grupoRegime: GrupoRegime.G2,
+  },
+  {
+    identificador: '10000009',
+    nome: 'Rafael Souza',
+    grupoRegime: GrupoRegime.G3_40H,
+  },
+  {
+    identificador: '10000010',
+    nome: 'Patrícia Gomes',
+    grupoRegime: GrupoRegime.G1,
+  },
+  {
+    identificador: '10000011',
+    nome: 'Diego Alves',
+    grupoRegime: GrupoRegime.G2,
+  },
+  // Os que aparecem na grade real de SI (4º e 6º períodos).
+  {
+    identificador: '10000012',
+    nome: 'Marlon Teixeira',
+    grupoRegime: GrupoRegime.G1,
+  },
+  {
+    identificador: '10000013',
+    nome: 'Diego Canizio',
+    grupoRegime: GrupoRegime.G1,
+  },
+  {
+    identificador: '10000014',
+    nome: 'Henrique Canizo',
+    grupoRegime: GrupoRegime.G1,
+  },
+  {
+    identificador: '10000015',
+    nome: 'Gustavo Cardial',
+    grupoRegime: GrupoRegime.G1,
+  },
+  {
+    identificador: '10000016',
+    nome: 'Tania Facanha',
+    grupoRegime: GrupoRegime.G1,
+  },
+  {
+    identificador: '10000017',
+    nome: 'Valdenir Cardoso',
+    grupoRegime: GrupoRegime.G1,
+  },
+  {
+    identificador: '10000018',
+    nome: 'Breno Silveira',
+    grupoRegime: GrupoRegime.G1,
+  },
+  {
+    identificador: '10000019',
     nome: 'Cristiane Nogueira',
     grupoRegime: GrupoRegime.G1,
   },
   // Professores das OFERTAS SOLTAS (as que nascem no catálogo, sem aula posta).
   // Sem nenhuma outra alocação de propósito: arrastar a oferta deles para uma
   // célula não acende PROFESSOR_DUPLICADO, deixando o teste do arraste limpo.
-  { siape: '10000020', nome: 'Sônia Duarte', grupoRegime: GrupoRegime.G1 },
-  { siape: '10000021', nome: 'Paulo Menezes', grupoRegime: GrupoRegime.G1 },
-  { siape: '10000022', nome: 'Lucas Farias', grupoRegime: GrupoRegime.G1 },
-  { siape: '10000023', nome: 'Renata Bastos', grupoRegime: GrupoRegime.G1 },
+  {
+    identificador: '10000020',
+    nome: 'Sônia Duarte',
+    grupoRegime: GrupoRegime.G1,
+  },
+  {
+    identificador: '10000021',
+    nome: 'Paulo Menezes',
+    grupoRegime: GrupoRegime.G1,
+  },
+  {
+    identificador: '10000022',
+    nome: 'Lucas Farias',
+    grupoRegime: GrupoRegime.G1,
+  },
+  {
+    identificador: '10000023',
+    nome: 'Renata Bastos',
+    grupoRegime: GrupoRegime.G1,
+  },
 ];
 
 interface SalaSeed {
@@ -162,7 +246,7 @@ interface DisciplinaSeed {
   cargaHoraria: number;
   tipoSala: TipoSala;
   /**
-   * SIAPEs dos professores da oferta. Mais de um = codocência — e é ela que faz
+   * Identificadores dos professores da oferta. Mais de um = codocência — e é ela que faz
    * o motor rebaixar `PROFESSOR_DUPLICADO` de FORTE para POTENCIAL, porque a
    * comissão pode resolver internamente quem entra em cada aula.
    */
@@ -694,20 +778,20 @@ export async function seedGrade2026(dataSource: DataSource): Promise<void> {
     );
 
     // 3. Professores (globais).
-    const professoresPorSiape = new Map<string, ProfessorEntity>();
+    const professoresPorIdentificador = new Map<string, ProfessorEntity>();
     for (const p of PROFESSORES) {
       const prof = await getOrCreate(
         manager,
         ProfessorEntity,
-        { siape: p.siape },
+        { identificador: p.identificador },
         {
           nome: p.nome,
-          siape: p.siape,
+          identificador: p.identificador,
           grupoRegime: p.grupoRegime,
           ativo: true,
         },
       );
-      professoresPorSiape.set(p.siape, prof);
+      professoresPorIdentificador.set(p.identificador, prof);
     }
 
     // 4. Salas (globais).
@@ -848,8 +932,8 @@ export async function seedGrade2026(dataSource: DataSource): Promise<void> {
           // Codocência divide a carga em partes iguais — a proporção não é usada
           // pelo motor hoje, mas a linha precisa existir para cada professor.
           const proporcaoCarga = Math.round(100 / d.professores.length);
-          for (const siape of d.professores) {
-            const professor = professoresPorSiape.get(siape)!;
+          for (const identificador of d.professores) {
+            const professor = professoresPorIdentificador.get(identificador)!;
             await getOrCreate(
               manager,
               ProfessorOfertaEntity,

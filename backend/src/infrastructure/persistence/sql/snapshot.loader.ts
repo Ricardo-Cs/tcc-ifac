@@ -4,7 +4,6 @@ import { DataSource } from 'typeorm';
 import {
   GrupoRegime,
   Modalidade,
-  TipoSala,
   Turno,
 } from '../../../domain/academico/enums';
 import {
@@ -82,16 +81,12 @@ export class SqlSnapshotLoader implements SnapshotLoader {
         `SELECT id, nome, grupo_regime, ajuste_carga_horas, ajuste_carga_motivo
            FROM professor`,
       ),
-      this.dataSource.query(
-        `SELECT id, nome, quantidade_alunos, curso_id FROM turma`,
-      ),
+      this.dataSource.query(`SELECT id, nome, curso_id FROM turma`),
       this.dataSource.query(
         `SELECT id, nome, sigla, modalidade, turno_padrao FROM curso`,
       ),
-      this.dataSource.query(
-        `SELECT id, codigo, nome, tipo_sala_requerido FROM disciplina`,
-      ),
-      this.dataSource.query(`SELECT id, nome, tipo, capacidade FROM sala`),
+      this.dataSource.query(`SELECT id, codigo, nome FROM disciplina`),
+      this.dataSource.query(`SELECT id, nome FROM sala`),
       this.dataSource.query(
         `SELECT id, codigo, dia_semana, turno, ordem, hora_inicio, hora_fim FROM slot_horario`,
       ),
@@ -175,7 +170,7 @@ export class SqlSnapshotLoader implements SnapshotLoader {
         {
           id: row.id,
           nome: row.nome,
-          grupoRegime: row.grupo_regime as GrupoRegime,
+          grupoRegime: row.grupo_regime as GrupoRegime | null,
           ajusteCargaHoras: row.ajuste_carga_horas,
           ajusteCargaMotivo: row.ajuste_carga_motivo,
         } satisfies ProfessorSnapshot,
@@ -188,7 +183,6 @@ export class SqlSnapshotLoader implements SnapshotLoader {
         {
           id: row.id,
           nome: row.nome,
-          quantidadeAlunos: row.quantidade_alunos,
           cursoId: row.curso_id,
         } satisfies TurmaSnapshot,
       ]),
@@ -214,7 +208,6 @@ export class SqlSnapshotLoader implements SnapshotLoader {
           id: row.id,
           codigo: row.codigo,
           nome: row.nome,
-          tipoSalaRequerido: row.tipo_sala_requerido as TipoSala | null,
         } satisfies DisciplinaSnapshot,
       ]),
     );
@@ -225,8 +218,6 @@ export class SqlSnapshotLoader implements SnapshotLoader {
         {
           id: row.id,
           nome: row.nome,
-          tipo: row.tipo as TipoSala,
-          capacidade: row.capacidade,
         } satisfies SalaSnapshot,
       ]),
     );

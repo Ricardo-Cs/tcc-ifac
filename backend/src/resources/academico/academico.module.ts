@@ -10,6 +10,7 @@ import { COLETAS_RESTRICAO_REPOSITORY } from '@domain/academico/coleta-restricao
 import { RESTRICOES_PROFESSOR_REPOSITORY } from '@domain/academico/restricao-professor';
 import { CursosService } from '@application/academico/cursos.service';
 import { ProfessoresService } from '@application/academico/professores.service';
+import { ImportarProfessoresUseCase } from '@application/academico/importar-professores.use-case';
 import { DisciplinasService } from '@application/academico/disciplinas.service';
 import { TurmasService } from '@application/academico/turmas.service';
 import { SalasService } from '@application/academico/salas.service';
@@ -71,6 +72,7 @@ import { RestricoesProfessorController } from './restricoes-professor/restricoes
   providers: [
     CursosService,
     ProfessoresService,
+    ImportarProfessoresUseCase,
     DisciplinasService,
     TurmasService,
     SalasService,

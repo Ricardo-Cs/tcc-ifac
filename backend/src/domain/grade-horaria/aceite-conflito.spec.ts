@@ -42,7 +42,7 @@ describe('chaveDoAceite', () => {
   it('devolve a chave para um conflito FRACO', () => {
     const fraco = conflito(
       SeveridadeConflito.FRACO,
-      TipoConflito.HORARIO_NAO_PREFERIDO,
+      TipoConflito.RESTRICAO_VIOLADA,
     );
     expect(chaveDoAceite(fraco)).toBe(chaveConflito(fraco));
   });

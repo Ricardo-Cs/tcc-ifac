@@ -1,14 +1,12 @@
 import { GrupoRegime } from './enums';
 
-// ───────────────────────────── Professor ──────────────────────────────
-
 export interface Professor {
   id: string;
   nome: string;
   email: string | null;
-  siape: string;
+  identificador: string;
   titulacao: string | null;
-  grupoRegime: GrupoRegime;
+  grupoRegime: GrupoRegime | null;
   ajusteCargaHoras: number | null;
   ajusteCargaMotivo: string | null;
   ativo: boolean;
@@ -17,9 +15,9 @@ export interface Professor {
 export interface CriarProfessorInput {
   nome: string;
   email?: string | null;
-  siape: string;
+  identificador: string;
   titulacao?: string | null;
-  grupoRegime: GrupoRegime;
+  grupoRegime?: GrupoRegime | null;
   ajusteCargaHoras?: number | null;
   ajusteCargaMotivo?: string | null;
   ativo?: boolean;
@@ -31,6 +29,7 @@ export const PROFESSORES_REPOSITORY = Symbol('PROFESSORES_REPOSITORY');
 export interface ProfessoresRepository {
   listar(): Promise<Professor[]>;
   buscarPorId(id: string): Promise<Professor | null>;
+  buscarPorIdentificador(identificador: string): Promise<Professor | null>;
   criar(input: CriarProfessorInput): Promise<Professor>;
   atualizar(
     id: string,

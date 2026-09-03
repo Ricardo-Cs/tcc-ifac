@@ -13,7 +13,6 @@ import {
   isViolacaoUnicidade,
 } from '../postgres-error';
 
-/** Adaptador TypeORM da porta `ProfessoresRepository`. */
 @Injectable()
 export class TypeormProfessoresRepository implements ProfessoresRepository {
   constructor(
@@ -31,6 +30,13 @@ export class TypeormProfessoresRepository implements ProfessoresRepository {
     return linha ? toModel(linha) : null;
   }
 
+  async buscarPorIdentificador(
+    identificador: string,
+  ): Promise<Professor | null> {
+    const linha = await this.repo.findOneBy({ identificador });
+    return linha ? toModel(linha) : null;
+  }
+
   async criar(input: CriarProfessorInput): Promise<Professor> {
     try {
       const salvo = await this.repo.save(this.repo.create(input));
@@ -38,7 +44,7 @@ export class TypeormProfessoresRepository implements ProfessoresRepository {
     } catch (erro) {
       if (isViolacaoUnicidade(erro)) {
         throw new ConflictException(
-          `Já existe um professor com o SIAPE "${input.siape}".`,
+          `Já existe um professor com o identificador "${input.identificador}".`,
         );
       }
       throw erro;
@@ -58,7 +64,7 @@ export class TypeormProfessoresRepository implements ProfessoresRepository {
     } catch (erro) {
       if (isViolacaoUnicidade(erro)) {
         throw new ConflictException(
-          `Já existe um professor com o SIAPE "${input.siape}".`,
+          `Já existe um professor com o identificador "${input.identificador}".`,
         );
       }
       throw erro;
@@ -85,7 +91,7 @@ function toModel(e: ProfessorEntity): Professor {
     id: e.id,
     nome: e.nome,
     email: e.email,
-    siape: e.siape,
+    identificador: e.identificador,
     titulacao: e.titulacao,
     grupoRegime: e.grupoRegime,
     ajusteCargaHoras: e.ajusteCargaHoras,
