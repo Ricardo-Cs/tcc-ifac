@@ -1,7 +1,10 @@
 import { BadRequestException } from '@nestjs/common';
 import { parse } from 'csv-parse/sync';
 import ExcelJS from 'exceljs';
-import { LinhaImportacaoProfessor } from '@application/academico/importar-professores.use-case';
+import {
+  LinhaBrutaImportacaoProfessor,
+  LinhaImportacaoProfessor,
+} from '@application/academico/importar-professores.use-case';
 
 const MAPA_CABECALHOS: Record<string, keyof LinhaImportacaoProfessor> = {
   nome: 'nome',
@@ -52,7 +55,7 @@ function mapearLinha(bruta: Record<string, unknown>): LinhaImportacaoProfessor {
   return linha;
 }
 
-function lerCsv(buffer: Buffer): LinhaImportacaoProfessor[] {
+function lerCsv(buffer: Buffer): LinhaBrutaImportacaoProfessor[] {
   const conteudo = buffer.toString('utf-8');
   const primeiraLinha = conteudo.split(/\r?\n/, 1)[0] ?? '';
   const delimitador =
@@ -61,18 +64,25 @@ function lerCsv(buffer: Buffer): LinhaImportacaoProfessor[] {
       ? ';'
       : ',';
 
-  const registros = parse(conteudo, {
+  const linhas: LinhaBrutaImportacaoProfessor[] = [];
+  parse(conteudo, {
     columns: true,
     skip_empty_lines: true,
     trim: true,
     bom: true,
     delimiter: delimitador,
+    on_record: (registro: Record<string, unknown>, contexto) => {
+      linhas.push({ linha: contexto.lines, dados: mapearLinha(registro) });
+      return registro;
+    },
   });
 
-  return registros.map(mapearLinha);
+  return linhas;
 }
 
-async function lerXlsx(buffer: Buffer): Promise<LinhaImportacaoProfessor[]> {
+async function lerXlsx(
+  buffer: Buffer,
+): Promise<LinhaBrutaImportacaoProfessor[]> {
   const workbook = new ExcelJS.Workbook();
   await workbook.xlsx.load(buffer as unknown as ExcelJS.Buffer);
   const planilha = workbook.worksheets[0];
@@ -83,7 +93,7 @@ async function lerXlsx(buffer: Buffer): Promise<LinhaImportacaoProfessor[]> {
     cabecalhos[coluna - 1] = valorDaCelula(celula.value);
   });
 
-  const linhas: LinhaImportacaoProfessor[] = [];
+  const linhas: LinhaBrutaImportacaoProfessor[] = [];
   planilha.eachRow((linha, numeroLinha) => {
     if (numeroLinha === 1) return;
     const bruta: Record<string, unknown> = {};
@@ -93,7 +103,7 @@ async function lerXlsx(buffer: Buffer): Promise<LinhaImportacaoProfessor[]> {
       bruta[cabecalho] = valorDaCelula(celula.value);
     });
     if (Object.values(bruta).some((v) => paraTexto(v))) {
-      linhas.push(mapearLinha(bruta));
+      linhas.push({ linha: numeroLinha, dados: mapearLinha(bruta) });
     }
   });
 
@@ -126,7 +136,7 @@ const EXTENSOES_XLSX = /\.xlsx?$/i;
 
 export async function lerLinhasProfessores(
   arquivo: Express.Multer.File,
-): Promise<LinhaImportacaoProfessor[]> {
+): Promise<LinhaBrutaImportacaoProfessor[]> {
   const nome = arquivo.originalname ?? '';
   try {
     if (EXTENSOES_CSV.test(nome)) {

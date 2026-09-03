@@ -18,6 +18,7 @@ import {
   Curso,
   Disciplina,
   Oferta,
+  PreviaImportacaoProfessores,
   Professor,
   ResultadoImportacaoProfessores,
   Sala,
@@ -65,6 +66,15 @@ export class AcademicoApi {
     formData.append('arquivo', arquivo);
     return this.http.post<ResultadoImportacaoProfessores>(
       `${API_BASE}/professores/importar`,
+      formData,
+    );
+  }
+
+  previaImportarProfessores(arquivo: File): Observable<PreviaImportacaoProfessores> {
+    const formData = new FormData();
+    formData.append('arquivo', arquivo);
+    return this.http.post<PreviaImportacaoProfessores>(
+      `${API_BASE}/professores/importar/preview`,
       formData,
     );
   }

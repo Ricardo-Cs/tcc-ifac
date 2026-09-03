@@ -1,7 +1,13 @@
 import { Component, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { NgIcon, provideIcons } from '@ng-icons/core';
-import { lucidePencil, lucideTrash2, lucideUpload, lucideUsers } from '@ng-icons/lucide';
+import {
+  lucideLoaderCircle,
+  lucidePencil,
+  lucideTrash2,
+  lucideUpload,
+  lucideUsers,
+} from '@ng-icons/lucide';
 import { HlmButton } from '@spartan-ng/helm/button';
 import { HlmInput } from '@spartan-ng/helm/input';
 import { HlmSelectImports } from '@spartan-ng/helm/select';
@@ -9,7 +15,9 @@ import { AcademicoApi } from '../../core/api/academico-api';
 import { mensagemErro } from '../../core/api/erro-http';
 import { formatarHoras } from '../../core/format/horas';
 import {
+  AcaoImportacaoProfessor,
   GrupoRegime,
+  PreviaImportacaoProfessores,
   Professor,
   ResultadoImportacaoProfessores,
 } from '../../core/models/academico.models';
@@ -58,7 +66,9 @@ const RASCUNHO_VAZIO: RascunhoProfessor = {
     ListagemLinhaDirective,
     ...HlmSelectImports,
   ],
-  providers: [provideIcons({ lucidePencil, lucideTrash2, lucideUpload, lucideUsers })],
+  providers: [
+    provideIcons({ lucideLoaderCircle, lucidePencil, lucideTrash2, lucideUpload, lucideUsers }),
+  ],
   templateUrl: './professores.html',
 })
 export class ProfessoresComponent {
@@ -134,11 +144,14 @@ export class ProfessoresComponent {
   readonly arquivoImportar = signal<File | null>(null);
   readonly erroImportar = signal<string | null>(null);
   readonly resultadoImportar = signal<ResultadoImportacaoProfessores | null>(null);
+  readonly carregandoPrevia = signal(false);
+  readonly previaImportar = signal<PreviaImportacaoProfessores | null>(null);
 
   abrirImportar(): void {
     this.arquivoImportar.set(null);
     this.erroImportar.set(null);
     this.resultadoImportar.set(null);
+    this.previaImportar.set(null);
     this.importarAberto.set(true);
   }
 
@@ -152,6 +165,25 @@ export class ProfessoresComponent {
     this.arquivoImportar.set(arquivo);
     this.erroImportar.set(null);
     this.resultadoImportar.set(null);
+    this.previaImportar.set(null);
+
+    if (!arquivo) return;
+
+    this.carregandoPrevia.set(true);
+    this.api.previaImportarProfessores(arquivo).subscribe({
+      next: (previa) => {
+        this.carregandoPrevia.set(false);
+        this.previaImportar.set(previa);
+      },
+      error: (err) => {
+        this.carregandoPrevia.set(false);
+        this.erroImportar.set(mensagemErro(err, 'Não foi possível ler o arquivo.'));
+      },
+    });
+  }
+
+  contarAcao(previa: PreviaImportacaoProfessores, acao: AcaoImportacaoProfessor): number {
+    return previa.linhas.filter((l) => l.acao === acao).length;
   }
 
   confirmarImportar(): void {
@@ -167,6 +199,7 @@ export class ProfessoresComponent {
       next: (resultado) => {
         this.importando.set(false);
         this.resultadoImportar.set(resultado);
+        this.previaImportar.set(null);
         this.carregar();
         if (resultado.erros.length === 0) {
           this.toast.sucesso(

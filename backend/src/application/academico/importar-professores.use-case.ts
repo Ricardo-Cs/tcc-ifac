@@ -18,6 +18,11 @@ export interface LinhaImportacaoProfessor {
   ativo?: string;
 }
 
+export interface LinhaBrutaImportacaoProfessor {
+  linha: number;
+  dados: LinhaImportacaoProfessor;
+}
+
 export interface ErroImportacaoProfessor {
   linha: number;
   motivo: string;
@@ -29,6 +34,36 @@ export interface ResultadoImportacaoProfessores {
   atualizados: number;
   erros: ErroImportacaoProfessor[];
 }
+
+export type AcaoImportacaoProfessor = 'CRIAR' | 'ATUALIZAR';
+
+export interface PreviaLinhaImportacaoProfessor {
+  linha: number;
+  nome: string;
+  identificador: string;
+  acao: AcaoImportacaoProfessor;
+}
+
+export interface PreviaImportacaoProfessores {
+  totalLinhas: number;
+  linhas: PreviaLinhaImportacaoProfessor[];
+  erros: ErroImportacaoProfessor[];
+}
+
+type LinhaResolvida =
+  | {
+      acao: 'CRIAR';
+      identificador: string;
+      nome: string;
+      criacao: CriarProfessorInput;
+    }
+  | {
+      acao: 'ATUALIZAR';
+      identificador: string;
+      nome: string;
+      professorId: string;
+      atualizacao: AtualizarProfessorInput;
+    };
 
 const GRUPOS_REGIME_VALIDOS = new Set<string>(Object.values(GrupoRegime));
 const VALORES_ATIVO_VERDADEIRO = new Set(['true', '1', 'sim']);
@@ -42,7 +77,7 @@ export class ImportarProfessoresUseCase {
   ) {}
 
   async executar(
-    linhas: LinhaImportacaoProfessor[],
+    linhas: LinhaBrutaImportacaoProfessor[],
   ): Promise<ResultadoImportacaoProfessores> {
     const resultado: ResultadoImportacaoProfessores = {
       totalLinhas: linhas.length,
@@ -51,14 +86,18 @@ export class ImportarProfessoresUseCase {
       erros: [],
     };
 
-    for (const [indice, linha] of linhas.entries()) {
-      const numeroLinha = indice + 2;
+    for (const { linha: numeroLinha, dados } of linhas) {
       try {
-        const existente = await this.processarLinha(linha);
-        if (existente) {
-          resultado.atualizados++;
-        } else {
+        const resolvida = await this.resolverLinha(dados);
+        if (resolvida.acao === 'CRIAR') {
+          await this.professores.criar(resolvida.criacao);
           resultado.criados++;
+        } else {
+          await this.professores.atualizar(
+            resolvida.professorId,
+            resolvida.atualizacao,
+          );
+          resultado.atualizados++;
         }
       } catch (erro) {
         resultado.erros.push({
@@ -71,9 +110,38 @@ export class ImportarProfessoresUseCase {
     return resultado;
   }
 
-  private async processarLinha(
+  async simular(
+    linhas: LinhaBrutaImportacaoProfessor[],
+  ): Promise<PreviaImportacaoProfessores> {
+    const previa: PreviaImportacaoProfessores = {
+      totalLinhas: linhas.length,
+      linhas: [],
+      erros: [],
+    };
+
+    for (const { linha: numeroLinha, dados } of linhas) {
+      try {
+        const resolvida = await this.resolverLinha(dados);
+        previa.linhas.push({
+          linha: numeroLinha,
+          nome: resolvida.nome,
+          identificador: resolvida.identificador,
+          acao: resolvida.acao,
+        });
+      } catch (erro) {
+        previa.erros.push({
+          linha: numeroLinha,
+          motivo: erro instanceof Error ? erro.message : 'Erro desconhecido.',
+        });
+      }
+    }
+
+    return previa;
+  }
+
+  private async resolverLinha(
     linha: LinhaImportacaoProfessor,
-  ): Promise<boolean> {
+  ): Promise<LinhaResolvida> {
     const identificador = (linha.identificador ?? '').trim();
     if (!identificador) {
       throw new Error('identificador é obrigatório.');
@@ -88,25 +156,29 @@ export class ImportarProfessoresUseCase {
 
     if (existente) {
       const atualizacao: AtualizarProfessorInput = { ...camposOpcionais };
-      const nome = linha.nome?.trim();
-      if (nome) {
-        atualizacao.nome = nome;
+      const nomeInformado = linha.nome?.trim();
+      if (nomeInformado) {
+        atualizacao.nome = nomeInformado;
       }
-      await this.professores.atualizar(existente.id, atualizacao);
-      return true;
+      return {
+        acao: 'ATUALIZAR',
+        identificador,
+        nome: nomeInformado || existente.nome,
+        professorId: existente.id,
+        atualizacao,
+      };
     }
 
     const nome = (linha.nome ?? '').trim();
     if (!nome) {
       throw new Error('nome é obrigatório.');
     }
-    const criacao: CriarProfessorInput = {
-      nome,
+    return {
+      acao: 'CRIAR',
       identificador,
-      ...camposOpcionais,
+      nome,
+      criacao: { nome, identificador, ...camposOpcionais },
     };
-    await this.professores.criar(criacao);
-    return false;
   }
 
   private extrairCamposOpcionais(

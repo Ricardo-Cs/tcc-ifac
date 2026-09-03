@@ -33,6 +33,7 @@ import {
   AtualizarProfessorDto,
   CriarProfessorDto,
   ImportarProfessoresResponseDto,
+  PreviaImportacaoProfessoresResponseDto,
   ProfessorResponseDto,
 } from './professores.dto';
 import { lerLinhasProfessores } from './importar-professores.parser';
@@ -80,6 +81,39 @@ export class ProfessoresController {
     return ProfessorResponseDto.fromDomain(await this.professores.criar(dto));
   }
 
+  @Post('importar/preview')
+  @UseInterceptors(
+    FileInterceptor('arquivo', {
+      storage: memoryStorage(),
+      limits: { fileSize: TAMANHO_MAXIMO_ARQUIVO_IMPORTACAO },
+    }),
+  )
+  @ApiOperation({
+    summary:
+      'Lê um CSV ou XLSX de professores e mostra o que a importação faria, ' +
+      'sem gravar nada.',
+    description:
+      'Roda a mesma leitura e validação de `POST /professores/importar`, ' +
+      'mas só consulta o banco (para saber se cada identificador já existe) ' +
+      '— nenhuma escrita acontece.',
+  })
+  @ApiConsumes('multipart/form-data')
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: { arquivo: { type: 'string', format: 'binary' } },
+      required: ['arquivo'],
+    },
+  })
+  @ApiOkResponse({ type: PreviaImportacaoProfessoresResponseDto })
+  async previaImportar(
+    @UploadedFile() arquivo?: Express.Multer.File,
+  ): Promise<PreviaImportacaoProfessoresResponseDto> {
+    const linhas = await this.lerArquivoImportacao(arquivo);
+    const previa = await this.importarProfessores.simular(linhas);
+    return PreviaImportacaoProfessoresResponseDto.fromDomain(previa);
+  }
+
   @Post('importar')
   @UseInterceptors(
     FileInterceptor('arquivo', {
@@ -108,6 +142,12 @@ export class ProfessoresController {
   async importar(
     @UploadedFile() arquivo?: Express.Multer.File,
   ): Promise<ImportarProfessoresResponseDto> {
+    const linhas = await this.lerArquivoImportacao(arquivo);
+    const resultado = await this.importarProfessores.executar(linhas);
+    return ImportarProfessoresResponseDto.fromDomain(resultado);
+  }
+
+  private async lerArquivoImportacao(arquivo?: Express.Multer.File) {
     if (!arquivo) {
       throw new BadRequestException('Nenhum arquivo enviado.');
     }
@@ -117,8 +157,7 @@ export class ProfessoresController {
         'O arquivo não contém linhas para importar.',
       );
     }
-    const resultado = await this.importarProfessores.executar(linhas);
-    return ImportarProfessoresResponseDto.fromDomain(resultado);
+    return linhas;
   }
 
   @Patch(':id')

@@ -1,12 +1,21 @@
 <div class="p-6">
-  <app-listagem [itens]="professores()" [colunas]="colunas" [filtros]="filtros" [textoBusca]="textoBusca"
-    [mostrarImportar]="true" entidade="professores" (adicionar)="abrirNovo()" (importar)="abrirImportar()">
+  <app-listagem
+    [itens]="professores()"
+    [colunas]="colunas"
+    [filtros]="filtros"
+    [textoBusca]="textoBusca"
+    [mostrarImportar]="true"
+    entidade="professores"
+    (adicionar)="abrirNovo()"
+    (importar)="abrirImportar()"
+  >
     <ng-template appLinhaListagem let-p>
       <td class="px-4 py-3">
         <div class="flex items-center gap-2.5">
           <span
-            class="grid size-8 shrink-0 place-items-center rounded-full bg-primary/10 text-[0.7rem] font-semibold text-primary">{{
-            iniciais(p.nome) }}</span>
+            class="grid size-8 shrink-0 place-items-center rounded-full bg-primary/10 text-[0.7rem] font-semibold text-primary"
+            >{{ iniciais(p.nome) }}</span
+          >
           <span class="font-medium text-foreground">{{ p.nome }}</span>
         </div>
       </td>
@@ -17,20 +26,38 @@
       </td>
       <td class="px-4 py-3">
         @if (p.ativo) {
-        <span
-          class="inline-flex items-center rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-medium text-emerald-700">Ativo</span>
+          <span
+            class="inline-flex items-center rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-medium text-emerald-700"
+            >Ativo</span
+          >
         } @else {
-        <span
-          class="inline-flex items-center rounded-full bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground">Inativo</span>
+          <span
+            class="inline-flex items-center rounded-full bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground"
+            >Inativo</span
+          >
         }
       </td>
       <td class="px-4 py-3">
         <div class="flex items-center justify-end gap-0.5">
-          <button hlmBtn variant="ghost" size="icon-sm" type="button" title="Editar" (click)="editar(p)">
+          <button
+            hlmBtn
+            variant="ghost"
+            size="icon-sm"
+            type="button"
+            title="Editar"
+            (click)="editar(p)"
+          >
             <ng-icon name="lucidePencil" size="1rem" />
           </button>
-          <button hlmBtn variant="ghost" size="icon-sm" type="button" title="Remover"
-            class="text-muted-foreground hover:text-destructive" (click)="pedirRemocao(p)">
+          <button
+            hlmBtn
+            variant="ghost"
+            size="icon-sm"
+            type="button"
+            title="Remover"
+            class="text-muted-foreground hover:text-destructive"
+            (click)="pedirRemocao(p)"
+          >
             <ng-icon name="lucideTrash2" size="1rem" />
           </button>
         </div>
@@ -39,38 +66,67 @@
   </app-listagem>
 </div>
 
-<app-form-dialog [aberto]="dialogAberto()" [titulo]="tituloDialog()"
-  descricao="Professor que a comissão aloca nas ofertas da grade." [salvando]="salvando()" [erro]="erroForm()"
-  (fechar)="fecharDialog()" (salvar)="salvar()">
+<app-form-dialog
+  [aberto]="dialogAberto()"
+  [titulo]="tituloDialog()"
+  descricao="Professor que a comissão aloca nas ofertas da grade."
+  [salvando]="salvando()"
+  [erro]="erroForm()"
+  (fechar)="fecharDialog()"
+  (salvar)="salvar()"
+>
   <ng-icon formDialogIcone name="lucideUsers" size="1.15rem" />
 
   <form class="grid gap-4" (ngSubmit)="salvar()">
     <div class="grid gap-1.5">
-      <label class="text-[0.7rem] font-semibold uppercase tracking-wide text-muted-foreground"
-        for="prof-nome">Nome</label>
-      <input hlmInput id="prof-nome" [ngModel]="rascunho().nome" name="nome" (ngModelChange)="atualizar('nome', $event)"
-        placeholder="Ex.: Maria Silva" />
+      <label
+        class="text-[0.7rem] font-semibold uppercase tracking-wide text-muted-foreground"
+        for="prof-nome"
+        >Nome</label
+      >
+      <input
+        hlmInput
+        id="prof-nome"
+        [ngModel]="rascunho().nome"
+        name="nome"
+        (ngModelChange)="atualizar('nome', $event)"
+        placeholder="Ex.: Maria Silva"
+      />
     </div>
 
     <div class="grid gap-4 sm:grid-cols-2">
       <div class="grid gap-1.5">
-        <label class="text-[0.7rem] font-semibold uppercase tracking-wide text-muted-foreground"
-          for="prof-identificador">Identificador</label>
-        <input hlmInput id="prof-identificador" [ngModel]="rascunho().identificador" name="identificador"
-          (ngModelChange)="atualizar('identificador', $event)" placeholder="SIAPE ou matrícula do SUAP" />
+        <label
+          class="text-[0.7rem] font-semibold uppercase tracking-wide text-muted-foreground"
+          for="prof-identificador"
+          >Identificador</label
+        >
+        <input
+          hlmInput
+          id="prof-identificador"
+          [ngModel]="rascunho().identificador"
+          name="identificador"
+          (ngModelChange)="atualizar('identificador', $event)"
+          placeholder="SIAPE ou matrícula do SUAP"
+        />
       </div>
 
       <div class="grid gap-1.5">
-        <label class="text-[0.7rem] font-semibold uppercase tracking-wide text-muted-foreground">Regime
-          (opcional)</label>
-        <hlm-select [ngModel]="rascunho().grupoRegime" name="grupoRegime" [itemToString]="rotuloRegime"
-          (ngModelChange)="atualizar('grupoRegime', $event)">
+        <label class="text-[0.7rem] font-semibold uppercase tracking-wide text-muted-foreground"
+          >Regime (opcional)</label
+        >
+        <hlm-select
+          [ngModel]="rascunho().grupoRegime"
+          name="grupoRegime"
+          [itemToString]="rotuloRegime"
+          (ngModelChange)="atualizar('grupoRegime', $event)"
+        >
           <hlm-select-trigger class="w-full">
             <hlm-select-value placeholder="Selecione o regime" />
           </hlm-select-trigger>
           <hlm-select-content *hlmSelectPortal>
             @for (r of regimes; track r.valor) {
-            <hlm-select-item [value]="r.valor">{{ r.rotulo }}</hlm-select-item>
+              <hlm-select-item [value]="r.valor">{{ r.rotulo }}</hlm-select-item>
             }
           </hlm-select-content>
         </hlm-select>
@@ -79,64 +135,167 @@
 
     <div class="grid gap-4 sm:grid-cols-2">
       <div class="grid gap-1.5">
-        <label class="text-[0.7rem] font-semibold uppercase tracking-wide text-muted-foreground" for="prof-email">E-mail
-          <span class="normal-case text-muted-foreground/70">(opcional)</span></label>
-        <input hlmInput id="prof-email" type="email" [ngModel]="rascunho().email" name="email"
-          (ngModelChange)="atualizar('email', $event)" placeholder="maria.silva@ifac.edu.br" />
+        <label
+          class="text-[0.7rem] font-semibold uppercase tracking-wide text-muted-foreground"
+          for="prof-email"
+          >E-mail <span class="normal-case text-muted-foreground/70">(opcional)</span></label
+        >
+        <input
+          hlmInput
+          id="prof-email"
+          type="email"
+          [ngModel]="rascunho().email"
+          name="email"
+          (ngModelChange)="atualizar('email', $event)"
+          placeholder="maria.silva@ifac.edu.br"
+        />
       </div>
 
       <div class="grid gap-1.5">
-        <label class="text-[0.7rem] font-semibold uppercase tracking-wide text-muted-foreground"
-          for="prof-titulacao">Titulação <span class="normal-case text-muted-foreground/70">(opcional)</span></label>
-        <input hlmInput id="prof-titulacao" [ngModel]="rascunho().titulacao" name="titulacao"
-          (ngModelChange)="atualizar('titulacao', $event)" placeholder="Ex.: Doutorado" />
+        <label
+          class="text-[0.7rem] font-semibold uppercase tracking-wide text-muted-foreground"
+          for="prof-titulacao"
+          >Titulação <span class="normal-case text-muted-foreground/70">(opcional)</span></label
+        >
+        <input
+          hlmInput
+          id="prof-titulacao"
+          [ngModel]="rascunho().titulacao"
+          name="titulacao"
+          (ngModelChange)="atualizar('titulacao', $event)"
+          placeholder="Ex.: Doutorado"
+        />
       </div>
     </div>
   </form>
 </app-form-dialog>
 
-<app-form-dialog [aberto]="importarAberto()" titulo="Importar professores"
-  descricao="Arquivo CSV ou XLSX. Identificador existente atualiza o cadastro; novo, cria." larguraClasse="sm:max-w-lg"
-  [salvando]="importando()" rotuloSalvar="Importar" [erro]="erroImportar()" (fechar)="fecharImportar()"
-  (salvar)="confirmarImportar()">
+<app-form-dialog
+  [aberto]="importarAberto()"
+  titulo="Importar professores"
+  descricao="Arquivo CSV ou XLSX. Identificador existente atualiza o cadastro; novo, cria."
+  larguraClasse="sm:max-w-lg"
+  [salvando]="importando()"
+  rotuloSalvar="Importar"
+  [erro]="erroImportar()"
+  (fechar)="fecharImportar()"
+  (salvar)="confirmarImportar()"
+>
   <ng-icon formDialogIcone name="lucideUpload" size="1.15rem" />
 
   <div class="grid gap-4">
     <div class="grid gap-1.5">
-      <label class="text-[0.7rem] font-semibold uppercase tracking-wide text-muted-foreground"
-        for="prof-importar-arquivo">Arquivo</label>
-      <input id="prof-importar-arquivo" type="file" accept=".csv,.xlsx"
+      <label
+        class="text-[0.7rem] font-semibold uppercase tracking-wide text-muted-foreground"
+        for="prof-importar-arquivo"
+        >Arquivo</label
+      >
+      <input
+        id="prof-importar-arquivo"
+        type="file"
+        accept=".csv,.xlsx"
         class="text-sm file:mr-3 file:rounded-md file:border-0 file:bg-primary/10 file:px-3 file:py-1.5 file:text-xs file:font-medium file:text-primary"
-        (change)="selecionarArquivo($event)" />
+        (change)="selecionarArquivo($event)"
+      />
     </div>
 
+    @if (carregandoPrevia()) {
+      <div class="flex items-center gap-2 text-xs text-muted-foreground">
+        <ng-icon name="lucideLoaderCircle" size="0.9rem" class="animate-spin" />
+        Lendo arquivo…
+      </div>
+    }
+
+    @if (!resultadoImportar() && previaImportar(); as previa) {
+      <div class="grid gap-2">
+        <div class="flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
+          <span>{{ previa.totalLinhas }} linha(s) no arquivo</span>
+          <span class="text-emerald-700">{{ contarAcao(previa, 'CRIAR') }} a criar</span>
+          <span class="text-sky-700">{{ contarAcao(previa, 'ATUALIZAR') }} a atualizar</span>
+          @if (previa.erros.length > 0) {
+            <span class="text-destructive">{{ previa.erros.length }} com erro</span>
+          }
+        </div>
+
+        <div class="max-h-56 overflow-y-auto rounded-md border border-border">
+          <table class="w-full text-xs">
+            <thead class="sticky top-0 bg-muted/60 text-muted-foreground">
+              <tr>
+                <th class="px-2 py-1 text-left font-medium">Linha</th>
+                <th class="px-2 py-1 text-left font-medium">Nome</th>
+                <th class="px-2 py-1 text-left font-medium">Identificador</th>
+                <th class="px-2 py-1 text-left font-medium">Ação</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (linha of previa.linhas; track linha.linha) {
+                <tr class="border-t border-border">
+                  <td class="px-2 py-1 tabular-nums text-muted-foreground">{{ linha.linha }}</td>
+                  <td class="px-2 py-1">{{ linha.nome }}</td>
+                  <td class="px-2 py-1 tabular-nums text-muted-foreground">
+                    {{ linha.identificador }}
+                  </td>
+                  <td class="px-2 py-1">
+                    @if (linha.acao === 'CRIAR') {
+                      <span
+                        class="inline-flex items-center rounded-full bg-emerald-100 px-2 py-0.5 text-[0.65rem] font-medium text-emerald-700"
+                        >Criar</span
+                      >
+                    } @else {
+                      <span
+                        class="inline-flex items-center rounded-full bg-sky-100 px-2 py-0.5 text-[0.65rem] font-medium text-sky-700"
+                        >Atualizar</span
+                      >
+                    }
+                  </td>
+                </tr>
+              }
+              @for (erro of previa.erros; track erro.linha) {
+                <tr class="border-t border-destructive/20 bg-destructive/5">
+                  <td class="px-2 py-1 tabular-nums text-destructive">{{ erro.linha }}</td>
+                  <td class="px-2 py-1 text-destructive" colspan="3">{{ erro.motivo }}</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      </div>
+    }
+
     @if (resultadoImportar(); as resultado) {
-    <div class="grid gap-2 rounded-md border border-border p-3 text-xs">
-      <div class="flex flex-wrap gap-3 text-muted-foreground">
-        <span>{{ resultado.totalLinhas }} linha(s)</span>
-        <span class="text-emerald-700">{{ resultado.criados }} criado(s)</span>
-        <span class="text-sky-700">{{ resultado.atualizados }} atualizado(s)</span>
+      <div class="grid gap-2 rounded-md border border-border p-3 text-xs">
+        <div class="flex flex-wrap gap-3 text-muted-foreground">
+          <span>{{ resultado.totalLinhas }} linha(s)</span>
+          <span class="text-emerald-700">{{ resultado.criados }} criado(s)</span>
+          <span class="text-sky-700">{{ resultado.atualizados }} atualizado(s)</span>
+          @if (resultado.erros.length > 0) {
+            <span class="text-destructive">{{ resultado.erros.length }} com erro</span>
+          }
+        </div>
         @if (resultado.erros.length > 0) {
-        <span class="text-destructive">{{ resultado.erros.length }} com erro</span>
+          <ul
+            class="max-h-40 overflow-y-auto rounded border border-destructive/30 bg-destructive/5"
+          >
+            @for (erro of resultado.erros; track erro.linha) {
+              <li class="border-b border-destructive/20 px-2 py-1 last:border-0">
+                <span class="font-medium text-destructive">Linha {{ erro.linha }}:</span>
+                {{ erro.motivo }}
+              </li>
+            }
+          </ul>
         }
       </div>
-      @if (resultado.erros.length > 0) {
-      <ul class="max-h-40 overflow-y-auto rounded border border-destructive/30 bg-destructive/5">
-        @for (erro of resultado.erros; track erro.linha) {
-        <li class="border-b border-destructive/20 px-2 py-1 last:border-0">
-          <span class="font-medium text-destructive">Linha {{ erro.linha }}:</span>
-          {{ erro.motivo }}
-        </li>
-        }
-      </ul>
-      }
-    </div>
     }
   </div>
 </app-form-dialog>
 
-<app-confirm-dialog [aberto]="removendo() !== null" titulo="Remover professor" [processando]="salvando()"
-  (fechar)="cancelarRemocao()" (confirmar)="confirmarRemocao()">
+<app-confirm-dialog
+  [aberto]="removendo() !== null"
+  titulo="Remover professor"
+  [processando]="salvando()"
+  (fechar)="cancelarRemocao()"
+  (confirmar)="confirmarRemocao()"
+>
   Remover <strong>{{ removendo()?.nome }}</strong> ({{ removendo()?.identificador }})? Esta ação não
   pode ser desfeita.
 </app-confirm-dialog>

@@ -12,6 +12,8 @@ import { GrupoRegime } from '@domain/academico/enums';
 import { Professor } from '@domain/academico/professor';
 import {
   ErroImportacaoProfessor,
+  PreviaImportacaoProfessores,
+  PreviaLinhaImportacaoProfessor,
   ResultadoImportacaoProfessores,
 } from '@application/academico/importar-professores.use-case';
 
@@ -171,6 +173,58 @@ export class ImportarProfessoresResponseDto {
     dto.criados = resultado.criados;
     dto.atualizados = resultado.atualizados;
     dto.erros = resultado.erros.map((erro) =>
+      ErroImportacaoProfessorDto.fromDomain(erro),
+    );
+    return dto;
+  }
+}
+
+export class PreviaLinhaImportacaoProfessorDto {
+  @ApiProperty({
+    description: 'Número da linha na planilha (cabeçalho = linha 1).',
+  })
+  linha: number;
+
+  @ApiProperty()
+  nome: string;
+
+  @ApiProperty()
+  identificador: string;
+
+  @ApiProperty({ enum: ['CRIAR', 'ATUALIZAR'] })
+  acao: 'CRIAR' | 'ATUALIZAR';
+
+  static fromDomain(
+    linha: PreviaLinhaImportacaoProfessor,
+  ): PreviaLinhaImportacaoProfessorDto {
+    const dto = new PreviaLinhaImportacaoProfessorDto();
+    dto.linha = linha.linha;
+    dto.nome = linha.nome;
+    dto.identificador = linha.identificador;
+    dto.acao = linha.acao;
+    return dto;
+  }
+}
+
+export class PreviaImportacaoProfessoresResponseDto {
+  @ApiProperty()
+  totalLinhas: number;
+
+  @ApiProperty({ type: PreviaLinhaImportacaoProfessorDto, isArray: true })
+  linhas: PreviaLinhaImportacaoProfessorDto[];
+
+  @ApiProperty({ type: ErroImportacaoProfessorDto, isArray: true })
+  erros: ErroImportacaoProfessorDto[];
+
+  static fromDomain(
+    previa: PreviaImportacaoProfessores,
+  ): PreviaImportacaoProfessoresResponseDto {
+    const dto = new PreviaImportacaoProfessoresResponseDto();
+    dto.totalLinhas = previa.totalLinhas;
+    dto.linhas = previa.linhas.map((linha) =>
+      PreviaLinhaImportacaoProfessorDto.fromDomain(linha),
+    );
+    dto.erros = previa.erros.map((erro) =>
       ErroImportacaoProfessorDto.fromDomain(erro),
     );
     return dto;

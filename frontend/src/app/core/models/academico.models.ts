@@ -63,6 +63,21 @@ export interface ResultadoImportacaoProfessores {
   erros: ErroImportacaoProfessor[];
 }
 
+export type AcaoImportacaoProfessor = 'CRIAR' | 'ATUALIZAR';
+
+export interface PreviaLinhaImportacaoProfessor {
+  linha: number;
+  nome: string;
+  identificador: string;
+  acao: AcaoImportacaoProfessor;
+}
+
+export interface PreviaImportacaoProfessores {
+  totalLinhas: number;
+  linhas: PreviaLinhaImportacaoProfessor[];
+  erros: ErroImportacaoProfessor[];
+}
+
 export interface Disciplina {
   id: string;
   cursoId: string;

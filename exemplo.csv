@@ -1,0 +1,7 @@
+nome,identificador,email,titulacao,grupoRegime,ajusteCargaHoras,ajusteCargaMotivo,ativo
+Camila Torres,20000001,camila.torres@ifac.edu.br,Doutorado,G1,,,true
+Eduardo Nakamura,20000002,eduardo.nakamura@ifac.edu.br,Mestrado,G3_40H,,,true
+Fernanda Ribas,20000003,,,,,,
+Gustavo Prado,20000004,gustavo.prado@ifac.edu.br,Especialização,G2,4,Coordenação de curso,true
+Helena Duarte,20000005,,,G1,,,false
+Igor Salles,20000006,igor.salles@ifac.edu.br,,G3_20H,,,true
