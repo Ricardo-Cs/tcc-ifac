@@ -1,20 +1,42 @@
 import { Component, computed, effect, inject, signal } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
+import { NgIcon, provideIcons } from '@ng-icons/core';
+import { lucideCheck, lucideFileDown, lucideLoaderCircle } from '@ng-icons/lucide';
 import { HlmComboboxImports } from '@spartan-ng/helm/combobox';
 import { HlmButton } from '@spartan-ng/helm/button';
+import { HlmDialogImports } from '@spartan-ng/helm/dialog';
 import { HlmSelectImports } from '@spartan-ng/helm/select';
 import { GradeApi } from '../../core/api/grade-api';
 import { formatarHoras } from '../../core/format/horas';
 import { Aula, Grade, PeriodoPublicado } from '../../core/models/grade.models';
 import { GradeTabelaComponent } from '../grade/components/grade-tabela/grade-tabela';
-import { LinhaVm, mapaConflitosPorAula, mapaSeveridadePorAula, montarLinhas } from '../grade/grade.view';
+import {
+  LinhaVm,
+  mapaConflitosPorAula,
+  mapaSeveridadePorAula,
+  montarLinhas,
+} from '../grade/grade.view';
+import { DocumentoPdf, SecaoPdf, gerarGradePdf, sanitizarNomeArquivo } from './grade-pdf';
 
 type Dimensao = 'turma' | 'professor';
+
+type EscopoExportacao = 'atual' | 'turmas' | 'professores';
 
 interface OpcaoTurma {
   valor: string;
   rotulo: string;
 }
+
+interface OpcaoExportacao {
+  valor: EscopoExportacao;
+  titulo: string;
+  detalhe: string;
+}
+
+const SUFIXO_ARQUIVO: Partial<Record<EscopoExportacao, string>> = {
+  turmas: 'todas-as-turmas',
+  professores: 'todos-os-professores',
+};
 
 const ROTULO_DIMENSAO: Record<Dimensao, string> = {
   turma: 'Turma',
@@ -29,7 +51,15 @@ function formatarData(iso: string): string {
 
 @Component({
   selector: 'app-grade-publica',
-  imports: [GradeTabelaComponent, HlmButton, ...HlmComboboxImports, ...HlmSelectImports],
+  imports: [
+    GradeTabelaComponent,
+    NgIcon,
+    HlmButton,
+    ...HlmComboboxImports,
+    ...HlmDialogImports,
+    ...HlmSelectImports,
+  ],
+  providers: [provideIcons({ lucideCheck, lucideFileDown, lucideLoaderCircle })],
   templateUrl: './grade-publica.html',
 })
 export class GradePublicaComponent {
@@ -123,10 +153,42 @@ export class GradePublicaComponent {
   readonly cargaDoSelecionado = computed<number | null>(() => {
     if (this.dimensao() !== 'professor') return null;
     const nome = this.selecionado();
-    if (!nome) return null;
-    const professor = (this.grade()?.professores ?? []).find((p) => p.nome === nome);
-    return professor?.cargaHorariaAtual ?? null;
+    return nome ? this.cargaDoProfessor(nome) : null;
   });
+
+  readonly dialogoExportar = signal(false);
+  readonly escopoExportacao = signal<EscopoExportacao>('atual');
+  readonly exportando = signal(false);
+  readonly erroExportacao = signal<string | null>(null);
+
+  readonly opcoesExportacao = computed<OpcaoExportacao[]>(() => {
+    const turmas = this.opcoesTurma().length;
+    const professores = this.opcoesProfessor().length;
+    const opcoes: OpcaoExportacao[] = [
+      {
+        valor: 'atual',
+        titulo: 'Esta grade',
+        detalhe: `${this.rotuloDimensao(this.dimensao())}: ${this.rotuloSelecionado()}`,
+      },
+    ];
+    if (turmas) {
+      opcoes.push({
+        valor: 'turmas',
+        titulo: 'Todas as turmas',
+        detalhe: `${turmas} turma(s) — uma página por turma.`,
+      });
+    }
+    if (professores) {
+      opcoes.push({
+        valor: 'professores',
+        titulo: 'Todos os professores',
+        detalhe: `${professores} professor(es) — uma página por professor.`,
+      });
+    }
+    return opcoes;
+  });
+
+  readonly podeExportar = computed(() => !!this.grade() && !!this.selecionado());
 
   private readonly aulasDaSelecao = computed<Aula[]>(() => {
     const sel = this.selecionado();
@@ -136,9 +198,13 @@ export class GradePublicaComponent {
     );
   });
 
-  private readonly severidadePorAula = computed(() => mapaSeveridadePorAula(this.grade()?.conflitos ?? []));
+  private readonly severidadePorAula = computed(() =>
+    mapaSeveridadePorAula(this.grade()?.conflitos ?? []),
+  );
 
-  private readonly conflitosPorAula = computed(() => mapaConflitosPorAula(this.grade()?.conflitos ?? []));
+  private readonly conflitosPorAula = computed(() =>
+    mapaConflitosPorAula(this.grade()?.conflitos ?? []),
+  );
 
   private readonly siglaPorCurso = computed(
     () => new Map((this.grade()?.cursos ?? []).map((c) => [c.id, c.sigla])),
@@ -163,6 +229,36 @@ export class GradePublicaComponent {
     ),
   );
 
+  abrirExportacao(): void {
+    this.escopoExportacao.set('atual');
+    this.erroExportacao.set(null);
+    this.dialogoExportar.set(true);
+  }
+
+  fecharExportacao(): void {
+    if (this.exportando()) return;
+    this.dialogoExportar.set(false);
+  }
+
+  escolherEscopo(escopo: EscopoExportacao): void {
+    this.escopoExportacao.set(escopo);
+  }
+
+  async exportar(): Promise<void> {
+    const documento = this.documentoParaExportar();
+    if (!documento) return;
+    this.exportando.set(true);
+    this.erroExportacao.set(null);
+    try {
+      await gerarGradePdf(documento);
+      this.dialogoExportar.set(false);
+    } catch {
+      this.erroExportacao.set('Não foi possível gerar o PDF. Tente novamente.');
+    } finally {
+      this.exportando.set(false);
+    }
+  }
+
   trocarPeriodo(codigo: string | null | undefined): void {
     if (!codigo || codigo === this.periodoCodigo()) return;
     this.periodoCodigo.set(codigo);
@@ -181,6 +277,84 @@ export class GradePublicaComponent {
 
   cargaFormatada(horas: number): string {
     return formatarHoras(horas);
+  }
+
+  private cargaDoProfessor(nome: string): number | null {
+    const professor = (this.grade()?.professores ?? []).find((p) => p.nome === nome);
+    return professor?.cargaHorariaAtual ?? null;
+  }
+
+  private linhasDe(aulas: Aula[]): LinhaVm[] {
+    const turnos = new Set(
+      aulas.map((a) => a.slot?.turno).filter((turno): turno is string => !!turno),
+    );
+    return montarLinhas(
+      aulas,
+      this.grade()?.slots ?? [],
+      new Map(),
+      this.siglaPorCurso(),
+      turnos.size ? turnos : null,
+      new Map(),
+    );
+  }
+
+  private secaoDaTurma(turmaId: string, rotulo: string): SecaoPdf {
+    const aulas = (this.grade()?.aulas ?? []).filter((a) => a.turmaId === turmaId);
+    return {
+      titulo: rotulo,
+      subtitulo: 'Grade da turma',
+      linhas: this.linhasDe(aulas),
+      mostrarTurma: false,
+      mostrarProfessores: true,
+    };
+  }
+
+  private secaoDoProfessor(nome: string): SecaoPdf {
+    const aulas = (this.grade()?.aulas ?? []).filter((a) => a.professores.includes(nome));
+    const carga = this.cargaDoProfessor(nome);
+    return {
+      titulo: nome,
+      subtitulo:
+        carga === null
+          ? 'Grade do professor'
+          : `Grade do professor · carga atual ${formatarHoras(carga)}`,
+      linhas: this.linhasDe(aulas),
+      mostrarTurma: true,
+      mostrarProfessores: false,
+    };
+  }
+
+  private secoesDoEscopo(escopo: EscopoExportacao, selecionado: string): SecaoPdf[] {
+    if (escopo === 'turmas') {
+      return this.opcoesTurma().map((opcao) => this.secaoDaTurma(opcao.valor, opcao.rotulo));
+    }
+    if (escopo === 'professores') {
+      return this.opcoesProfessor().map((nome) => this.secaoDoProfessor(nome));
+    }
+    return [
+      this.dimensao() === 'professor'
+        ? this.secaoDoProfessor(selecionado)
+        : this.secaoDaTurma(selecionado, this.itemToStringOpcao(selecionado)),
+    ];
+  }
+
+  private documentoParaExportar(): DocumentoPdf | null {
+    const periodo = this.periodoSelecionado();
+    const selecionado = this.selecionado();
+    if (!periodo || !this.grade() || !selecionado) return null;
+
+    const escopo = this.escopoExportacao();
+    const secoes = this.secoesDoEscopo(escopo, selecionado);
+    if (!secoes.length) return null;
+
+    const descricao = periodo.descricao ? `${periodo.descricao} · ` : '';
+    const sufixo = SUFIXO_ARQUIVO[escopo] ?? sanitizarNomeArquivo(this.rotuloSelecionado() ?? '');
+    return {
+      arquivo: `grade-${sanitizarNomeArquivo(periodo.codigo)}-${sufixo}.pdf`,
+      periodo: periodo.codigo,
+      detalhePeriodo: `Grade horária publicada · ${descricao}${formatarData(periodo.dataInicio)} a ${formatarData(periodo.dataFim)}`,
+      secoes,
+    };
   }
 
   private carregarGrade(codigo: string): void {

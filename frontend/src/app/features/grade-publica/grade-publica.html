@@ -1,9 +1,13 @@
 <div class="flex min-h-screen flex-col bg-muted">
-  <header class="flex flex-wrap items-center justify-between gap-3 border-b border-border bg-card px-6 py-3">
+  <header
+    class="flex flex-wrap items-center justify-between gap-3 border-b border-border bg-card px-6 py-3"
+  >
     <div class="flex items-center gap-3">
       <img src="logo-alter.svg" alt="Chronos" class="size-8" />
       <div>
-        <span class="text-[0.7rem] font-extrabold uppercase tracking-widest text-primary">Chronos · IFAC</span>
+        <span class="text-[0.7rem] font-extrabold uppercase tracking-widest text-primary"
+          >Chronos · IFAC</span
+        >
         <h1 class="text-sm font-semibold text-foreground">Grade horária pública</h1>
       </div>
     </div>
@@ -25,7 +29,9 @@
           <span class="font-semibold text-foreground">{{ p.codigo }}</span>
         }
         <span>{{ p.descricao }}</span>
-        <span class="tabular-nums">{{ formatarData(p.dataInicio) }} – {{ formatarData(p.dataFim) }}</span>
+        <span class="tabular-nums"
+          >{{ formatarData(p.dataInicio) }} – {{ formatarData(p.dataFim) }}</span
+        >
       </div>
     }
   </header>
@@ -64,7 +70,9 @@
           [placeholder]="'Buscar ' + rotuloDimensao(dimensao()).toLowerCase()"
         />
         <hlm-combobox-content *hlmComboboxPortal>
-          <hlm-combobox-empty>Nenhum {{ rotuloDimensao(dimensao()).toLowerCase() }} encontrado.</hlm-combobox-empty>
+          <hlm-combobox-empty
+            >Nenhum {{ rotuloDimensao(dimensao()).toLowerCase() }} encontrado.</hlm-combobox-empty
+          >
           <div hlmComboboxList>
             @for (valor of opcoesValores(); track valor) {
               <hlm-combobox-item [value]="valor">{{ itemToStringOpcao(valor) }}</hlm-combobox-item>
@@ -77,13 +85,100 @@
     @if (cargaDoSelecionado() !== null) {
       <span class="text-xs text-muted-foreground">
         Carga atual:
-        <span class="font-semibold text-foreground">{{ cargaFormatada(cargaDoSelecionado()!) }}</span>
+        <span class="font-semibold text-foreground">{{
+          cargaFormatada(cargaDoSelecionado()!)
+        }}</span>
       </span>
     }
+
+    <button
+      hlmBtn
+      size="sm"
+      variant="outline"
+      type="button"
+      class="ml-auto gap-1.5"
+      [disabled]="!podeExportar()"
+      (click)="abrirExportacao()"
+    >
+      <ng-icon name="lucideFileDown" size="1rem" />
+      Exportar PDF
+    </button>
   </div>
 
+  <hlm-dialog [state]="dialogoExportar() ? 'open' : 'closed'" (closed)="fecharExportacao()">
+    <hlm-dialog-content *hlmDialogPortal class="gap-0 p-0 sm:max-w-md">
+      <hlm-dialog-header
+        class="flex flex-row items-start gap-3 space-y-0 border-b border-border p-4 text-left"
+      >
+        <span class="grid size-9 shrink-0 place-items-center rounded-lg bg-primary/10 text-primary">
+          <ng-icon name="lucideFileDown" size="1.15rem" />
+        </span>
+        <div>
+          <h3 hlmDialogTitle class="text-base leading-none">Exportar em PDF</h3>
+          <p hlmDialogDescription class="mt-1.5 text-xs">
+            Escolha o que entra no arquivo do período {{ periodoSelecionado()?.codigo }}.
+          </p>
+        </div>
+      </hlm-dialog-header>
+
+      <div class="grid gap-2 p-4">
+        @for (opcao of opcoesExportacao(); track opcao.valor) {
+          <button
+            type="button"
+            class="flex items-start gap-3 rounded-lg border p-3 text-left transition-colors hover:bg-accent focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+            [class]="
+              escopoExportacao() === opcao.valor ? 'border-primary bg-primary/5' : 'border-border'
+            "
+            (click)="escolherEscopo(opcao.valor)"
+          >
+            <span
+              class="mt-0.5 grid size-4 shrink-0 place-items-center rounded-full border"
+              [class]="
+                escopoExportacao() === opcao.valor
+                  ? 'border-primary bg-primary text-primary-foreground'
+                  : 'border-border'
+              "
+            >
+              @if (escopoExportacao() === opcao.valor) {
+                <ng-icon name="lucideCheck" size="0.6rem" />
+              }
+            </span>
+            <span class="min-w-0">
+              <span class="block text-sm font-medium text-foreground">{{ opcao.titulo }}</span>
+              <span class="block truncate text-xs text-muted-foreground">{{ opcao.detalhe }}</span>
+            </span>
+          </button>
+        }
+
+        @if (erroExportacao()) {
+          <p
+            class="rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-xs text-destructive"
+          >
+            {{ erroExportacao() }}
+          </p>
+        }
+      </div>
+
+      <hlm-dialog-footer class="border-t border-border p-4">
+        <button hlmBtn variant="outline" type="button" (click)="fecharExportacao()">
+          Cancelar
+        </button>
+        <button hlmBtn type="button" class="gap-1.5" [disabled]="exportando()" (click)="exportar()">
+          @if (exportando()) {
+            <ng-icon name="lucideLoaderCircle" size="1rem" class="animate-spin" />
+            Gerando…
+          } @else {
+            Baixar PDF
+          }
+        </button>
+      </hlm-dialog-footer>
+    </hlm-dialog-content>
+  </hlm-dialog>
+
   @if (erro()) {
-    <div class="mx-6 mt-4 rounded-md border border-destructive/40 bg-destructive/10 px-4 py-3 text-sm text-destructive">
+    <div
+      class="mx-6 mt-4 rounded-md border border-destructive/40 bg-destructive/10 px-4 py-3 text-sm text-destructive"
+    >
       {{ erro() }}
     </div>
   }
@@ -97,7 +192,12 @@
   } @else if (grade() && selecionado()) {
     <div class="p-6">
       <p class="mb-3 text-sm font-medium text-foreground">{{ rotuloSelecionado() }}</p>
-      <app-grade-tabela [linhas]="linhas()" [editavel]="false" [vendoTodos]="true" [vendoVariasTurmas]="true" />
+      <app-grade-tabela
+        [linhas]="linhas()"
+        [editavel]="false"
+        [vendoTodos]="true"
+        [vendoVariasTurmas]="true"
+      />
     </div>
   }
 </div>
