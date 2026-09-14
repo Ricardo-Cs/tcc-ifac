@@ -21,12 +21,44 @@ import { ConfirmDialogComponent } from '../../shared/confirm-dialog/confirm-dial
 import { FormDialogComponent } from '../../shared/form-dialog/form-dialog';
 import { ColunaListagem, FiltroListagem, ListagemComponent } from '../../shared/listagem/listagem';
 import { ListagemLinhaDirective } from '../../shared/listagem/listagem-linha';
+import { OpcaoBusca, SelectBuscaComponent } from '../../shared/select-busca/select-busca';
 import { SugestaoAulasSemana, regimeDaModalidade, sugerirAulasSemana } from './carga';
 
 const REGIMES = [
   { valor: 'SEMESTRAL', rotulo: 'Semestral' },
   { valor: 'ANUAL', rotulo: 'Anual' },
 ] as const;
+
+const SEPARADORES = /^[\s\u2014\u2013\-\u00b7:]+/;
+
+const restoAposPrefixo = (texto: string, prefixo: string): string => {
+  const valor = texto.trim();
+  const alvo = prefixo.trim();
+  if (!alvo || !valor.toLocaleLowerCase().startsWith(alvo.toLocaleLowerCase())) return valor;
+  const resto = valor.slice(alvo.length);
+  if (resto && !SEPARADORES.test(resto)) return valor;
+  return resto.replace(SEPARADORES, '');
+};
+
+const juntar = (...partes: string[]): string => partes.filter((p) => p).join(' \u00b7 ');
+
+const rotuloDaTurma = (turma: Turma): string => {
+  const sigla = turma.cursoSigla.trim();
+  const curso = turma.cursoNome.trim();
+  const cabecalho =
+    curso && curso.toLocaleLowerCase() !== sigla.toLocaleLowerCase()
+      ? `${sigla} \u2014 ${curso}`
+      : sigla;
+  return juntar(cabecalho, restoAposPrefixo(turma.nome, sigla));
+};
+
+const rotuloDaDisciplina = (disciplina: Disciplina): string => {
+  const codigo = disciplina.codigo.trim();
+  const nome = restoAposPrefixo(disciplina.nome, codigo);
+  return nome && nome.toLocaleLowerCase() !== codigo.toLocaleLowerCase()
+    ? `${codigo} \u2014 ${nome}`
+    : codigo;
+};
 
 interface RascunhoVinculo {
   professorId: string;
@@ -65,6 +97,7 @@ const rascunhoVazio = (): RascunhoOferta => ({
     ConfirmDialogComponent,
     ListagemComponent,
     ListagemLinhaDirective,
+    SelectBuscaComponent,
     ...HlmSelectImports,
   ],
   providers: [provideIcons({ lucideLayers, lucidePencil, lucideTrash2, lucidePlus, lucideX })],
@@ -84,7 +117,7 @@ export class OfertasComponent {
   readonly editavel = this.periodoState.editavel;
 
   readonly colunas: ColunaListagem[] = [
-    { rotulo: 'Turma', largura: 'w-40' },
+    { rotulo: 'Turma', largura: 'w-64' },
     { rotulo: 'Disciplina' },
     { rotulo: 'Regime', largura: 'w-32' },
     { rotulo: 'Aulas/sem', largura: 'w-28' },
@@ -93,7 +126,7 @@ export class OfertasComponent {
   ];
 
   readonly filtros: FiltroListagem<Oferta>[] = [
-    { chave: 'curso', rotulo: 'Curso', valor: (o) => o.cursoSigla },
+    { chave: 'curso', rotulo: 'Curso', valor: (o) => o.cursoNome, busca: true },
     {
       chave: 'regime',
       rotulo: 'Regime',
@@ -102,7 +135,7 @@ export class OfertasComponent {
   ];
 
   readonly textoBusca = (o: Oferta): string =>
-    `${o.cursoSigla} ${o.turmaNome} ${o.disciplinaCodigo} ${o.disciplinaNome}`;
+    `${o.cursoSigla} ${o.cursoNome} ${o.turmaNome} ${o.disciplinaCodigo} ${o.disciplinaNome}`;
 
   constructor() {
     this.carregarAuxiliares();
@@ -142,18 +175,25 @@ export class OfertasComponent {
   readonly rotuloRegime = (valor: string): string =>
     REGIMES.find((r) => r.valor === valor)?.rotulo ?? valor;
 
-  readonly rotuloTurma = (turmaId: string): string => {
-    const t = this.turmas().find((x) => x.id === turmaId);
-    return t ? `${t.cursoSigla} — ${t.nome}` : turmaId;
-  };
+  readonly opcoesTurma = computed<OpcaoBusca[]>(() =>
+    this.turmas().map((t) => ({ valor: t.id, rotulo: rotuloDaTurma(t) })),
+  );
 
-  readonly rotuloDisciplina = (disciplinaId: string): string => {
-    const d = this.disciplinas().find((x) => x.id === disciplinaId);
-    return d ? `${d.codigo} — ${d.nome}` : disciplinaId;
-  };
+  readonly opcoesProfessor = computed<OpcaoBusca[]>(() =>
+    this.professores().map((p) => ({
+      valor: p.id,
+      rotulo: p.nome,
+      detalhe: p.identificador,
+    })),
+  );
 
-  readonly rotuloProfessor = (professorId: string): string =>
-    this.professores().find((x) => x.id === professorId)?.nome ?? professorId;
+  nomeDoCursoNaLinha(o: Oferta): string {
+    return o.cursoNome || o.cursoSigla;
+  }
+
+  siglaETurmaNaLinha(o: Oferta): string {
+    return juntar(o.cursoSigla, restoAposPrefixo(o.turmaNome, o.cursoSigla));
+  }
 
   resumoProfessores(o: Oferta): string {
     if (o.professores.length === 0) return '—';
@@ -187,6 +227,14 @@ export class OfertasComponent {
     if (!turma) return [];
     return this.disciplinas().filter((d) => d.cursoId === turma.cursoId);
   });
+
+  readonly opcoesDisciplina = computed<OpcaoBusca[]>(() =>
+    this.disciplinasDoCurso().map((d) => ({
+      valor: d.id,
+      rotulo: rotuloDaDisciplina(d),
+      detalhe: `${d.cargaHoraria}h`,
+    })),
+  );
 
   readonly regimeEscolhido = computed<RegimeOferta | null>(() => {
     const turma = this.turmaEscolhida();

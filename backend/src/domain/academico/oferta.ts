@@ -11,6 +11,7 @@ export interface Oferta {
   turmaId: string;
   turmaNome: string;
   cursoSigla: string;
+  cursoNome: string;
   disciplinaId: string;
   disciplinaCodigo: string;
   disciplinaNome: string;
@@ -18,6 +19,8 @@ export interface Oferta {
   periodoCodigo: string;
   regime: RegimeOferta;
   aulasSemana: number;
+  salaId: string | null;
+  salaNome: string | null;
   observacoes: string | null;
   professores: ProfessorDaOferta[];
 }
@@ -33,6 +36,7 @@ export interface CriarOfertaInput {
   periodoLetivoId: string;
   regime: RegimeOferta;
   aulasSemana: number;
+  salaId?: string | null;
   observacoes?: string | null;
   professores: ProfessorOfertaInput[];
 }

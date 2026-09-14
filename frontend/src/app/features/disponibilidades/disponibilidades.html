@@ -40,6 +40,7 @@
       [colunas]="colunas"
       [filtros]="filtros"
       [textoBusca]="textoBusca"
+      [camposBusca]="['professor', 'horário', 'motivo']"
       [mostrarImportar]="false"
       [mostrarAdicionar]="coleta() !== null"
       entidade="restrições"
@@ -93,21 +94,13 @@
       <label class="text-[0.7rem] font-semibold uppercase tracking-wide text-muted-foreground"
         >Professor</label
       >
-      <hlm-select
-        [ngModel]="rascunho().professorId"
-        name="professorId"
-        [itemToString]="rotuloProfessor"
-        (ngModelChange)="atualizarProfessor($event)"
-      >
-        <hlm-select-trigger class="w-full">
-          <hlm-select-value placeholder="Selecione o professor" />
-        </hlm-select-trigger>
-        <hlm-select-content *hlmSelectPortal>
-          @for (p of professores(); track p.id) {
-            <hlm-select-item [value]="p.id">{{ p.nome }}</hlm-select-item>
-          }
-        </hlm-select-content>
-      </hlm-select>
+      <app-select-busca
+        [opcoes]="opcoesProfessor()"
+        [valor]="rascunho().professorId"
+        placeholder="Busque o professor"
+        vazio="Nenhum professor encontrado."
+        (valorChange)="atualizarProfessor($event)"
+      />
     </div>
 
     <div class="grid gap-1.5">

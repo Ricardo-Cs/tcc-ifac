@@ -1,5 +1,4 @@
 <div class="flex flex-col gap-4 p-6">
-  <!-- Barra de período: ofertas são recortadas pelo período em foco. -->
   <div class="flex flex-wrap items-center gap-3">
     <label class="text-sm font-medium text-muted-foreground">Período letivo</label>
     <hlm-select
@@ -29,6 +28,7 @@
     [colunas]="colunas"
     [filtros]="filtros"
     [textoBusca]="textoBusca"
+    [camposBusca]="['curso', 'turma', 'disciplina']"
     [mostrarImportar]="false"
     [mostrarAdicionar]="editavel()"
     entidade="ofertas"
@@ -37,8 +37,8 @@
     <ng-template appLinhaListagem let-o>
       <td class="px-4 py-3">
         <div class="flex flex-col">
-          <span class="font-medium text-foreground">{{ o.turmaNome }}</span>
-          <span class="text-xs text-muted-foreground">{{ o.cursoSigla }}</span>
+          <span class="font-medium text-foreground">{{ nomeDoCursoNaLinha(o) }}</span>
+          <span class="text-xs text-muted-foreground">{{ siglaETurmaNaLinha(o) }}</span>
         </div>
       </td>
       <td class="px-4 py-3">
@@ -83,8 +83,6 @@
   </app-listagem>
 </div>
 
-<!-- Criar/editar: o cromo vem do app-form-dialog; aqui só o ícone e o formulário.
-     Diálogo mais largo (sm:max-w-lg) e com o corpo rolável — é o maior deles. -->
 <app-form-dialog
   [aberto]="dialogAberto()"
   [titulo]="tituloDialog()"
@@ -102,45 +100,27 @@
       <label class="text-[0.7rem] font-semibold uppercase tracking-wide text-muted-foreground"
         >Turma</label
       >
-      <hlm-select
-        [ngModel]="rascunho().turmaId"
-        name="turma"
-        [itemToString]="rotuloTurma"
-        (ngModelChange)="atualizar('turmaId', $event)"
-      >
-        <hlm-select-trigger class="w-full">
-          <hlm-select-value placeholder="Selecione a turma" />
-        </hlm-select-trigger>
-        <hlm-select-content *hlmSelectPortal>
-          @for (t of turmas(); track t.id) {
-            <hlm-select-item [value]="t.id">{{ t.cursoSigla }} — {{ t.nome }}</hlm-select-item>
-          }
-        </hlm-select-content>
-      </hlm-select>
+      <app-select-busca
+        [opcoes]="opcoesTurma()"
+        [valor]="rascunho().turmaId"
+        placeholder="Busque a turma"
+        vazio="Nenhuma turma encontrada."
+        (valorChange)="atualizar('turmaId', $event)"
+      />
     </div>
 
     <div class="grid gap-1.5">
       <label class="text-[0.7rem] font-semibold uppercase tracking-wide text-muted-foreground"
         >Disciplina</label
       >
-      <hlm-select
-        [ngModel]="rascunho().disciplinaId"
-        name="disciplina"
-        [itemToString]="rotuloDisciplina"
-        [disabled]="!turmaEscolhida()"
-        (ngModelChange)="atualizar('disciplinaId', $event)"
-      >
-        <hlm-select-trigger class="w-full">
-          <hlm-select-value
-            [placeholder]="turmaEscolhida() ? 'Selecione a disciplina' : 'Escolha a turma primeiro'"
-          />
-        </hlm-select-trigger>
-        <hlm-select-content *hlmSelectPortal>
-          @for (d of disciplinasDoCurso(); track d.id) {
-            <hlm-select-item [value]="d.id">{{ d.codigo }} — {{ d.nome }}</hlm-select-item>
-          }
-        </hlm-select-content>
-      </hlm-select>
+      <app-select-busca
+        [opcoes]="opcoesDisciplina()"
+        [valor]="rascunho().disciplinaId"
+        [desabilitado]="!turmaEscolhida()"
+        [placeholder]="turmaEscolhida() ? 'Busque a disciplina' : 'Escolha a turma primeiro'"
+        vazio="Nenhuma disciplina encontrada."
+        (valorChange)="atualizar('disciplinaId', $event)"
+      />
       @if (turmaEscolhida(); as t) {
         @if (!disciplinasDoCurso().length) {
           <span class="text-xs text-muted-foreground">
@@ -222,21 +202,13 @@
       @for (p of rascunho().professores; track $index) {
         <div class="flex items-end gap-2">
           <div class="grid flex-1 gap-1.5">
-            <hlm-select
-              [ngModel]="p.professorId"
-              [name]="'prof-' + $index"
-              [itemToString]="rotuloProfessor"
-              (ngModelChange)="atualizarProfessor($index, 'professorId', $event)"
-            >
-              <hlm-select-trigger class="w-full">
-                <hlm-select-value placeholder="Professor" />
-              </hlm-select-trigger>
-              <hlm-select-content *hlmSelectPortal>
-                @for (prof of professores(); track prof.id) {
-                  <hlm-select-item [value]="prof.id">{{ prof.nome }}</hlm-select-item>
-                }
-              </hlm-select-content>
-            </hlm-select>
+            <app-select-busca
+              [opcoes]="opcoesProfessor()"
+              [valor]="p.professorId"
+              placeholder="Busque o professor"
+              vazio="Nenhum professor encontrado."
+              (valorChange)="atualizarProfessor($index, 'professorId', $event)"
+            />
           </div>
           @if (codocencia()) {
             <input
@@ -295,7 +267,6 @@
   </form>
 </app-form-dialog>
 
-<!-- Confirmar remoção: destrutivo, então nunca num clique só. -->
 <app-confirm-dialog
   [aberto]="removendo() !== null"
   titulo="Remover oferta"

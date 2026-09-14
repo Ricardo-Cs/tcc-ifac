@@ -4,6 +4,7 @@
     [colunas]="colunas"
     [filtros]="filtros"
     [textoBusca]="textoBusca"
+    [camposBusca]="['curso', 'turma']"
     [mostrarImportar]="false"
     entidade="turmas"
     (adicionar)="abrirNovo()"
@@ -47,7 +48,6 @@
   </app-listagem>
 </div>
 
-<!-- Criar/editar: o cromo vem do app-form-dialog; aqui só o ícone e o formulário. -->
 <app-form-dialog
   [aberto]="dialogAberto()"
   [titulo]="tituloDialog()"
@@ -64,21 +64,13 @@
       <label class="text-[0.7rem] font-semibold uppercase tracking-wide text-muted-foreground"
         >Curso</label
       >
-      <hlm-select
-        [ngModel]="rascunho().cursoId"
-        name="curso"
-        [itemToString]="rotuloCurso"
-        (ngModelChange)="atualizar('cursoId', $event)"
-      >
-        <hlm-select-trigger class="w-full">
-          <hlm-select-value placeholder="Selecione o curso" />
-        </hlm-select-trigger>
-        <hlm-select-content *hlmSelectPortal>
-          @for (c of cursos(); track c.id) {
-            <hlm-select-item [value]="c.id">{{ c.sigla }} — {{ c.nome }}</hlm-select-item>
-          }
-        </hlm-select-content>
-      </hlm-select>
+      <app-select-busca
+        [opcoes]="opcoesCurso()"
+        [valor]="rascunho().cursoId"
+        placeholder="Busque o curso"
+        vazio="Nenhum curso encontrado."
+        (valorChange)="atualizar('cursoId', $event)"
+      />
     </div>
 
     <div class="grid gap-1.5">
@@ -136,7 +128,6 @@
   </form>
 </app-form-dialog>
 
-<!-- Confirmar remoção: destrutivo, então nunca num clique só. -->
 <app-confirm-dialog
   [aberto]="removendo() !== null"
   titulo="Remover turma"

@@ -1,0 +1,38 @@
+<hlm-combobox
+  class="w-full"
+  [value]="selecionado()"
+  [disabled]="desabilitado()"
+  [itemToString]="rotuloDoValor"
+  [filter]="filtrar"
+  [autoHighlight]="true"
+  (valueChange)="escolher($event)"
+>
+  <hlm-combobox-input
+    class="w-full"
+    [placeholder]="placeholder()"
+    [showClear]="limpavel()"
+    triggerAriaLabel="Abrir opções"
+    clearAriaLabel="Limpar seleção"
+  />
+  <hlm-combobox-content *hlmComboboxPortal>
+    <hlm-combobox-empty>{{ vazio() }}</hlm-combobox-empty>
+    <div hlmComboboxList>
+      @for (o of opcoes(); track o.valor) {
+        <hlm-combobox-item class="pe-7" [value]="o.valor" [disabled]="o.desabilitado ?? false">
+          <span class="flex w-full items-center gap-2">
+            <span class="min-w-0 break-words">{{ o.rotulo }}</span>
+            @if (o.detalhe) {
+              <span class="shrink-0 text-xs text-muted-foreground">{{ o.detalhe }}</span>
+            }
+            @if (o.marcador) {
+              <span
+                class="ms-auto shrink-0 rounded bg-destructive/10 px-1.5 py-0.5 text-[0.65rem] font-semibold text-destructive"
+                >{{ o.marcador }}</span
+              >
+            }
+          </span>
+        </hlm-combobox-item>
+      }
+    </div>
+  </hlm-combobox-content>
+</hlm-combobox>

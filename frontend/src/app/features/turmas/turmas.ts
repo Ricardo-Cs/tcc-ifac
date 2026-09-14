@@ -1,17 +1,9 @@
-/**
- * Cadastro de Turmas — segue o molde de Cursos (listagem + diálogo de
- * formulário), integrado ao backend (`TurmasController`): a lista vem de
- * `GET /turmas` e o salvar/remover chamam POST/PATCH/DELETE. Toda turma
- * pertence a um curso, então o diálogo carrega os cursos (`GET /cursos`) para
- * o select; um curso inexistente é rejeitado pelo servidor (400).
- */
 import { Component, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { NgIcon, provideIcons } from '@ng-icons/core';
 import { lucideGraduationCap, lucidePencil, lucideTrash2 } from '@ng-icons/lucide';
 import { HlmButton } from '@spartan-ng/helm/button';
 import { HlmInput } from '@spartan-ng/helm/input';
-import { HlmSelectImports } from '@spartan-ng/helm/select';
 import { AcademicoApi } from '../../core/api/academico-api';
 import { mensagemErro } from '../../core/api/erro-http';
 import { Curso, Turma } from '../../core/models/academico.models';
@@ -20,8 +12,8 @@ import { ConfirmDialogComponent } from '../../shared/confirm-dialog/confirm-dial
 import { FormDialogComponent } from '../../shared/form-dialog/form-dialog';
 import { ColunaListagem, FiltroListagem, ListagemComponent } from '../../shared/listagem/listagem';
 import { ListagemLinhaDirective } from '../../shared/listagem/listagem-linha';
+import { OpcaoBusca, SelectBuscaComponent } from '../../shared/select-busca/select-busca';
 
-/** O rascunho do formulário — os campos editáveis de uma turma. */
 interface RascunhoTurma {
   cursoId: string;
   nome: string;
@@ -47,7 +39,7 @@ const RASCUNHO_VAZIO: RascunhoTurma = {
     ConfirmDialogComponent,
     ListagemComponent,
     ListagemLinhaDirective,
-    ...HlmSelectImports,
+    SelectBuscaComponent,
   ],
   providers: [provideIcons({ lucideGraduationCap, lucidePencil, lucideTrash2 })],
   templateUrl: './turmas.html',
@@ -57,9 +49,7 @@ export class TurmasComponent {
   private readonly toast = inject(ToastService);
 
   readonly turmas = signal<Turma[]>([]);
-  /** Cursos para o select do formulário — carregados junto com a tela. */
   readonly cursos = signal<Curso[]>([]);
-  /** true enquanto o salvar/remover está em voo — trava os botões do diálogo. */
   readonly salvando = signal(false);
 
   readonly colunas: ColunaListagem[] = [
@@ -71,10 +61,10 @@ export class TurmasComponent {
   ];
 
   readonly filtros: FiltroListagem<Turma>[] = [
-    { chave: 'curso', rotulo: 'Curso', valor: (t) => t.cursoSigla },
+    { chave: 'curso', rotulo: 'Curso', valor: (t) => t.cursoNome, busca: true },
   ];
 
-  readonly textoBusca = (t: Turma): string => `${t.cursoSigla} ${t.nome}`;
+  readonly textoBusca = (t: Turma): string => `${t.cursoSigla} ${t.cursoNome} ${t.nome}`;
 
   constructor() {
     this.carregar();
@@ -100,23 +90,15 @@ export class TurmasComponent {
     });
   }
 
-  // Arrow field para o `itemToString` do hlm-select: o trigger mostra a sigla
-  // do curso selecionado a partir do id guardado no rascunho.
-  readonly rotuloCurso = (cursoId: string): string => {
-    const curso = this.cursos().find((c) => c.id === cursoId);
-    return curso ? `${curso.sigla} — ${curso.nome}` : cursoId;
-  };
+  readonly opcoesCurso = computed<OpcaoBusca[]>(() =>
+    this.cursos().map((c) => ({ valor: c.id, rotulo: `${c.sigla} — ${c.nome}` })),
+  );
 
-  // ---- Diálogo de formulário --------------------------------------------
-
-  /** Turma em edição, ou `null` quando o diálogo está criando uma nova. */
   readonly editando = signal<Turma | null>(null);
   readonly dialogAberto = signal(false);
   readonly rascunho = signal<RascunhoTurma>(RASCUNHO_VAZIO);
-  /** Erro do formulário — acende dentro do diálogo (além do toast). */
   readonly erroForm = signal<string | null>(null);
 
-  /** Turma à espera de confirmação de remoção — abre o diálogo de confirmar. */
   readonly removendo = signal<Turma | null>(null);
 
   readonly tituloDialog = computed(() => (this.editando() ? 'Editar turma' : 'Nova turma'));
@@ -167,8 +149,6 @@ export class TurmasComponent {
 
     requisicao.subscribe({
       next: (turma) => {
-        // O servidor devolve a turma com o curso já resolvido (sigla/nome) — é
-        // a fonte da verdade; refletimos exatamente ela na lista.
         this.turmas.update((lista) =>
           alvo ? lista.map((t) => (t.id === turma.id ? turma : t)) : [...lista, turma],
         );
@@ -182,8 +162,6 @@ export class TurmasComponent {
       },
     });
   }
-
-  // ---- Remoção -----------------------------------------------------------
 
   pedirRemocao(turma: Turma): void {
     this.removendo.set(turma);

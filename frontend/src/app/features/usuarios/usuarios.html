@@ -17,6 +17,7 @@
       [colunas]="colunas"
       [filtros]="filtros"
       [textoBusca]="textoBusca"
+      [camposBusca]="['nome', 'e-mail']"
       [mostrarImportar]="false"
       entidade="usuários"
       (adicionar)="abrirNovo()"
@@ -170,7 +171,9 @@
       </div>
 
       @if (!editando()) {
-        <p class="rounded-md border border-border bg-muted/40 px-3 py-2 text-xs text-muted-foreground">
+        <p
+          class="rounded-md border border-border bg-muted/40 px-3 py-2 text-xs text-muted-foreground"
+        >
           A senha inicial será <strong class="text-foreground">{{ senhaPadrao }}</strong> — repasse
           ao usuário e peça para trocá-la no primeiro login.
         </p>
@@ -198,7 +201,8 @@
     (fechar)="cancelarRedefinicaoSenha()"
     (confirmar)="confirmarRedefinicaoSenha()"
   >
-    Redefinir a senha de <strong>{{ redefinindo()?.nome }}</strong> para a padrão ({{ senhaPadrao }})?
-    Ele precisará trocá-la de novo ao entrar.
+    Redefinir a senha de <strong>{{ redefinindo()?.nome }}</strong> para a padrão ({{
+      senhaPadrao
+    }})? Ele precisará trocá-la de novo ao entrar.
   </app-confirm-dialog>
 }

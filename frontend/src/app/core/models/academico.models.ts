@@ -151,6 +151,7 @@ export interface Oferta {
   turmaId: string;
   turmaNome: string;
   cursoSigla: string;
+  cursoNome: string;
   disciplinaId: string;
   disciplinaCodigo: string;
   disciplinaNome: string;

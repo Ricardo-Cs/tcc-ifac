@@ -1,5 +1,4 @@
 <div class="overflow-hidden rounded-xl border border-border bg-card">
-  <!-- Barra de ações: busca + filtros à esquerda, adicionar/importar à direita -->
   <div class="flex flex-wrap items-center justify-between gap-3 border-b border-border p-4">
     <div class="flex flex-wrap items-center gap-2">
       <div class="relative w-full sm:w-64">
@@ -13,28 +12,39 @@
           class="w-full ps-8"
           [ngModel]="termo()"
           (ngModelChange)="buscar($event)"
-          [placeholder]="'Buscar ' + entidade() + '…'"
+          [placeholder]="placeholderBusca()"
         />
       </div>
 
       @for (filtro of filtros(); track filtro.chave) {
-        <hlm-select
-          class="w-44"
-          [itemToString]="rotuladores().get(filtro.chave)!"
-          [ngModel]="valorFiltro(filtro.chave)"
-          (ngModelChange)="filtrar(filtro.chave, $event)"
-        >
-          <hlm-select-trigger class="w-44">
-            <hlm-select-value [placeholder]="filtro.rotulo" />
-          </hlm-select-trigger>
-          <hlm-select-content *hlmSelectPortal>
-            <hlm-select-item [value]="TODOS">Todos</hlm-select-item>
-            <hlm-select-separator />
-            @for (o of opcoesPorFiltro().get(filtro.chave) ?? []; track o.valor) {
-              <hlm-select-item [value]="o.valor">{{ o.rotulo ?? o.valor }}</hlm-select-item>
-            }
-          </hlm-select-content>
-        </hlm-select>
+        @if (opcoesBuscaPorFiltro().get(filtro.chave); as opcoesBusca) {
+          <app-select-busca
+            class="w-44"
+            [opcoes]="opcoesBusca"
+            [valor]="valorFiltroBusca(filtro.chave)"
+            [placeholder]="filtro.rotulo"
+            [vazio]="'Nenhum ' + filtro.rotulo.toLowerCase() + ' encontrado.'"
+            (valorChange)="filtrar(filtro.chave, $event || TODOS)"
+          />
+        } @else {
+          <hlm-select
+            class="w-44"
+            [itemToString]="rotuladores().get(filtro.chave)!"
+            [ngModel]="valorFiltro(filtro.chave)"
+            (ngModelChange)="filtrar(filtro.chave, $event)"
+          >
+            <hlm-select-trigger class="w-44">
+              <hlm-select-value [placeholder]="filtro.rotulo" />
+            </hlm-select-trigger>
+            <hlm-select-content *hlmSelectPortal>
+              <hlm-select-item [value]="TODOS">Todos</hlm-select-item>
+              <hlm-select-separator />
+              @for (o of opcoesPorFiltro().get(filtro.chave) ?? []; track o.valor) {
+                <hlm-select-item [value]="o.valor">{{ o.rotulo ?? o.valor }}</hlm-select-item>
+              }
+            </hlm-select-content>
+          </hlm-select>
+        }
       }
 
       @if (algumFiltroAtivo()) {
@@ -47,7 +57,14 @@
 
     <div class="flex items-center gap-2">
       @if (mostrarImportar()) {
-        <button hlmBtn variant="outline" size="lg" class="gap-1.5" type="button" (click)="importar.emit()">
+        <button
+          hlmBtn
+          variant="outline"
+          size="lg"
+          class="gap-1.5"
+          type="button"
+          (click)="importar.emit()"
+        >
           <ng-icon name="lucideUpload" size="1rem" />
           Importar
         </button>
@@ -61,7 +78,6 @@
     </div>
   </div>
 
-  <!-- Tabela -->
   <div class="overflow-x-auto">
     <table class="w-full border-collapse text-sm">
       <thead>
@@ -102,8 +118,6 @@
     </table>
   </div>
 
-  <!-- Rodapé: contagem + paginação. Grid de 3 colunas para a paginação ficar
-       centralizada no rodapé inteiro, não só no espaço que sobra da contagem. -->
   <div class="grid grid-cols-[1fr_auto_1fr] items-center gap-3 border-t border-border px-4 py-3">
     <span class="text-xs text-muted-foreground">
       @if (total()) {

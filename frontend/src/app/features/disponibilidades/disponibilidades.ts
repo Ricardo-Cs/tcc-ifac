@@ -7,7 +7,6 @@ import { HlmBadge } from '@spartan-ng/helm/badge';
 import { HlmButton } from '@spartan-ng/helm/button';
 import { HlmCard } from '@spartan-ng/helm/card';
 import { HlmInput } from '@spartan-ng/helm/input';
-import { HlmSelectImports } from '@spartan-ng/helm/select';
 import { AcademicoApi } from '../../core/api/academico-api';
 import { mensagemErro } from '../../core/api/erro-http';
 import { GradeApi } from '../../core/api/grade-api';
@@ -21,6 +20,7 @@ import { ColunaListagem, FiltroListagem, ListagemComponent } from '../../shared/
 import { ConfirmDialogComponent } from '../../shared/confirm-dialog/confirm-dialog';
 import { FormDialogComponent } from '../../shared/form-dialog/form-dialog';
 import { ListagemLinhaDirective } from '../../shared/listagem/listagem-linha';
+import { OpcaoBusca, SelectBuscaComponent } from '../../shared/select-busca/select-busca';
 
 const DIAS = [
   { num: 1, nome: 'Segunda' },
@@ -78,7 +78,7 @@ function formatarDataHora(iso: string): string {
     ConfirmDialogComponent,
     ListagemComponent,
     ListagemLinhaDirective,
-    ...HlmSelectImports,
+    SelectBuscaComponent,
   ],
   providers: [provideIcons({ lucideCalendarOff, lucideTrash2 })],
   templateUrl: './disponibilidades.html',
@@ -144,8 +144,9 @@ export class DisponibilidadesComponent {
   readonly textoBusca = (r: RestricaoProfessor): string =>
     `${r.professorNome} ${r.slotHorarioCodigo} ${r.motivo ?? ''}`;
 
-  readonly rotuloProfessor = (id: string): string =>
-    this.professores().find((p) => p.id === id)?.nome ?? id;
+  readonly opcoesProfessor = computed<OpcaoBusca[]>(() =>
+    this.professores().map((p) => ({ valor: p.id, rotulo: p.nome, detalhe: p.identificador })),
+  );
 
   constructor() {
     this.academico.listarProfessores().subscribe({

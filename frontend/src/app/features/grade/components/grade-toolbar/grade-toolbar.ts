@@ -1,17 +1,16 @@
 import { Component, computed, input, output } from '@angular/core';
-import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { NgIcon, provideIcons } from '@ng-icons/core';
 import { lucideGlobe, lucideSend, lucideWandSparkles } from '@ng-icons/lucide';
 import { HlmButton } from '@spartan-ng/helm/button';
-import { HlmSelectImports } from '@spartan-ng/helm/select';
 import { Curso, Periodo, Severidade, Turma } from '../../../../core/models/grade.models';
+import { OpcaoBusca, SelectBuscaComponent } from '../../../../shared/select-busca/select-busca';
 import { pillSeveridade } from '../../severidade';
 import { TODAS_AS_TURMAS } from '../../grade.view';
 
 @Component({
   selector: 'app-grade-toolbar',
-  imports: [FormsModule, RouterLink, NgIcon, HlmButton, ...HlmSelectImports],
+  imports: [RouterLink, NgIcon, HlmButton, SelectBuscaComponent],
   providers: [provideIcons({ lucideGlobe, lucideSend, lucideWandSparkles })],
   templateUrl: './grade-toolbar.html',
 })
@@ -30,19 +29,19 @@ export class GradeToolbarComponent {
   readonly publicar = output<void>();
   readonly gerarInicial = output<void>();
 
-  readonly TODAS = TODAS_AS_TURMAS;
-
   readonly pillFraco = computed(() => pillSeveridade('FRACO'));
   readonly pillPotencial = computed(() => pillSeveridade('POTENCIAL'));
   readonly pillForte = computed(() => pillSeveridade('FORTE'));
 
-  rotuloCurso = (id: string): string => {
-    const curso = this.cursos().find((c) => c.id === id);
-    return curso ? `${curso.sigla} — ${curso.nome}` : '';
-  };
+  readonly opcoesCurso = computed<OpcaoBusca[]>(() =>
+    this.cursos().map((c) => ({ valor: c.id, rotulo: `${c.sigla} — ${c.nome}` })),
+  );
 
-  rotuloTurma = (id: string): string => {
-    if (id === TODAS_AS_TURMAS) return 'Todas as turmas';
-    return this.turmas().find((t) => t.id === id)?.nome ?? '';
-  };
+  readonly opcoesTurma = computed<OpcaoBusca[]>(() => {
+    const turmas = this.turmas().map((t) => ({ valor: t.id, rotulo: t.nome }));
+    if (turmas.length > 1) {
+      turmas.push({ valor: TODAS_AS_TURMAS, rotulo: 'Todas as turmas' });
+    }
+    return turmas;
+  });
 }

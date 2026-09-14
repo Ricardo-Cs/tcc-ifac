@@ -92,6 +92,9 @@ export class OfertaResponseDto {
   @ApiProperty()
   cursoSigla: string;
 
+  @ApiProperty()
+  cursoNome: string;
+
   @ApiProperty({ format: 'uuid' })
   disciplinaId: string;
 
@@ -125,6 +128,7 @@ export class OfertaResponseDto {
     dto.turmaId = oferta.turmaId;
     dto.turmaNome = oferta.turmaNome;
     dto.cursoSigla = oferta.cursoSigla;
+    dto.cursoNome = oferta.cursoNome;
     dto.disciplinaId = oferta.disciplinaId;
     dto.disciplinaCodigo = oferta.disciplinaCodigo;
     dto.disciplinaNome = oferta.disciplinaNome;

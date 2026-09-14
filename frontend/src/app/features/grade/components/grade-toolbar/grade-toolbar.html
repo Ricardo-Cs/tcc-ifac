@@ -3,45 +3,25 @@
 >
   <div class="flex flex-wrap items-center gap-2">
     @if (cursos().length) {
-      <hlm-select
+      <app-select-busca
         class="w-full sm:w-80"
-        [itemToString]="rotuloCurso"
-        [ngModel]="cursoSelecionado() ?? ''"
-        (ngModelChange)="cursoChange.emit($event)"
-      >
-        <hlm-select-trigger class="w-full sm:w-80">
-          <hlm-select-value placeholder="Curso" />
-        </hlm-select-trigger>
-        <hlm-select-content *hlmSelectPortal>
-          @for (c of cursos(); track c.id) {
-            <hlm-select-item class="pe-6" [value]="c.id">
-              {{ c.sigla }} — {{ c.nome }}
-            </hlm-select-item>
-          }
-        </hlm-select-content>
-      </hlm-select>
+        [opcoes]="opcoesCurso()"
+        [valor]="cursoSelecionado()"
+        placeholder="Curso"
+        vazio="Nenhum curso encontrado."
+        (valorChange)="cursoChange.emit($event)"
+      />
     }
 
     @if (turmas().length) {
-      <hlm-select
+      <app-select-busca
         class="w-full sm:w-72"
-        [itemToString]="rotuloTurma"
-        [ngModel]="turmaSelecionada() ?? ''"
-        (ngModelChange)="turmaChange.emit($event)"
-      >
-        <hlm-select-trigger class="w-full sm:w-72">
-          <hlm-select-value placeholder="Turma" />
-        </hlm-select-trigger>
-        <hlm-select-content *hlmSelectPortal>
-          @for (t of turmas(); track t.id) {
-            <hlm-select-item class="pe-6" [value]="t.id">{{ t.nome }}</hlm-select-item>
-          }
-          @if (turmas().length > 1) {
-            <hlm-select-separator />
-            <hlm-select-item class="pe-6" [value]="TODAS">Todas as turmas</hlm-select-item>
-          }
-        </hlm-select-content>
-      </hlm-select>
+        [opcoes]="opcoesTurma()"
+        [valor]="turmaSelecionada()"
+        placeholder="Turma"
+        vazio="Nenhuma turma encontrada."
+        (valorChange)="turmaChange.emit($event)"
+      />
     }
   </div>
 

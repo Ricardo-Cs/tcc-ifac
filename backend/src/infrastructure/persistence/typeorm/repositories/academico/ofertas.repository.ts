@@ -210,6 +210,7 @@ function toModel(
     turmaId: o.turma.id,
     turmaNome: o.turma.nome,
     cursoSigla: o.turma.curso.sigla,
+    cursoNome: o.turma.curso.nome,
     disciplinaId: o.disciplina.id,
     disciplinaCodigo: o.disciplina.codigo,
     disciplinaNome: o.disciplina.nome,

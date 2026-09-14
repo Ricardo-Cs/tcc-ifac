@@ -4,6 +4,7 @@
     [colunas]="colunas"
     [filtros]="filtros"
     [textoBusca]="textoBusca"
+    [camposBusca]="['código', 'descrição']"
     [mostrarImportar]="false"
     entidade="períodos"
     (adicionar)="abrirNovo()"
@@ -244,11 +245,11 @@
 >
   @if (publicando()?.status === 'PUBLICADO') {
     O link público de <strong>{{ publicando()?.codigo }}</strong> já existe, mas mostra a grade de
-    quando foi publicada pela última vez — mudanças depois disso só aparecem lá quando você
-    publicar de novo. Confirma?
+    quando foi publicada pela última vez — mudanças depois disso só aparecem lá quando você publicar
+    de novo. Confirma?
   } @else {
-    Publicar <strong>{{ publicando()?.codigo }}</strong>? A grade fica acessível para qualquer
-    pessoa, sem login, em um link público. Só é possível publicar se não houver conflitos fortes
-    na grade.
+    Publicar <strong>{{ publicando()?.codigo }}</strong
+    >? A grade fica acessível para qualquer pessoa, sem login, em um link público. Só é possível
+    publicar se não houver conflitos fortes na grade.
   }
 </app-confirm-dialog>

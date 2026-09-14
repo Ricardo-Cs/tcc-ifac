@@ -13,6 +13,7 @@ import { ConfirmDialogComponent } from '../../shared/confirm-dialog/confirm-dial
 import { FormDialogComponent } from '../../shared/form-dialog/form-dialog';
 import { ColunaListagem, FiltroListagem, ListagemComponent } from '../../shared/listagem/listagem';
 import { ListagemLinhaDirective } from '../../shared/listagem/listagem-linha';
+import { OpcaoBusca, SelectBuscaComponent } from '../../shared/select-busca/select-busca';
 
 const TIPOS_SALA = [
   { valor: 'COMUM', rotulo: 'Comum' },
@@ -52,6 +53,7 @@ const RASCUNHO_VAZIO: RascunhoDisciplina = {
     ConfirmDialogComponent,
     ListagemComponent,
     ListagemLinhaDirective,
+    SelectBuscaComponent,
     ...HlmSelectImports,
   ],
   providers: [provideIcons({ lucideBookOpen, lucidePencil, lucideTrash2 })],
@@ -79,7 +81,7 @@ export class DisciplinasComponent {
   ];
 
   readonly filtros: FiltroListagem<Disciplina>[] = [
-    { chave: 'curso', rotulo: 'Curso', valor: (d) => d.cursoSigla },
+    { chave: 'curso', rotulo: 'Curso', valor: (d) => d.cursoNome, busca: true },
     {
       chave: 'tipoSala',
       rotulo: 'Tipo de sala',
@@ -87,7 +89,8 @@ export class DisciplinasComponent {
     },
   ];
 
-  readonly textoBusca = (d: Disciplina): string => `${d.cursoSigla} ${d.codigo} ${d.nome}`;
+  readonly textoBusca = (d: Disciplina): string =>
+    `${d.cursoSigla} ${d.cursoNome} ${d.codigo} ${d.nome}`;
 
   constructor() {
     this.carregar();
@@ -110,10 +113,9 @@ export class DisciplinasComponent {
     return TIPOS_SALA.find((t) => t.valor === valor)?.rotulo ?? valor;
   };
 
-  readonly rotuloCurso = (cursoId: string): string => {
-    const curso = this.cursos().find((c) => c.id === cursoId);
-    return curso ? `${curso.sigla} — ${curso.nome}` : cursoId;
-  };
+  readonly opcoesCurso = computed<OpcaoBusca[]>(() =>
+    this.cursos().map((c) => ({ valor: c.id, rotulo: `${c.sigla} — ${c.nome}` })),
+  );
 
   rotuloFase(periodoCurso: number | null): string {
     return periodoCurso ? `${periodoCurso}ª` : '—';

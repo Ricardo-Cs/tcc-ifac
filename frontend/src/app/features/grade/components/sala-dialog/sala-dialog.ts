@@ -2,16 +2,16 @@ import { Component, computed, input, linkedSignal, output } from '@angular/core'
 import { FormsModule } from '@angular/forms';
 import { NgIcon, provideIcons } from '@ng-icons/core';
 import { lucideDoorOpen } from '@ng-icons/lucide';
-import { HlmSelectImports } from '@spartan-ng/helm/select';
 import { Sala } from '../../../../core/models/academico.models';
 import { Aula } from '../../../../core/models/grade.models';
 import { FormDialogComponent } from '../../../../shared/form-dialog/form-dialog';
+import { OpcaoBusca, SelectBuscaComponent } from '../../../../shared/select-busca/select-busca';
 
 export const SEM_SALA = '__sem-sala__';
 
 @Component({
   selector: 'app-sala-dialog',
-  imports: [FormsModule, NgIcon, FormDialogComponent, ...HlmSelectImports],
+  imports: [FormsModule, NgIcon, FormDialogComponent, SelectBuscaComponent],
   providers: [provideIcons({ lucideDoorOpen })],
   templateUrl: './sala-dialog.html',
 })
@@ -40,18 +40,16 @@ export class SalaDialogComponent {
     return aula.turma ? `${disciplina} · ${aula.turma}` : disciplina;
   });
 
-  readonly rotuloSala = (id: string): string => {
-    if (id === SEM_SALA) return 'Sem sala';
-    return this.salas().find((s) => s.id === id)?.nome ?? id;
-  };
-
-  detalhe(sala: Sala): string {
-    return sala.capacidade ? `${sala.capacidade} lugares` : '';
-  }
-
-  ocupada(sala: Sala): boolean {
-    return this.ocupadas().has(sala.id);
-  }
+  readonly opcoesSala = computed<OpcaoBusca[]>(() => [
+    { valor: SEM_SALA, rotulo: 'Sem sala' },
+    ...this.opcoes().map((s) => ({
+      valor: s.id,
+      rotulo: s.nome,
+      detalhe: s.capacidade ? `${s.capacidade} lugares` : undefined,
+      marcador: this.ocupadas().has(s.id) ? 'ocupada' : undefined,
+      desabilitado: this.ocupadas().has(s.id),
+    })),
+  ]);
 
   submeter(): void {
     const escolha = this.escolha();
