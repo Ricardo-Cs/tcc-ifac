@@ -1,34 +1,19 @@
-<app-form-dialog
-  [aberto]="aula() !== null"
-  titulo="Sala da aula"
-  [descricao]="descricao()"
-  [salvando]="salvando()"
-  rotuloSalvar="Definir"
-  (fechar)="fechar.emit()"
-  (salvar)="submeter()"
->
+<app-form-dialog [aberto]="aula() !== null" titulo="Sala da aula" [descricao]="descricao()" [salvando]="salvando()"
+  rotuloSalvar="Definir" (fechar)="fechar.emit()" (salvar)="submeter()">
   <ng-icon formDialogIcone name="lucideDoorOpen" size="1.15rem" />
 
   <form class="grid gap-3" (ngSubmit)="submeter()">
     <div class="grid gap-1.5">
-      <label class="text-[0.7rem] font-semibold tracking-wide text-muted-foreground uppercase"
-        >Sala</label
-      >
-      <app-select-busca
-        [opcoes]="opcoesSala()"
-        [valor]="escolha()"
-        placeholder="Busque a sala"
-        vazio="Nenhuma sala encontrada."
-        [limpavel]="false"
-        (valorChange)="escolha.set($event || semSala)"
-      />
+      <label class="text-[0.7rem] font-semibold tracking-wide text-muted-foreground uppercase">Sala</label>
+      <app-select-busca [opcoes]="opcoesSala()" [valor]="escolha()" placeholder="Busque a sala"
+        vazio="Nenhuma sala encontrada." [limpavel]="false" (valorChange)="escolha.set($event || semSala)" />
     </div>
 
     <p class="text-xs text-muted-foreground">
       @if (tipoSalaExigido(); as tipo) {
-        A disciplina pede {{ rotuloTipoSala(tipo) }}; a lista traz esse tipo e as salas comuns.
+      A disciplina pede {{ rotuloTipoSala(tipo) }}; a lista traz esse tipo e as salas comuns.
       } @else {
-        Escolha uma sala para a disciplina.
+      Escolha uma sala para a disciplina.
       }
     </p>
   </form>
