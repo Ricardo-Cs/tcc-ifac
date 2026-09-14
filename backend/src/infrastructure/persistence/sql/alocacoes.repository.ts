@@ -10,21 +10,14 @@ import {
   AlocacoesRepository,
   CriarAlocacaoInput,
   MoverAlocacaoInput,
+  OfertaParaAlocacao,
 } from '@domain/grade-horaria/ports';
 
-/**
- * Escrita de alocações em SQL cru. `id`, `criado_em` e `atualizado_em` vêm dos
- * DEFAULTs que a `synchronize` criou nas colunas, então o INSERT não os informa.
- * Todas as operações devolvem o `periodo_letivo_id` afetado — é o que o
- * controller usa para recalcular a grade e responder com os conflitos atuais.
- */
 @Injectable()
 export class SqlAlocacoesRepository implements AlocacoesRepository {
   constructor(@InjectDataSource() private readonly dataSource: DataSource) {}
 
   async criar(input: CriarAlocacaoInput): Promise<AlocacaoAlterada> {
-    // O período é derivado da oferta no próprio INSERT (subquery), nunca vem do
-    // cliente — mantém `periodo_letivo_id` coerente com a oferta.
     const rows = await this.dataSource.query(
       `INSERT INTO alocacao_aula
          (oferta_id, slot_horario_id, sala_id, periodo_letivo_id, grupo_bloco, observacoes, criado_por_id)
@@ -51,9 +44,6 @@ export class SqlAlocacoesRepository implements AlocacoesRepository {
     id: string,
     input: MoverAlocacaoInput,
   ): Promise<AlocacaoAlterada> {
-    // SET dinâmico: só as colunas informadas mudam. `salaId: null` é uma
-    // atualização válida (limpa a sala); omitir a chave a preserva. `version`
-    // sempre incrementa (concorrência otimista) para invalidar telas velhas.
     const sets: string[] = [`version = version + 1`];
     const params: unknown[] = [id];
     if (input.slotHorarioId !== undefined) {
@@ -95,12 +85,6 @@ export class SqlAlocacoesRepository implements AlocacoesRepository {
     return { id: rows[0].id, periodoLetivoId: rows[0].periodo_letivo_id };
   }
 
-  /**
-   * Cláusula `AND version = $n` quando o cliente informou a versão que viu.
-   * Empurra o parâmetro em `params` e devolve o trecho a concatenar no WHERE
-   * (vazio quando não há checagem). Concorrência otimista: sem a versão certa,
-   * a linha "some" do UPDATE/DELETE.
-   */
   private guardaDeVersao(
     versaoBase: number | undefined,
     params: unknown[],
@@ -110,11 +94,6 @@ export class SqlAlocacoesRepository implements AlocacoesRepository {
     return ` AND version = $${params.length}`;
   }
 
-  /**
-   * O UPDATE/DELETE não afetou nenhuma linha. Distingue as duas causas: a
-   * alocação sumiu (404) ou existe mas em outra versão — alguém a alterou primeiro
-   * (409). Sem a checagem de versão, "zero linhas" só pode ser 404.
-   */
   private async recusarEscritaSemLinha(
     id: string,
     versaoBase: number | undefined,
@@ -133,12 +112,20 @@ export class SqlAlocacoesRepository implements AlocacoesRepository {
     throw new NotFoundException(`Alocação ${id} não encontrada.`);
   }
 
-  async periodoDaOferta(ofertaId: string): Promise<string | null> {
+  async ofertaParaAlocacao(
+    ofertaId: string,
+  ): Promise<OfertaParaAlocacao | null> {
     const rows = await this.dataSource.query(
-      `SELECT periodo_letivo_id FROM oferta_disciplina WHERE id = $1`,
+      `SELECT periodo_letivo_id, sala_id FROM oferta_disciplina WHERE id = $1`,
       [ofertaId],
     );
-    return rows[0]?.periodo_letivo_id ?? null;
+    if (rows.length === 0) {
+      return null;
+    }
+    return {
+      periodoLetivoId: rows[0].periodo_letivo_id,
+      salaPadraoId: rows[0].sala_id ?? null,
+    };
   }
 
   async periodoDaAlocacao(id: string): Promise<string | null> {
@@ -150,11 +137,6 @@ export class SqlAlocacoesRepository implements AlocacoesRepository {
   }
 }
 
-/**
- * Normaliza o retorno de UPDATE/DELETE com RETURNING. O `query()` do TypeORM
- * devolve `rows[]` para INSERT, mas `[rows[], affectedCount]` para UPDATE/DELETE
- * — sem desempacotar, `rows[0]` seria o array interno, não a primeira linha.
- */
 function linhasComRetorno(resultado: unknown): any[] {
   if (Array.isArray(resultado) && Array.isArray(resultado[0])) {
     return resultado[0];

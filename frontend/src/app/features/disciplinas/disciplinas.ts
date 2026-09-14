@@ -14,13 +14,7 @@ import { FormDialogComponent } from '../../shared/form-dialog/form-dialog';
 import { ColunaListagem, FiltroListagem, ListagemComponent } from '../../shared/listagem/listagem';
 import { ListagemLinhaDirective } from '../../shared/listagem/listagem-linha';
 import { OpcaoBusca, SelectBuscaComponent } from '../../shared/select-busca/select-busca';
-
-const TIPOS_SALA = [
-  { valor: 'COMUM', rotulo: 'Comum' },
-  { valor: 'LABORATORIO', rotulo: 'Laboratório' },
-  { valor: 'AUDITORIO', rotulo: 'Auditório' },
-  { valor: 'QUADRA', rotulo: 'Quadra' },
-] as const;
+import { TIPOS_SALA } from '../../core/salas';
 
 const SEM_EXIGENCIA = '';
 

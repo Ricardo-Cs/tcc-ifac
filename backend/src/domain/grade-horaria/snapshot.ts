@@ -1,4 +1,4 @@
-import { GrupoRegime, Modalidade, Turno } from '../academico/enums';
+import { GrupoRegime, Modalidade, TipoSala, Turno } from '../academico/enums';
 
 export type Id = string;
 
@@ -49,12 +49,14 @@ export interface CursoSnapshot {
 export interface SalaSnapshot {
   id: Id;
   nome: string;
+  tipo: TipoSala;
 }
 
 export interface DisciplinaSnapshot {
   id: Id;
   codigo: string;
   nome: string;
+  tipoSalaRequerido: TipoSala | null;
 }
 
 export interface SlotSnapshot {

@@ -28,7 +28,7 @@
     [colunas]="colunas"
     [filtros]="filtros"
     [textoBusca]="textoBusca"
-    [camposBusca]="['curso', 'turma', 'disciplina']"
+    [camposBusca]="['curso', 'turma', 'disciplina', 'sala']"
     [mostrarImportar]="false"
     [mostrarAdicionar]="editavel()"
     entidade="ofertas"
@@ -49,6 +49,7 @@
       </td>
       <td class="px-4 py-3 text-muted-foreground">{{ rotuloRegime(o.regime) }}</td>
       <td class="px-4 py-3 text-muted-foreground">{{ o.aulasSemana }}</td>
+      <td class="px-4 py-3 text-muted-foreground">{{ o.salaNome ?? '—' }}</td>
       <td class="px-4 py-3 text-muted-foreground">{{ resumoProfessores(o) }}</td>
       <td class="px-4 py-3">
         @if (editavel()) {
@@ -182,6 +183,26 @@
         }
       </div>
     }
+
+    <div class="grid gap-1.5">
+      <label class="text-[0.7rem] font-semibold uppercase tracking-wide text-muted-foreground"
+        >Sala <span class="normal-case text-muted-foreground/70">(opcional)</span></label
+      >
+      <app-select-busca
+        [opcoes]="opcoesSala()"
+        [valor]="rascunho().salaId"
+        [desabilitado]="!rascunho().disciplinaId"
+        [placeholder]="rascunho().disciplinaId ? 'Busque a sala' : 'Escolha a disciplina primeiro'"
+        vazio="Nenhuma sala encontrada."
+        (valorChange)="atualizar('salaId', $event)"
+      />
+      <span class="text-xs text-muted-foreground">
+        @if (tipoSalaExigido(); as tipo) {
+          A disciplina pede {{ rotuloTipoSala(tipo) }}; a lista traz esse tipo e as salas comuns.
+        }
+        Pré-preenche cada aula nova na grade; a comissão troca aula a aula quando precisar.
+      </span>
+    </div>
 
     <div class="grid gap-2">
       <div class="flex items-center justify-between">

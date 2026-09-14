@@ -13,8 +13,10 @@ import {
   Oferta,
   Professor,
   RegimeOferta,
+  Sala,
   Turma,
 } from '../../core/models/academico.models';
+import { rotuloTipoSala, salasElegiveis } from '../../core/salas';
 import { PeriodoState } from '../../core/state/periodo-state';
 import { ToastService } from '../../core/toast';
 import { ConfirmDialogComponent } from '../../shared/confirm-dialog/confirm-dialog';
@@ -69,6 +71,7 @@ interface RascunhoOferta {
   turmaId: string;
   disciplinaId: string;
   aulasSemana: number | null;
+  salaId: string;
   observacoes: string;
   professores: RascunhoVinculo[];
 }
@@ -82,6 +85,7 @@ const rascunhoVazio = (): RascunhoOferta => ({
   turmaId: '',
   disciplinaId: '',
   aulasSemana: null,
+  salaId: '',
   observacoes: '',
   professores: [vinculoVazio()],
 });
@@ -112,6 +116,7 @@ export class OfertasComponent {
   readonly turmas = signal<Turma[]>([]);
   readonly disciplinas = signal<Disciplina[]>([]);
   readonly professores = signal<Professor[]>([]);
+  readonly salas = signal<Sala[]>([]);
   readonly salvando = signal(false);
 
   readonly editavel = this.periodoState.editavel;
@@ -121,6 +126,7 @@ export class OfertasComponent {
     { rotulo: 'Disciplina' },
     { rotulo: 'Regime', largura: 'w-32' },
     { rotulo: 'Aulas/sem', largura: 'w-28' },
+    { rotulo: 'Sala', largura: 'w-40' },
     { rotulo: 'Professores' },
     { rotulo: 'Ações', alinhamento: 'fim', largura: 'w-24' },
   ];
@@ -135,7 +141,7 @@ export class OfertasComponent {
   ];
 
   readonly textoBusca = (o: Oferta): string =>
-    `${o.cursoSigla} ${o.cursoNome} ${o.turmaNome} ${o.disciplinaCodigo} ${o.disciplinaNome}`;
+    `${o.cursoSigla} ${o.cursoNome} ${o.turmaNome} ${o.disciplinaCodigo} ${o.disciplinaNome} ${o.salaNome ?? ''}`;
 
   constructor() {
     this.carregarAuxiliares();
@@ -169,6 +175,10 @@ export class OfertasComponent {
     this.api.listarProfessores().subscribe({
       next: (p) => this.professores.set(p),
       error: () => this.professores.set([]),
+    });
+    this.api.listarSalas().subscribe({
+      next: (s) => this.salas.set(s),
+      error: () => this.salas.set([]),
     });
   }
 
@@ -241,9 +251,28 @@ export class OfertasComponent {
     return turma ? regimeDaModalidade(turma.cursoModalidade) : null;
   });
 
+  readonly disciplinaEscolhida = computed<Disciplina | null>(
+    () => this.disciplinas().find((d) => d.id === this.rascunho().disciplinaId) ?? null,
+  );
+
   readonly cargaHorariaEscolhida = computed<number | null>(
-    () =>
-      this.disciplinas().find((d) => d.id === this.rascunho().disciplinaId)?.cargaHoraria ?? null,
+    () => this.disciplinaEscolhida()?.cargaHoraria ?? null,
+  );
+
+  readonly tipoSalaExigido = computed(() => this.disciplinaEscolhida()?.tipoSalaRequerido ?? null);
+
+  readonly rotuloTipoSala = rotuloTipoSala;
+
+  readonly opcoesSala = computed<OpcaoBusca[]>(() =>
+    salasElegiveis(this.salas(), this.tipoSalaExigido(), this.rascunho().salaId || null).map(
+      (s) => ({
+        valor: s.id,
+        rotulo: s.nome,
+        detalhe: [rotuloTipoSala(s.tipo), s.capacidade ? `${s.capacidade} lugares` : '']
+          .filter(Boolean)
+          .join(' \u00b7 '),
+      }),
+    ),
   );
 
   readonly sugestao = computed<SugestaoAulasSemana | null>(() =>
@@ -291,6 +320,13 @@ export class OfertasComponent {
         if (sugestao && !this.aulasSemanaEditado()) {
           proximo.aulasSemana = sugestao.aulasSemana;
         }
+
+        const tipoSala =
+          this.disciplinas().find((d) => d.id === proximo.disciplinaId)?.tipoSalaRequerido ?? null;
+        const elegiveis = salasElegiveis(this.salas(), tipoSala);
+        if (proximo.salaId && !elegiveis.some((s) => s.id === proximo.salaId)) {
+          proximo.salaId = '';
+        }
       }
       return proximo;
     });
@@ -335,6 +371,7 @@ export class OfertasComponent {
       turmaId: oferta.turmaId,
       disciplinaId: oferta.disciplinaId,
       aulasSemana: oferta.aulasSemana,
+      salaId: oferta.salaId ?? '',
       observacoes: oferta.observacoes ?? '',
       professores: oferta.professores.map((p) => ({
         professorId: p.professorId,
@@ -392,6 +429,7 @@ export class OfertasComponent {
       disciplinaId: r.disciplinaId,
       periodoLetivoId: periodo.id,
       aulasSemana: r.aulasSemana,
+      salaId: r.salaId || null,
       observacoes: r.observacoes.trim() || null,
       professores,
     };

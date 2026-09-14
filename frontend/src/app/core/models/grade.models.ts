@@ -1,8 +1,11 @@
+import { TipoSala } from './academico.models';
+
 export type Severidade = 'FORTE' | 'POTENCIAL' | 'FRACO';
 
 export interface Disciplina {
   codigo: string;
   nome: string;
+  tipoSalaRequerido: TipoSala | null;
 }
 
 export interface Slot {

@@ -19,19 +19,13 @@ import {
   isViolacaoUnicidade,
 } from '../postgres-error';
 
-/** Relações necessárias para montar o registro plano da oferta (curso via turma). */
 const RELACOES = {
   turma: { curso: true },
   disciplina: true,
   periodoLetivo: true,
+  sala: true,
 } as const;
 
-/**
- * Adaptador TypeORM da porta `OfertasRepository`. A oferta e seus vínculos de
- * professor (`professor_oferta`, a codocência) são gravados juntos, numa
- * transação: ou entra a oferta com todos os professores, ou nada. A leitura
- * traz turma/curso/disciplina/período resolvidos e agrega os vínculos.
- */
 @Injectable()
 export class TypeormOfertasRepository implements OfertasRepository {
   constructor(
@@ -74,6 +68,7 @@ export class TypeormOfertasRepository implements OfertasRepository {
             periodoLetivo: { id: input.periodoLetivoId },
             regime: input.regime,
             aulasSemana: input.aulasSemana,
+            sala: input.salaId ? { id: input.salaId } : null,
             observacoes: input.observacoes ?? null,
           }),
         );
@@ -96,8 +91,6 @@ export class TypeormOfertasRepository implements OfertasRepository {
     }
     try {
       await this.ofertas.manager.transaction(async (em) => {
-        // preload sobrepõe só os campos enviados sobre a linha atual (relações
-        // por id). `undefined` = não mexe; para `observacoes`, `null` limpa.
         const entidade = await em.preload(OfertaDisciplinaEntity, {
           id,
           ...(input.turmaId ? { turma: { id: input.turmaId } } : {}),
@@ -111,6 +104,9 @@ export class TypeormOfertasRepository implements OfertasRepository {
           ...(input.aulasSemana !== undefined
             ? { aulasSemana: input.aulasSemana }
             : {}),
+          ...(input.salaId !== undefined
+            ? { sala: input.salaId ? { id: input.salaId } : null }
+            : {}),
           ...(input.observacoes !== undefined
             ? { observacoes: input.observacoes }
             : {}),
@@ -118,7 +114,6 @@ export class TypeormOfertasRepository implements OfertasRepository {
         if (entidade) {
           await em.save(entidade);
         }
-        // `professores` presente = substitui o conjunto inteiro de vínculos.
         if (input.professores !== undefined) {
           await em.delete(ProfessorOfertaEntity, { oferta: { id } });
           await this.gravarVinculos(em, id, input.professores);
@@ -131,7 +126,6 @@ export class TypeormOfertasRepository implements OfertasRepository {
   }
 
   async remover(id: string): Promise<boolean> {
-    // `professor_oferta` some em cascata (onDelete CASCADE na entidade).
     const resultado = await this.ofertas.delete({ id });
     return (resultado.affected ?? 0) > 0;
   }
@@ -173,7 +167,6 @@ export class TypeormOfertasRepository implements OfertasRepository {
     return mapa;
   }
 
-  /** Relê a oferta recém-gravada; nesse ponto ela sempre existe. */
   private async exigirPorId(id: string): Promise<Oferta> {
     const oferta = await this.buscarPorId(id);
     return oferta!;
@@ -188,7 +181,7 @@ function traduzErro(erro: unknown): unknown {
   }
   if (isViolacaoChaveEstrangeira(erro)) {
     return new BadRequestException(
-      'Turma, disciplina, período ou professor informado não existe.',
+      'Turma, disciplina, período, sala ou professor informado não existe.',
     );
   }
   return erro;
@@ -218,6 +211,8 @@ function toModel(
     periodoCodigo: o.periodoLetivo.codigo,
     regime: o.regime,
     aulasSemana: o.aulasSemana,
+    salaId: o.sala?.id ?? null,
+    salaNome: o.sala?.nome ?? null,
     observacoes: o.observacoes,
     professores: vinculos.map((v) => ({
       professorId: v.professor.id,

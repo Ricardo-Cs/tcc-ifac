@@ -11,13 +11,18 @@ import {
   TurmaSnapshot,
 } from '@domain/grade-horaria/snapshot';
 import { cargaLetivaPorProfessor } from '@domain/grade-horaria/carga-letiva';
+import { TipoSala } from '@domain/academico/enums';
 
 export interface AulaView {
   id: string;
   ofertaId: string;
   version: number;
   grupoBloco: string | null;
-  disciplina: { codigo: string; nome: string } | null;
+  disciplina: {
+    codigo: string;
+    nome: string;
+    tipoSalaRequerido: TipoSala | null;
+  } | null;
   turma: string | null;
   turmaId: string | null;
   cursoId: string | null;
@@ -107,7 +112,11 @@ function montarAula(snapshot: GradeSnapshot, alocacao): AulaView {
     version: alocacao.version,
     grupoBloco: alocacao.grupoBloco,
     disciplina: disciplina
-      ? { codigo: disciplina.codigo, nome: disciplina.nome }
+      ? {
+          codigo: disciplina.codigo,
+          nome: disciplina.nome,
+          tipoSalaRequerido: disciplina.tipoSalaRequerido,
+        }
       : null,
     turma: turma?.nome ?? null,
     turmaId: turma?.id ?? null,

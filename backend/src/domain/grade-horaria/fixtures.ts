@@ -1,4 +1,4 @@
-import { GrupoRegime, Modalidade, Turno } from '../academico/enums';
+import { GrupoRegime, Modalidade, TipoSala, Turno } from '../academico/enums';
 import { construirSnapshot } from './construir-snapshot';
 import {
   AlocacaoSnapshot,
@@ -81,7 +81,7 @@ export function curso(
 export function sala(
   p: Partial<SalaSnapshot> & Pick<SalaSnapshot, 'id'>,
 ): SalaSnapshot {
-  return { nome: `Sala ${p.id}`, ...p };
+  return { nome: `Sala ${p.id}`, tipo: TipoSala.COMUM, ...p };
 }
 
 export function disciplina(
@@ -90,6 +90,7 @@ export function disciplina(
   return {
     codigo: p.id,
     nome: `Disciplina ${p.id}`,
+    tipoSalaRequerido: null,
     ...p,
   };
 }

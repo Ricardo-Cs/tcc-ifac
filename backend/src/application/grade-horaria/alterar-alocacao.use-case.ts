@@ -10,15 +10,8 @@ import type {
 } from '@domain/grade-horaria/ports';
 import { PeriodoEditavelGuard } from './periodo-editavel.guard';
 
-/** O que o cliente envia para criar uma aula — o autor vem do token, à parte. */
 export type NovaAlocacao = Omit<CriarAlocacaoInput, 'criadoPorId'>;
 
-/**
- * Escrita de alocações. Chronos NÃO bloqueia alocação conflitante — registra o
- * que a comissão decidir e deixa o motor sinalizar. Por isso não há validação de
- * conflito aqui: criar/mover uma aula é sempre permitido; o recálculo (feito
- * pelo controller após a escrita) é que mostra o que acendeu.
- */
 @Injectable()
 export class AlterarAlocacaoUseCase {
   constructor(
@@ -31,15 +24,16 @@ export class AlterarAlocacaoUseCase {
     comando: NovaAlocacao,
     criadoPorId: string,
   ): Promise<AlocacaoAlterada> {
-    // Trava de escrita ANTES de inserir: resolve o período pela oferta e recusa
-    // se não for o corrente. `null` = oferta inexistente, mesmo 404 do INSERT.
-    const periodoId = await this.alocacoes.periodoDaOferta(comando.ofertaId);
-    if (!periodoId) {
+    const oferta = await this.alocacoes.ofertaParaAlocacao(comando.ofertaId);
+    if (!oferta) {
       throw new NotFoundException(`Oferta ${comando.ofertaId} não encontrada.`);
     }
-    await this.periodoEditavel.garantir(periodoId);
+    await this.periodoEditavel.garantir(oferta.periodoLetivoId);
 
-    return this.alocacoes.criar({ ...comando, criadoPorId });
+    const salaId =
+      comando.salaId === undefined ? oferta.salaPadraoId : comando.salaId;
+
+    return this.alocacoes.criar({ ...comando, salaId, criadoPorId });
   }
 
   async mover(
@@ -55,11 +49,6 @@ export class AlterarAlocacaoUseCase {
     return this.alocacoes.remover(id, versaoBase);
   }
 
-  /**
-   * Trava de escrita para mover/remover: resolve o período pela alocação e
-   * recusa se não for o corrente, ANTES do UPDATE/DELETE. `null` = alocação
-   * inexistente — o mesmo 404 que o próprio write daria.
-   */
   private async garantirCorrente(id: string): Promise<void> {
     const periodoId = await this.alocacoes.periodoDaAlocacao(id);
     if (!periodoId) {

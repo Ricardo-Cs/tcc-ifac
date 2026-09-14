@@ -1,9 +1,3 @@
-/**
- * Cadastro de Salas — segue o molde de Cursos (listagem + diálogo de
- * formulário), integrado ao backend (`SalasController`): a lista vem de
- * `GET /salas` e o salvar/remover chamam POST/PATCH/DELETE. A unicidade do nome
- * é decidida pelo servidor (409) — a tela traduz a resposta em toast.
- */
 import { Component, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { NgIcon, provideIcons } from '@ng-icons/core';
@@ -19,16 +13,8 @@ import { ColunaListagem, FiltroListagem, ListagemComponent } from '../../shared/
 import { ConfirmDialogComponent } from '../../shared/confirm-dialog/confirm-dialog';
 import { FormDialogComponent } from '../../shared/form-dialog/form-dialog';
 import { ListagemLinhaDirective } from '../../shared/listagem/listagem-linha';
+import { TIPOS_SALA } from '../../core/salas';
 
-/** Tipos de sala — código do domínio + rótulo humano para exibir/filtrar. */
-const TIPOS_SALA = [
-  { valor: 'COMUM', rotulo: 'Comum' },
-  { valor: 'LABORATORIO', rotulo: 'Laboratório' },
-  { valor: 'AUDITORIO', rotulo: 'Auditório' },
-  { valor: 'QUADRA', rotulo: 'Quadra' },
-] as const;
-
-/** O rascunho do formulário — os campos editáveis de uma sala. */
 interface RascunhoSala {
   nome: string;
   tipo: TipoSala | '';
@@ -60,7 +46,6 @@ export class SalasComponent {
   readonly tiposSala = TIPOS_SALA;
 
   readonly salas = signal<Sala[]>([]);
-  /** true enquanto o salvar/remover está em voo — trava os botões do diálogo. */
   readonly salvando = signal(false);
 
   readonly colunas: ColunaListagem[] = [
@@ -88,21 +73,14 @@ export class SalasComponent {
     });
   }
 
-  // Arrow field para servir de `itemToString` do hlm-select: o trigger deriva
-  // seu texto do VALOR selecionado, não do conteúdo do item.
   readonly rotuloTipo = (valor: string): string =>
     TIPOS_SALA.find((t) => t.valor === valor)?.rotulo ?? valor;
 
-  // ---- Diálogo de formulário --------------------------------------------
-
-  /** Sala em edição, ou `null` quando o diálogo está criando uma nova. */
   readonly editando = signal<Sala | null>(null);
   readonly dialogAberto = signal(false);
   readonly rascunho = signal<RascunhoSala>(RASCUNHO_VAZIO);
-  /** Erro do formulário — acende dentro do diálogo (além do toast). */
   readonly erroForm = signal<string | null>(null);
 
-  /** Sala à espera de confirmação de remoção — abre o diálogo de confirmar. */
   readonly removendo = signal<Sala | null>(null);
 
   readonly tituloDialog = computed(() => (this.editando() ? 'Editar sala' : 'Nova sala'));
@@ -164,8 +142,6 @@ export class SalasComponent {
       },
     });
   }
-
-  // ---- Remoção -----------------------------------------------------------
 
   pedirRemocao(sala: Sala): void {
     this.removendo.set(sala);

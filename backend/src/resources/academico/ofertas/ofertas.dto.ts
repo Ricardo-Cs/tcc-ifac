@@ -53,6 +53,17 @@ export class CriarOfertaDto {
   @Min(1)
   aulasSemana: number;
 
+  @ApiPropertyOptional({
+    format: 'uuid',
+    nullable: true,
+    type: String,
+    description:
+      'Sala padrão da oferta; pré-preenche cada aula nova na grade. Null = sem sala.',
+  })
+  @IsOptional()
+  @IsUUID()
+  salaId?: string | null;
+
   @ApiPropertyOptional({ nullable: true, type: String })
   @IsOptional()
   @IsString()
@@ -116,6 +127,12 @@ export class OfertaResponseDto {
   @ApiProperty()
   aulasSemana: number;
 
+  @ApiProperty({ format: 'uuid', nullable: true, type: String })
+  salaId: string | null;
+
+  @ApiProperty({ nullable: true, type: String })
+  salaNome: string | null;
+
   @ApiProperty({ nullable: true, type: String })
   observacoes: string | null;
 
@@ -136,6 +153,8 @@ export class OfertaResponseDto {
     dto.periodoCodigo = oferta.periodoCodigo;
     dto.regime = oferta.regime;
     dto.aulasSemana = oferta.aulasSemana;
+    dto.salaId = oferta.salaId;
+    dto.salaNome = oferta.salaNome;
     dto.observacoes = oferta.observacoes;
     dto.professores = oferta.professores.map((p) => proReferido(p));
     return dto;

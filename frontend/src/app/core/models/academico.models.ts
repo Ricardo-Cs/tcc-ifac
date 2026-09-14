@@ -159,6 +159,8 @@ export interface Oferta {
   periodoCodigo: string;
   regime: RegimeOferta;
   aulasSemana: number;
+  salaId: string | null;
+  salaNome: string | null;
   observacoes: string | null;
   professores: ProfessorDaOferta[];
 }
@@ -173,6 +175,7 @@ export interface CriarOferta {
   disciplinaId: string;
   periodoLetivoId: string;
   aulasSemana: number;
+  salaId?: string | null;
   observacoes?: string | null;
   professores: ProfessorOfertaInput[];
 }

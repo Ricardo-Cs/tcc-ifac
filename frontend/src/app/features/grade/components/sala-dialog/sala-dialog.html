@@ -24,6 +24,12 @@
       />
     </div>
 
-    <p class="text-xs text-muted-foreground">Escolha uma sala para a disciplina.</p>
+    <p class="text-xs text-muted-foreground">
+      @if (tipoSalaExigido(); as tipo) {
+        A disciplina pede {{ rotuloTipoSala(tipo) }}; a lista traz esse tipo e as salas comuns.
+      } @else {
+        Escolha uma sala para a disciplina.
+      }
+    </p>
   </form>
 </app-form-dialog>

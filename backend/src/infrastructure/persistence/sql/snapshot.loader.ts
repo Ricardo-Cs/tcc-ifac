@@ -4,6 +4,7 @@ import { DataSource } from 'typeorm';
 import {
   GrupoRegime,
   Modalidade,
+  TipoSala,
   Turno,
 } from '../../../domain/academico/enums';
 import {
@@ -85,8 +86,10 @@ export class SqlSnapshotLoader implements SnapshotLoader {
       this.dataSource.query(
         `SELECT id, nome, sigla, modalidade, turno_padrao FROM curso`,
       ),
-      this.dataSource.query(`SELECT id, codigo, nome FROM disciplina`),
-      this.dataSource.query(`SELECT id, nome FROM sala`),
+      this.dataSource.query(
+        `SELECT id, codigo, nome, tipo_sala_requerido FROM disciplina`,
+      ),
+      this.dataSource.query(`SELECT id, nome, tipo FROM sala`),
       this.dataSource.query(
         `SELECT id, codigo, dia_semana, turno, ordem, hora_inicio, hora_fim FROM slot_horario`,
       ),
@@ -208,6 +211,7 @@ export class SqlSnapshotLoader implements SnapshotLoader {
           id: row.id,
           codigo: row.codigo,
           nome: row.nome,
+          tipoSalaRequerido: row.tipo_sala_requerido as TipoSala | null,
         } satisfies DisciplinaSnapshot,
       ]),
     );
@@ -218,6 +222,7 @@ export class SqlSnapshotLoader implements SnapshotLoader {
         {
           id: row.id,
           nome: row.nome,
+          tipo: row.tipo as TipoSala,
         } satisfies SalaSnapshot,
       ]),
     );

@@ -3,6 +3,7 @@ import { FormsModule } from '@angular/forms';
 import { NgIcon, provideIcons } from '@ng-icons/core';
 import { lucideDoorOpen } from '@ng-icons/lucide';
 import { Sala } from '../../../../core/models/academico.models';
+import { rotuloTipoSala, salasElegiveis } from '../../../../core/salas';
 import { Aula } from '../../../../core/models/grade.models';
 import { FormDialogComponent } from '../../../../shared/form-dialog/form-dialog';
 import { OpcaoBusca, SelectBuscaComponent } from '../../../../shared/select-busca/select-busca';
@@ -28,10 +29,13 @@ export class SalaDialogComponent {
 
   readonly escolha = linkedSignal(() => this.aula()?.salaId ?? SEM_SALA);
 
-  readonly opcoes = computed<readonly Sala[]>(() => {
-    const atual = this.aula()?.salaId;
-    return this.salas().filter((s) => s.ativa || s.id === atual);
-  });
+  readonly tipoSalaExigido = computed(() => this.aula()?.disciplina?.tipoSalaRequerido ?? null);
+
+  readonly opcoes = computed<readonly Sala[]>(() =>
+    salasElegiveis(this.salas(), this.tipoSalaExigido(), this.aula()?.salaId ?? null),
+  );
+
+  readonly rotuloTipoSala = rotuloTipoSala;
 
   readonly descricao = computed(() => {
     const aula = this.aula();
@@ -45,7 +49,9 @@ export class SalaDialogComponent {
     ...this.opcoes().map((s) => ({
       valor: s.id,
       rotulo: s.nome,
-      detalhe: s.capacidade ? `${s.capacidade} lugares` : undefined,
+      detalhe: [rotuloTipoSala(s.tipo), s.capacidade ? `${s.capacidade} lugares` : '']
+        .filter(Boolean)
+        .join(' \u00b7 '),
       marcador: this.ocupadas().has(s.id) ? 'ocupada' : undefined,
       desabilitado: this.ocupadas().has(s.id),
     })),
