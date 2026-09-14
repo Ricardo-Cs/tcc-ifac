@@ -32,7 +32,8 @@ const COR = {
   papel: [255, 255, 255] as Cor,
 };
 
-const MARGEM = { esquerda: 12, direita: 12, topo: 28, rodape: 14 };
+const MARGEM = { esquerda: 12, direita: 12, topo: 28, rodape: 18 };
+const AUTOR = 'Ricardo Costa da Silva';
 const LARGURA_HORARIO = 22;
 const RAIO_TABELA = 2.6;
 const RAIO_CARTAO = 1.3;
@@ -231,15 +232,26 @@ function desenharRodapes(doc: jsPDF, geradoEm: string, larguraTabela: number): v
     doc.setPage(pagina);
     doc.setDrawColor(COR.borda[0], COR.borda[1], COR.borda[2]);
     doc.setLineWidth(0.2);
-    doc.line(x, altura - 11, x + larguraTabela, altura - 11);
+    doc.line(x, altura - 15, x + larguraTabela, altura - 15);
 
     fonte(doc, 'bold', 6.6, COR.marca);
-    doc.text('Chronos', x, altura - 7);
+    doc.text('Chronos', x, altura - 11);
     const recuo = doc.getTextWidth('Chronos') + 1.2;
     fonte(doc, 'normal', 6.6, COR.suave);
-    doc.text('· IFAC — Campus Rio Branco', x + recuo, altura - 7);
-    doc.text(`Gerado em ${geradoEm}`, x + larguraTabela / 2, altura - 7, { align: 'center' });
-    doc.text(`Página ${pagina} de ${total}`, x + larguraTabela, altura - 7, { align: 'right' });
+    doc.text('· IFAC — Campus Rio Branco', x + recuo, altura - 11);
+    doc.text(`Gerado em ${geradoEm}`, x + larguraTabela / 2, altura - 11, { align: 'center' });
+    doc.text(`Página ${pagina} de ${total}`, x + larguraTabela, altura - 11, { align: 'right' });
+
+    fonte(doc, 'normal', 5.6, COR.suave);
+    const prefixo = 'Sistema desenvolvido por ';
+    const larguraPrefixo = doc.getTextWidth(prefixo);
+    fonte(doc, 'bold', 5.6, COR.marca);
+    const larguraAutor = doc.getTextWidth(AUTOR);
+    const inicio = x + (larguraTabela - larguraPrefixo - larguraAutor) / 2;
+    fonte(doc, 'normal', 5.6, COR.suave);
+    doc.text(prefixo, inicio, altura - 6.5);
+    fonte(doc, 'bold', 5.6, COR.marca);
+    doc.text(AUTOR, inicio + larguraPrefixo, altura - 6.5);
   }
 }
 
@@ -257,6 +269,12 @@ export async function gerarGradePdf(documento: DocumentoPdf): Promise<void> {
   ]);
 
   const doc = new JsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
+  doc.setProperties({
+    title: `Grade horária — ${documento.periodo}`,
+    subject: 'Grade horária pública do IFAC — Campus Rio Branco',
+    author: AUTOR,
+    creator: `Chronos · ${AUTOR}`,
+  });
   const larguraPagina = doc.internal.pageSize.getWidth();
   const larguraDia =
     (larguraPagina - MARGEM.esquerda - MARGEM.direita - LARGURA_HORARIO) / DIAS.length;
