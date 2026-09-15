@@ -1,0 +1,191 @@
+% ============================================================
+% Acrescentar no preâmbulo, logo após \usepackage{array}:
+%
+% \usepackage{tabularx}
+% \renewcommand{\tabularxcolumn}[1]{m{#1}}   % centraliza verticalmente as colunas X
+% \newcolumntype{I}{>{\centering\arraybackslash}m{1.3cm}}  % coluna de ID
+% \newcommand{\modulo}[1]{\multicolumn{2}{|l|}{\textit{#1}} \\ \hline}
+%
+% O pacote float já está carregado no preâmbulo; os quadros usam [H].
+% ============================================================
+
+\section{Requisitos}
+\label{sub_cap_requis}
+
+Os requisitos do Chronos foram organizados em três grupos: requisitos funcionais (RF), que descrevem o que o sistema deve fazer; requisitos não funcionais (RNF), que tratam de qualidades e restrições da solução; e regras de negócio (RN), que expressam as políticas do domínio da montagem de horários, parte delas fundamentada na Resolução CONSU/IFAC nº 116/2022.
+
+Cada requisito recebe um identificador único, utilizado para referenciá-lo nos casos de uso e na análise dos resultados.
+
+% ------------------------------------------------------------
+\subsection{Requisitos funcionais}
+\label{sub_cap_requis_func}
+
+Os requisitos funcionais estão agrupados por módulo do sistema. O Quadro~\ref{quadro_rf_cadastros} reúne os módulos de acesso, cadastros e ofertas, que estruturam os dados utilizados na montagem da grade.
+
+\begin{quadro}[H]
+\centering
+\small
+\renewcommand{\arraystretch}{1.25}
+\caption{Requisitos funcionais de acesso, cadastros e ofertas.}
+\label{quadro_rf_cadastros}
+\begin{tabularx}{\textwidth}{|I|X|}
+\hline
+\textbf{ID} & \textbf{Descrição} \\ \hline
+\modulo{Acesso e usuários}
+RF01 & Autenticar o usuário por e-mail e senha. \\ \hline
+RF02 & Exigir a troca da senha provisória no primeiro acesso ou após a redefinição pelo administrador. \\ \hline
+RF03 & Gerenciar usuários, com cadastro, edição, remoção, atribuição de papéis e redefinição de senha, de forma restrita ao administrador. \\ \hline
+RF04 & Atualizar os dados de perfil e a senha do próprio usuário. \\ \hline
+\modulo{Cadastros}
+RF05 & Gerenciar períodos letivos (ano, semestre, datas e status) e definir o período corrente. \\ \hline
+RF06 & Gerenciar cursos, com modalidade e turno padrão. \\ \hline
+RF07 & Gerenciar professores, com identificador, grupo de regime de trabalho e ajustes de carga horária. \\ \hline
+RF08 & Importar professores a partir de planilha (CSV ou XLSX), com pré-visualização das linhas a criar, a atualizar e com erro. \\ \hline
+RF09 & Gerenciar disciplinas, com código, carga horária, fase da matriz e tipo de sala exigido. \\ \hline
+RF10 & Gerenciar turmas vinculadas a um curso. \\ \hline
+RF11 & Gerenciar salas, com tipo e capacidade. \\ \hline
+\modulo{Ofertas}
+RF12 & Gerenciar ofertas, vinculando disciplina, turma, período letivo, professores e quantidade de aulas semanais. \\ \hline
+RF13 & Registrar codocência, com a distribuição da proporção da carga da oferta entre os professores. \\ \hline
+RF14 & Sugerir a quantidade de aulas semanais da oferta a partir da carga horária da disciplina e do regime. \\ \hline
+RF15 & Definir uma sala padrão para a oferta, utilizada na alocação de novas aulas. \\ \hline
+\end{tabularx}
+\fonte{Elaborado pelo autor (2026).}
+\end{quadro}
+
+O Quadro~\ref{quadro_rf_planejamento} reúne os módulos que operam sobre esses dados: coleta de restrições, montagem da grade, tratamento de conflitos, acompanhamento e publicação.
+
+\begin{quadro}[H]
+\centering
+\small
+\renewcommand{\arraystretch}{1.25}
+\caption{Requisitos funcionais de restrições, grade, conflitos e publicação.}
+\label{quadro_rf_planejamento}
+\begin{tabularx}{\textwidth}{|I|X|}
+\hline
+\textbf{ID} & \textbf{Descrição} \\ \hline
+\modulo{Restrições}
+RF16 & Abrir e fechar a coleta de restrições de horário de um período letivo. \\ \hline
+RF17 & Registrar restrições de horário dos professores, com motivo e indicação de amparo legal. \\ \hline
+\modulo{Montagem da grade}
+RF18 & Exibir a grade horária por curso e turma, com o catálogo de ofertas que ainda têm aulas a alocar. \\ \hline
+RF19 & Alocar uma aula arrastando a oferta do catálogo para um dia e horário da grade. \\ \hline
+RF20 & Mover e remover aulas alocadas na grade. \\ \hline
+RF21 & Definir a sala de cada aula, com indicação das salas já ocupadas no horário. \\ \hline
+RF22 & Gerar um rascunho inicial da grade a partir das aulas pendentes, editável pela comissão. \\ \hline
+\modulo{Conflitos}
+RF23 & Avaliar e exibir os conflitos da grade a cada alteração, com tipo, severidade, descrição e aulas envolvidas. \\ \hline
+RF24 & Registrar o aceite de um conflito mediante justificativa da comissão. \\ \hline
+\modulo{Acompanhamento}
+RF25 & Exibir a grade de trabalho por professor e por sala. \\ \hline
+RF26 & Exibir a carga horária letiva atual de cada professor no período. \\ \hline
+\modulo{Publicação}
+RF27 & Publicar a grade do período e atualizar uma publicação existente. \\ \hline
+RF28 & Disponibilizar a grade publicada para consulta sem autenticação, por turma ou por professor. \\ \hline
+RF29 & Exportar a grade publicada em PDF, individualmente ou para todas as turmas ou todos os professores. \\ \hline
+\end{tabularx}
+\fonte{Elaborado pelo autor (2026).}
+\end{quadro}
+
+% ------------------------------------------------------------
+\subsection{Requisitos não funcionais}
+\label{sub_cap_requis_nao_func}
+
+Os requisitos não funcionais, apresentados no Quadro~\ref{quadro_rnf}, tratam da plataforma e da interface (RNF01 e RNF09), da segurança (RNF02 e RNF03), do desempenho e da consistência dos dados (RNF04 a RNF06), da arquitetura e da API (RNF07 e RNF08) e da implantação (RNF10).
+
+\begin{quadro}[H]
+\centering
+\small
+\renewcommand{\arraystretch}{1.25}
+\caption{Requisitos não funcionais.}
+\label{quadro_rnf}
+\begin{tabularx}{\textwidth}{|I|X|}
+\hline
+\textbf{ID} & \textbf{Descrição} \\ \hline
+RNF01 & O sistema deve ser uma aplicação web, acessível por navegador, sem instalação no computador do usuário. \\ \hline
+RNF02 & O sistema deve exigir autenticação por \textit{token} JWT para acesso às funcionalidades internas e respeitar os papéis Administrador, Comissão e Consulta. \\ \hline
+RNF03 & O sistema deve armazenar as senhas de forma cifrada, por meio de função de \textit{hash} (bcrypt). \\ \hline
+RNF04 & O sistema deve recalcular os conflitos a partir do estado atual da grade, sem persisti-los. \\ \hline
+RNF05 & O sistema deve avaliar os conflitos a cada alteração da grade em tempo compatível com o uso interativo. \\ \hline
+RNF06 & O sistema deve tratar alterações simultâneas na mesma aula por controle de concorrência otimista, sem sobrescrever a alteração de outro usuário. \\ \hline
+RNF07 & O sistema deve implementar as regras de negócio em camada de domínio independente de \textit{framework} e de banco de dados, testável de forma isolada. \\ \hline
+RNF08 & O sistema deve validar os dados de entrada da API e documentá-la no padrão OpenAPI. \\ \hline
+RNF09 & O sistema deve adaptar a interface a telas de computadores e de dispositivos móveis. \\ \hline
+RNF10 & O sistema deve ser implantado por meio de contêineres Docker. \\ \hline
+\end{tabularx}
+\fonte{Elaborado pelo autor (2026).}
+\end{quadro}
+
+% ------------------------------------------------------------
+\subsection{Regras de negócio}
+\label{sub_cap_regras_negocio}
+
+As regras de negócio concentram as decisões do domínio. O princípio que orienta as demais é o da RN01: o sistema apoia a comissão de horários, sinalizando problemas, mas não substitui sua decisão. Por essa razão, os conflitos são classificados por severidade: um conflito \textit{forte} representa uma situação que não pode ser mantida na grade publicada; um conflito \textit{potencial} representa uma situação que a comissão pode analisar e, se cabível, aceitar com justificativa.
+
+O Quadro~\ref{quadro_rn_organizacao} apresenta as regras de organização do período letivo e das ofertas.
+
+\begin{quadro}[H]
+\centering
+\small
+\renewcommand{\arraystretch}{1.25}
+\caption{Regras de negócio de organização do período e das ofertas.}
+\label{quadro_rn_organizacao}
+\begin{tabularx}{\textwidth}{|I|X|}
+\hline
+\textbf{ID} & \textbf{Descrição} \\ \hline
+RN01 & O sistema não impede alocações conflitantes: os conflitos são sinalizados e a decisão cabe à comissão de horários. \\ \hline
+RN02 & Apenas um período letivo pode ser o corrente, e somente nele a grade pode ser editada. \\ \hline
+RN03 & O regime da oferta é definido pela modalidade do curso: anual para o técnico integrado e semestral para o superior e o subsequente. \\ \hline
+RN04 & Não pode existir mais de uma oferta da mesma disciplina para a mesma turma no mesmo período letivo. \\ \hline
+RN05 & Em ofertas com codocência, as proporções de carga dos professores devem somar 100\%. \\ \hline
+RN06 & A carga horária é contada em horas de 60 minutos; a aula de 50 minutos é apenas a unidade de alocação na grade. \\ \hline
+RN07 & A sugestão de aulas semanais é dada por $\mathit{CH} \times 6/5 \div s$, em que $\mathit{CH}$ é a carga horária da disciplina e $s$ é o número de semanas (18 no regime semestral e 36 no anual). O resultado é arredondado e ajustável pela comissão. \\ \hline
+RN08 & Ofertas anuais iniciadas no primeiro semestre devem ser consideradas também na avaliação da grade do segundo semestre do mesmo ano. \\ \hline
+RN09 & A existência de uma restrição registrada indica que o professor não pode ser alocado naquele horário. \\ \hline
+\end{tabularx}
+\fonte{Elaborado pelo autor (2026).}
+\end{quadro}
+
+As regras de conflito são apresentadas no Quadro~\ref{quadro_rn_conflitos}, que indica, para cada tipo de conflito, a severidade atribuída e, quando houver, a base normativa. As regras RN14 a RN17 tratam da jornada docente e derivam do Regulamento de Atividades Docentes (RAD).
+
+\begin{quadro}[H]
+\centering
+\small
+\renewcommand{\arraystretch}{1.25}
+\caption{Regras de negócio de conflitos.}
+\label{quadro_rn_conflitos}
+\begin{tabularx}{\textwidth}{|I|X|>{\raggedright\arraybackslash}m{3.3cm}|>{\raggedright\arraybackslash}m{2.2cm}|}
+\hline
+\textbf{ID} & \textbf{Conflito} & \textbf{Severidade} & \textbf{Base normativa} \\ \hline
+RN10 & \textbf{Professor em duas aulas}\newline Mesmo professor em ofertas distintas no mesmo horário. & Forte; potencial com codocência\textsuperscript{*} & -- \\ \hline
+RN11 & \textbf{Turma em duas aulas}\newline Mesma turma com ofertas distintas no mesmo horário. & Sempre forte & -- \\ \hline
+RN12 & \textbf{Sala ocupada}\newline Mesma sala com ofertas distintas no mesmo horário. & Sempre forte & -- \\ \hline
+RN13 & \textbf{Restrição violada}\newline Aula coincidente com uma restrição do professor. & Forte com amparo legal; potencial nos demais casos & -- \\ \hline
+RN14 & \textbf{Interjornada}\newline Intervalo inferior a 11 horas entre a última aula de um dia e a primeira do dia seguinte. & Forte; potencial com codocência\textsuperscript{*} & RAD, Art.~8º \\ \hline
+RN15 & \textbf{Intrajornada}\newline Intervalo inferior a 1 hora entre turnos no mesmo dia. & Forte; potencial com codocência\textsuperscript{*} & RAD, Art.~8º \\ \hline
+RN16 & \textbf{Três turnos no dia}\newline Aulas do professor nos três turnos no mesmo dia. & Forte; potencial com codocência\textsuperscript{*} & RAD, Art.~5º, §1º \\ \hline
+RN17 & \textbf{Carga diária excedida}\newline Mais de 8 horas de aula no dia, o que corresponde a mais de 9 aulas de 50 minutos. & Forte; potencial com codocência\textsuperscript{*} & -- \\ \hline
+\end{tabularx}
+\fonte{Elaborado pelo autor (2026).}
+\nota{\textsuperscript{*}O conflito é forte quando o professor detém 100\% da carga de todas as ofertas envolvidas e potencial quando há codocência em alguma delas.}
+\end{quadro}
+
+Por fim, o Quadro~\ref{quadro_rn_publicacao} trata do aceite de conflitos pela comissão e das condições para a publicação da grade.
+
+\begin{quadro}[H]
+\centering
+\small
+\renewcommand{\arraystretch}{1.25}
+\caption{Regras de negócio de aceite de conflitos e publicação.}
+\label{quadro_rn_publicacao}
+\begin{tabularx}{\textwidth}{|I|X|}
+\hline
+\textbf{ID} & \textbf{Descrição} \\ \hline
+RN18 & Somente conflitos não fortes podem ser aceitos, e todo aceite exige justificativa. \\ \hline
+RN19 & O aceite é vinculado à identidade do conflito (tipo, ofertas, horários e sala envolvidos) e deixa de valer quando essa situação muda. \\ \hline
+RN20 & Um aceite não cobre um conflito cuja severidade atual seja forte, ainda que tenha sido registrado quando o conflito era potencial. \\ \hline
+RN21 & A publicação da grade exige a ausência de conflitos fortes em todo o período letivo. \\ \hline
+RN22 & A grade publicada é uma versão salva: alterações posteriores só se tornam públicas após nova publicação. \\ \hline
+\end{tabularx}
+\fonte{Elaborado pelo autor (2026).}
+\end{quadro}
